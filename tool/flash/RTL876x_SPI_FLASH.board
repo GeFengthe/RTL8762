@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<flash_board>
+    <pass>
+        <loader>RTL876x_SPI_FLASH.flash</loader>
+        <range>CODE 0x800000 0xffffff</range>
+    </pass>
+    <ignore>CODE 0x8800000 0x8ffffff</ignore>
+</flash_board>

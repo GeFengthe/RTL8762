@@ -1,0 +1,115 @@
+﻿V0.9.5 Date: 20200323
+0. Common SDK
+1. Platform
+2. Stack
+   - NEW: Support ali new mesh/ais specification
+   - NEW: Support bearer hint and control of mesh messages
+   - NEW: Add feature of uncheck group address
+   - NEW: Optimize ali timing operation
+   - CHG: Add more configurable friendship parameters
+   - BUG: Fix ali model transparent msg memory copy crossing line bug
+3. App
+   - NEW: Ctl light project supports ali new mesh specification
+   - BUG: Fix the typo of udb retransmit interval paramter in ali projects
+4. Doc
+5. Tool
+
+V0.9.3 Date: 20191101
+0. Common SDK
+   - CHG: V1.1.0
+   - CHG: fsbl image v1.1.2.0
+1. Platform
+   - NEW: Support most of the C lib API
+2. Stack
+   - NEW: Transport layer support tx caching multiple segmented messages and rx reasembling segmented messages from multiple sources
+   - NEW: Start the heartbeat publish if exist when reboot
+   - NEW: Group protocol support relay and sync feature
+   - CHG: Change ttl default value 127 to 7
+   - CHG: Optimize the friendship interacion
+   - BUG: Fix ECC key generate failure bug
+   - BUG: Fix the segmented message ack with wrong address bug
+3. App
+   - NEW: Add ali fan light, power strip etc. new projects
+   - NEW: Support ali vendor model
+   - NEW: Ali AIS support authentication and multiple frames per cycle 
+4. Doc
+   - BUG: Fix some typo
+5. Tool
+   - CHG: Log Tool(DebugAnalyzer) v3.0.0.10
+   - CHG: MP Tool v1.0.3.2
+   - CHG: Pack Tool v2.0.2.6
+   - CHG: RF Test Tool v1.0.1.3
+
+V0.8.1 Date: 20190129
+0. Common SDK
+1. Platform
+2. Stack
+   - BUG: Modify the random generator to avoid duplicate random values in the provisioning
+3. App
+4. Doc
+   - BUG: Remove unrelated content in the chm api file
+   - CHG: Release the mesh pdf files using the tools
+5. Tool
+
+V0.8.0 Date: 20190124
+0. Common SDK
+   - CHG: V1.0.3
+1. Platform
+   - NEW: No requirement of short enum to the compiler;
+   - CHG: Improve the annotation;
+2. Stack
+   - NEW: Support the sig mesh ota with power on continues and changing image halfway;
+   - NEW: The adv bearer can be closed independently;
+   - NEW: The provisioner can assign the address of the device in the provisioning procedure;
+   - NEW: The device can restore the provisioning parameters at runtime;
+   - NEW: Add the pb_adv retransmit parameters;
+   - CHG: The length of adv interval parameters increased to 2 octets from 1 octet;
+   - CHG: Network transmit parameters increased to 1 octets;
+3. App
+   - NEW: Support the ali ais ota;
+   - NEW: Refine the light related operation;
+   - NEW: Add ping/pong delay min/max statistic
+4. Doc
+   - NEW: Add the chm api file;
+5. Tool
+   - CHG: Log Tool(DebugAnalyzer) v2.1.8.2
+   - CHG: MP Tool v1.0.2.1
+   - CHG: Pack Tool v2.0.2.3
+   - CHG: RF Test Tool v1.0.0.8
+
+V0.7.0 Date: 20181211
+0. Common SDK
+1. Platform
+2. Stack
+   - CHG: Modify the bearers configuration;
+3. App
+   - NEW: Add sig mesh ota;
+   - NEW: Add the Group RCU;
+   - CHG: Change the light effect
+4. Doc
+5. Tool
+
+V0.5.5 Date: 20181012
+0. Common SDK
+1. Platform
+2. Stack
+   - CHG: Modify the AppKey/NetKey size to uint16_t;
+3. App
+   - NEW: Add ota over gatt between devices;
+   - BUG: Fix can't lighten light issue
+4. Doc
+5. Tool
+
+V0.5.0 Date: 20181009 (Beta Version)
+0. Common SDK
+   - CHG: V1.0.2;
+1. Platform
+   - CHG: Change flash layout;
+2. Stack
+   - BUG: Fix the model app binding nvm storage offset error;
+3. App
+   - NEW: Add the single fire switch project;
+   - CHG: Modify the light effect of the ali light project;
+4. Doc
+   - NEW: Add some application notes about the model;
+5. Tool
