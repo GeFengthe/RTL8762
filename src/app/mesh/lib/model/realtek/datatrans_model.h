@@ -63,7 +63,7 @@ typedef uint8_t datatrans_stat_t;
 
 typedef struct
 {
-    uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_DATATRANS_WRITE)];
+    uint8_t opcode[3];
     uint8_t data[0];
 } _PACKED_ datatrans_write_t;
 

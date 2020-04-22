@@ -14,9 +14,13 @@
 #include "datatrans_model.h"
 
 
-static mesh_model_info_t datatrans_server;
+static mesh_model_info_t datatrans_server;    // vendor model
 
-static uint8_t sample_data[16];
+
+
+typedef void (*Vendor_handle_rx_cb)(uint8_t opcode, uint8_t len, uint8_t *data);
+static Vendor_handle_rx_cb    VendorHandleRx_cb = NULL;
+
 
 static int32_t datatrans_server_data(const mesh_model_info_p pmodel_info,
                                      uint32_t type, void *pargs)
@@ -24,38 +28,35 @@ static int32_t datatrans_server_data(const mesh_model_info_p pmodel_info,
     UNUSED(pmodel_info);
     switch (type)
     {
-    case DATATRANS_SERVER_WRITE:
-        {
-            datatrans_server_write_t *pdata = pargs;
-            data_uart_debug("remote write %d bytes: ", pdata->data_len);
-            data_uart_dump(pdata->data, pdata->data_len);
-        }
-        break;
-    case DATATRANS_SERVER_READ:
-        {
-            datatrans_server_read_t *pdata = pargs;
-            if (pdata->data_len > 16)
-            {
-                pdata->data_len = 16;
-            }
-
-            for (uint8_t i = 0; i < pdata->data_len; ++i)
-            {
-                sample_data[i] = i;
-            }
-            pdata->data = sample_data;
-        }
-        break;
-    default:
-        break;
+		case DATATRANS_SERVER_WRITE:{
+				datatrans_server_write_t *pdata = pargs;
+				data_uart_debug("remote write %d bytes: ", pdata->data_len);
+				data_uart_dump(pdata->data, pdata->data_len);
+				
+				uint8_t opcode_1B =  pdata->data[0]; // qlj 如果不行 利用type字段传进来
+				// application call back
+				if(VendorHandleRx_cb){
+					VendorHandleRx_cb(opcode_1B, pdata->data_len, pdata->data);
+				}
+			}
+			break;
+		case DATATRANS_SERVER_READ:
+			break;
+		default:
+			break;
     }
 
     return 0;
 }
 
-void datatrans_server_model_init(void)
+void datatrans_server_model_init(void *rx_cb)
 {
     /* register data transmission server model */
     datatrans_server.model_data_cb = datatrans_server_data;
     datatrans_server_reg(0, &datatrans_server);
+	
+	if(rx_cb){
+		VendorHandleRx_cb = (Vendor_handle_rx_cb)rx_cb;
+	}
+	
 }

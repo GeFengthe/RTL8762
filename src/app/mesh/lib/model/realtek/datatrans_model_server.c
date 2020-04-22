@@ -73,7 +73,26 @@ static bool datatrans_server_receive(mesh_msg_p pmesh_msg)
     uint8_t *pbuffer = pmesh_msg->pbuffer + pmesh_msg->msg_offset;
     mesh_model_info_p pmodel_info = pmesh_msg->pmodel_info;
 	
-data_uart_debug("datatrans_server_receive %d %d: ", pmesh_msg->access_opcode, 123);
+	#if 1
+	uint16_t tmp_cpyid = (BLEMESH_VENDOR_COMPANY_ID<<8) | (BLEMESH_VENDOR_COMPANY_ID>>8);
+	
+	if( (pmesh_msg->access_opcode&0xFFFF) == tmp_cpyid ){
+		
+        datatrans_write_t *pmsg = (datatrans_write_t *)pbuffer;
+		uint16_t data_len = pmesh_msg->msg_len - sizeof(datatrans_write_t);
+		datatrans_server_write_t write_data = {data_len, NULL, DATATRANS_SUCCESS, data_len};
+		if (NULL != pmodel_info->model_data_cb)
+		{
+			write_data.data = pmsg->data;
+			pmodel_info->model_data_cb(pmodel_info, DATATRANS_SERVER_WRITE, &write_data);  // receive date from gateway
+		}	
+		
+	} else {		
+		ret = FALSE;
+	}
+	
+	#else
+	
     switch (pmesh_msg->access_opcode)
     {
     case MESH_MSG_DATATRANS_READ:
@@ -117,6 +136,8 @@ data_uart_debug("datatrans_server_receive %d %d: ", pmesh_msg->access_opcode, 12
         ret = FALSE;
         break;
     }
+	#endif
+	
     return ret;
 }
 

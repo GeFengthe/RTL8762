@@ -119,10 +119,6 @@
       <TargetDriverDllRegistry>
         <SetRegEntry>
           <Number>0</Number>
-          <Key>DLGUARM</Key>
-        </SetRegEntry>
-        <SetRegEntry>
-          <Number>0</Number>
           <Key>ARMRTXEVENTFLAGS</Key>
           <Name>-L70 -Z18 -C0 -M0 -T1</Name>
         </SetRegEntry>
@@ -167,18 +163,18 @@
         <Bp>
           <Number>1</Number>
           <Type>0</Type>
-          <LineNumber>362</LineNumber>
+          <LineNumber>73</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8460840</Address>
+          <Address>8460604</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\..\..\src\app\mesh\device\main.c</Filename>
+          <Filename>..\..\..\src\app\mesh\lib\model\realtek\datatrans_model_server.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\app\../../../src/app/mesh/device/main.c\362</Expression>
+          <Expression>\\app\../../../src/app/mesh/lib/model/realtek/datatrans_model_server.c\73</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -248,7 +244,7 @@
 
   <Group>
     <GroupName>include</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -268,7 +264,7 @@
 
   <Group>
     <GroupName>lib</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -324,7 +320,7 @@
 
   <Group>
     <GroupName>cmsis</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -356,7 +352,7 @@
 
   <Group>
     <GroupName>io</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -480,7 +476,7 @@
 
   <Group>
     <GroupName>model</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -527,18 +523,6 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\src\app\mesh\lib\model\realtek\datatrans_model_server.c</PathWithFileName>
-      <FilenameWithoutPath>datatrans_model_server.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>6</GroupNumber>
-      <FileNumber>21</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
       <PathWithFileName>..\..\..\src\app\mesh\lib\model\generic_transition_time.c</PathWithFileName>
       <FilenameWithoutPath>generic_transition_time.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
@@ -554,13 +538,25 @@
     <RteFlg>0</RteFlg>
     <File>
       <GroupNumber>7</GroupNumber>
-      <FileNumber>22</FileNumber>
+      <FileNumber>21</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
       <PathWithFileName>..\..\..\src\app\mesh\device\main.c</PathWithFileName>
       <FilenameWithoutPath>main.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>7</GroupNumber>
+      <FileNumber>22</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\..\..\src\app\mesh\lib\model\realtek\datatrans_model_server.c</PathWithFileName>
+      <FilenameWithoutPath>datatrans_model_server.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -705,6 +701,30 @@
       <bDave2>0</bDave2>
       <PathWithFileName>..\..\..\src\app\mesh\device\io_management.c</PathWithFileName>
       <FilenameWithoutPath>io_management.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>7</GroupNumber>
+      <FileNumber>35</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\app\app_skyiot_server.c</PathWithFileName>
+      <FilenameWithoutPath>app_skyiot_server.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>7</GroupNumber>
+      <FileNumber>36</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\app\skylight.c</PathWithFileName>
+      <FilenameWithoutPath>skylight.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

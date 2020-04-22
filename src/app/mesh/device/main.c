@@ -145,7 +145,7 @@ void mesh_stack_init(void)
 //    trans_ping_pong_init(ping_app_ping_cb, pong_receive);
 //    tp_control_reg(tp_reveive);
 	
-    datatrans_server_model_init();   // vendor model
+    datatrans_server_model_init( NULL );   // vendor model
     compo_data_page0_header_t compo_data_page0_header = {COMPANY_ID, PRODUCT_ID, VERSION_ID};
     compo_data_page0_gen(&compo_data_page0_header);
 
