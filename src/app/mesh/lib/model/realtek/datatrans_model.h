@@ -40,7 +40,12 @@ BEGIN_DECLS
  * @brief Mesh model id
  * @{
  */
-#define MESH_MODEL_DATATRANS_SERVER                     0x0004005D
+
+#define BLEMESH_VENDOR_COMPANY_ID  (0x0094)   /*  MTK */
+#define BLEMESH_SKYWORTH_MODEL_ID  (0x5320)	  /*  SKYWORTH MODEL ID*/
+
+// #define MESH_VENDOR_MODELID_SERVER                   0x0004005D 
+#define MESH_VENDOR_MODELID_SERVER                    ((BLEMESH_SKYWORTH_MODEL_ID<<16)|BLEMESH_VENDOR_COMPANY_ID)
 #define MESH_MODEL_DATATRANS_CLIENT                     0x0005005D
 /** @} */
 

@@ -72,7 +72,8 @@ static bool datatrans_server_receive(mesh_msg_p pmesh_msg)
     bool ret = TRUE;
     uint8_t *pbuffer = pmesh_msg->pbuffer + pmesh_msg->msg_offset;
     mesh_model_info_p pmodel_info = pmesh_msg->pmodel_info;
-
+	
+data_uart_debug("datatrans_server_receive %d %d: ", pmesh_msg->access_opcode, 123);
     switch (pmesh_msg->access_opcode)
     {
     case MESH_MSG_DATATRANS_READ:
@@ -126,7 +127,7 @@ bool datatrans_server_reg(uint8_t element_index, mesh_model_info_p pmodel_info)
         return FALSE;
     }
 
-    pmodel_info->model_id = MESH_MODEL_DATATRANS_SERVER;
+    pmodel_info->model_id = MESH_VENDOR_MODELID_SERVER;
     if (NULL == pmodel_info->model_receive)
     {
         pmodel_info->model_receive = datatrans_server_receive;

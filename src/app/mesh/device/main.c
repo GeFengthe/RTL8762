@@ -71,7 +71,7 @@ void mesh_stack_init(void)
 
     /** set mesh stack log level, default all on, disable the log of level LEVEL_TRACE */
     uint32_t module_bitmap[MESH_LOG_LEVEL_SIZE] = {0};
-    diag_level_set(LEVEL_TRACE, module_bitmap);
+   // diag_level_set(LEVEL_TRACE, module_bitmap);
 
     /** print the mesh sdk & lib version */
     mesh_sdk_version();
@@ -141,10 +141,11 @@ void mesh_stack_init(void)
     mesh_element_create(GATT_NS_DESC_UNKNOWN);
     health_server_reg(0, &health_server_model);
     health_server_set_company_id(&health_server_model, COMPANY_ID);
-    ping_control_reg(ping_app_ping_cb, pong_receive);
-    trans_ping_pong_init(ping_app_ping_cb, pong_receive);
-    tp_control_reg(tp_reveive);
-    datatrans_server_model_init();
+//    ping_control_reg(ping_app_ping_cb, pong_receive);
+//    trans_ping_pong_init(ping_app_ping_cb, pong_receive);
+//    tp_control_reg(tp_reveive);
+	
+    datatrans_server_model_init();   // vendor model
     compo_data_page0_header_t compo_data_page0_header = {COMPANY_ID, PRODUCT_ID, VERSION_ID};
     compo_data_page0_gen(&compo_data_page0_header);
 
@@ -171,7 +172,13 @@ void app_le_gap_init(void)
     uint32_t auth_fix_passkey = 0;
     uint8_t  auth_sec_req_enable = false;
     uint16_t auth_sec_req_flags = GAP_AUTHEN_BIT_BONDING_FLAG;
-
+	
+//        uint16_t adv_int_min = 320; // 200ms
+//        uint16_t adv_int_max = 320;
+//
+//        le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(adv_int_min), &adv_int_min);
+//        le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(adv_int_max), &adv_int_max);
+	
     /* Setup the GAP Bond Manager */
     gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(auth_pair_mode), &auth_pair_mode);
     gap_set_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, sizeof(auth_flags), &auth_flags);
