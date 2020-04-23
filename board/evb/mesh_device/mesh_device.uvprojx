@@ -629,6 +629,11 @@
               <FileType>1</FileType>
               <FilePath>.\app\skylight.c</FilePath>
             </File>
+            <File>
+              <FileName>utils_md5.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\utils_md5.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
