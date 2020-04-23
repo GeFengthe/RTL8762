@@ -37,6 +37,8 @@
 #include "mem_config.h"
 #include "board.h"
 
+#include "app_skyiot_server.h"
+
 #if ENABLE_DLPS
 #include "io_management.h"
 #endif
@@ -765,9 +767,11 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
         break;
     case PROV_CB_TYPE_UNPROV:
         data_uart_debug("unprov device!\r\n>");
+		SkyBleMesh_Provision_State(MESH_PROVISION_STATE_UNPROV);
         break;
     case PROV_CB_TYPE_START:
         data_uart_debug("being prov-ed!\r\n");
+		SkyBleMesh_Provision_State(MESH_PROVISION_STATE_START);
         break;
     case PROV_CB_TYPE_PUBLIC_KEY:
         {
@@ -812,14 +816,17 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
         {
             prov_data_p pprov_data = cb_data.pprov_data;
             data_uart_debug("been prov-ed with addr 0x%04x!\r\n", pprov_data->unicast_address);
+			SkyBleMesh_Provision_State(MESH_PROVISION_STATE_SUCCEED);
         }
         break;
     case PROV_CB_TYPE_FAIL:
         data_uart_debug("provision fail, type=%d!\r\n", cb_data.prov_fail.fail_type);
+		SkyBleMesh_Provision_State(MESH_PROVISION_STATE_FAILED);
         break;
     case PROV_CB_TYPE_PROV:
         /* stack ready */
         data_uart_debug("ms addr: 0x%04x\r\n>", mesh_node.unicast_addr);
+		SkyBleMesh_Provision_State(MESH_PROVISION_STATE_PROVED);
         break;
     default:
         break;

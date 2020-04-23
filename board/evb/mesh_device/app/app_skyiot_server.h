@@ -65,13 +65,25 @@ typedef enum
 {
     FLASH_PARAM_TYPE_APP_CMFDATA,
     FLASH_PARAM_TYPE_QUICK_ONOFF_CNT,
-} FLASH_PARAM_TYPE_t;
+} FLASH_PARAM_TYPE_e;
 
 
 #define FLASH_USERDATA_SAVE_LEN        (64)    // 大于 sizeof(SkyBleMeshIotManager) 
 
 #define MESH_DEV_UUID_LEN  16
 
+
+
+
+typedef enum
+{
+    MESH_PROVISION_STATE_START,
+    MESH_PROVISION_STATE_FAILED,
+    MESH_PROVISION_STATE_SUCCEED,
+    MESH_PROVISION_STATE_UNPROV,
+    MESH_PROVISION_STATE_PROVED,
+} MESH_PROVISION_STATE_e;
+extern MESH_PROVISION_STATE_e mesh_provison_state;
 
 extern bool Hal_Get_Ble_MacAddr(uint8_t* mac);
 
@@ -85,9 +97,7 @@ extern void SkyIotSaveAttr(void);
 
 extern void SkyBleMesh_UnPro_Adv_timeout_cb(void);
 
-extern void SkyBleMesh_Provision_Start(void);
-extern void SkyBleMesh_Provision_Fail(void);
-extern void SkyBleMesh_Provision_Success(void);
+extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate);
 
 extern void SkyBleMesh_unBind_complete(void);
 extern void SkyBleMesh_MainLoop_timer(void );

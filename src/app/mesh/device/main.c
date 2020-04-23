@@ -177,11 +177,6 @@ void app_le_gap_init(void)
     uint8_t  auth_sec_req_enable = false;
     uint16_t auth_sec_req_flags = GAP_AUTHEN_BIT_BONDING_FLAG;
 	
-//        uint16_t adv_int_min = 320; // 200ms
-//        uint16_t adv_int_max = 320;
-//
-//        le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MIN, sizeof(adv_int_min), &adv_int_min);
-//        le_adv_set_param(GAP_PARAM_ADV_INTERVAL_MAX, sizeof(adv_int_max), &adv_int_max);
 	
     /* Setup the GAP Bond Manager */
     gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(auth_pair_mode), &auth_pair_mode);

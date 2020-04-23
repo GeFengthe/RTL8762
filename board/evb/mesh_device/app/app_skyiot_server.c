@@ -10,7 +10,7 @@
 
 #define APP_DBG_PRINTF(fmt, ...)  
 
-static uint8_t macaddr[6];
+MESH_PROVISION_STATE_e mesh_provison_state = MESH_PROVISION_STATE_UNPROV;
 /*
  * DEFINES
  ****************************************************************************************
@@ -32,8 +32,8 @@ uint8_t  ackattrsval=0;
 #define SKYBLERESET_MAXCNT         (10)    // 重配网延时服务，延时次数，即重配网闪灯次数
 #define SKYBLERESET_TIMEOUT        (150)
 
-//#define SKYBLEPROVSUCCESS_MAXCNT   (10)    // 配网成功闪
-//#define SKYBLEPROVSUCCESS_TIMEOUT  (500)
+#define SKYBLEPROVSUCCESS_MAXCNT   (10)    // 配网成功闪
+#define SKYBLEPROVSUCCESS_TIMEOUT  (500)
 
 #define SKYIOTSAVEATTR_INTERVAL    (5000)  // 定时保存attr的参数
 
@@ -184,6 +184,8 @@ typedef struct {
 static plt_timer_t quick_onoff_timer = NULL;
 static plt_timer_t skyblereset_timer = NULL;
 static plt_timer_t skyiot_SaveAttr_timer = NULL;
+static plt_timer_t skybleprosuccess_timer = NULL;
+static plt_timer_t skyblemainloop_timer = NULL;
 
 // FIFO
 static main_msg_fifo_t MainMsg_fifo={
@@ -227,12 +229,9 @@ static int SkyBleMesh_WriteConfig(void);
  
 static uint32_t pwm2timercnt=0;   //for 2ms timer
 
-
-
-
 #if 1
 // qlj len 加长度越界判断
-static bool Hal_FlashWrite(FLASH_PARAM_TYPE_t type, uint16_t len, void *pdata)
+static bool Hal_FlashWrite(FLASH_PARAM_TYPE_e type, uint16_t len, void *pdata)
 {
     uint32_t ret = 0;
 	
@@ -257,7 +256,7 @@ static bool Hal_FlashWrite(FLASH_PARAM_TYPE_t type, uint16_t len, void *pdata)
     return (0 == ret);
 }
 
-static bool Hal_FlashRead(FLASH_PARAM_TYPE_t type, uint16_t len, void *pdata)
+static bool Hal_FlashRead(FLASH_PARAM_TYPE_e type, uint16_t len, void *pdata)
 {
     uint32_t ret = 0;
 	
@@ -327,7 +326,8 @@ static uint8_t HAL_IntToString(int num, char* str)
 */
 static uint32_t HAL_GetTickCount(void)
 {
-	return (os_sys_time_get() & 0xFFFFFFFF);
+	// return (os_sys_time_get() & 0xFFFFFFFF);
+	return (os_sys_tick_get() & 0xFFFFFFFF);
 }
 
 static uint32_t HAL_CalculateTickDiff(uint32_t oldtick, uint32_t newtick)
@@ -1050,14 +1050,87 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 
 #if 1  // 联网配置
 
+static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
+{
+	req_event_t event;
+	
+	skybleprovsucesscnt++;
+	if(skybleprovsucesscnt <= SKYBLEPROVSUCCESS_MAXCNT){
+		#if USE_LIGHT_FOR_SKYIOT
+		if( skybleprovsucesscnt&0x01 ){			
+			HAL_Lighting_ON();
+		}else{
+			HAL_Lighting_OFF();
+		}
+		#endif
+
+	}else{
+		if(skybleprovsucesscnt == (SKYBLEPROVSUCCESS_MAXCNT+1)){			
+			#if USE_LIGHT_FOR_SKYIOT
+			mIotManager.mLightManager.status = 1;  // 不保存，默认开
+			HAL_Lighting_ON();
+			#endif
+
+			// 闪灯结束后延时10s，触发配网成功事件。  
+			// qlj 如果需要，另起单次定时器延时 
+			
+		}else{		
+			event.event_id = EVENT_TYPE_PROVISIONED;
+			Push_Msg_Into_FIFO(&event);	
+	
+			if(skybleprosuccess_timer){
+				plt_timer_delete(skybleprosuccess_timer, 0);
+				skybleprosuccess_timer = NULL;
+			}
+		}
+	}
+
+}
+
+
 /*
 ** Provisioning state values
 */
+
+extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate)
+{
+	mesh_provison_state = sate;
+	
+	switch(mesh_provison_state){
+		case MESH_PROVISION_STATE_START:{
+			break;
+		}
+		case MESH_PROVISION_STATE_FAILED:{
+			break;
+		}
+		case MESH_PROVISION_STATE_SUCCEED:{
+			
+			if(skybleprosuccess_timer == NULL){		
+				skybleprosuccess_timer = plt_timer_create("prvok", SKYBLEPROVSUCCESS_TIMEOUT, true, 0, SkyBleMesh_Prov_Success_Timeout_cb);
+				if (skybleprosuccess_timer != NULL){
+					plt_timer_start(skybleprosuccess_timer, 1000);
+				}
+			}
+			break;
+		}
+		case MESH_PROVISION_STATE_UNPROV:{
+			break;
+		}
+		case MESH_PROVISION_STATE_PROVED:{
+			break;
+		}
+		
+		default:
+			break;
+	}
+}
 static bool SkyBleMesh_IsProvision_Sate(void)
 {
 	bool ret=false;
 	
-	
+	if(mesh_provison_state==MESH_PROVISION_STATE_SUCCEED || mesh_provison_state==MESH_PROVISION_STATE_PROVED){
+		ret = true;
+	}
 
 	return ret;
 }
@@ -1070,20 +1143,6 @@ extern void SkyBleMesh_UnPro_Adv_timeout_cb(void)
 	APP_DBG_PRINTF("%s\r\n",__func__);	
 }
 
-/*
-** current provisioning state.
-*/
-extern void SkyBleMesh_Provision_Start(void)
-{
-	APP_DBG_PRINTF("%s\r\n",__func__);	
-}
-
-
-extern void SkyBleMesh_Provision_Fail(void)
-{
-	APP_DBG_PRINTF("%s\r\n",__func__);	
-}
-
 
 // 进入重配网模式
 extern void SkyBleMesh_unBind_complete(void)
@@ -1091,7 +1150,6 @@ extern void SkyBleMesh_unBind_complete(void)
     APP_DBG_PRINTF("**********************************************************************\r\n");
     APP_DBG_PRINTF("******************* SkyMesh_unBind_complete **************************\r\n");    
     APP_DBG_PRINTF("**********************************************************************\r\n");
-
 	
 	#if USE_LIGHT_FOR_SKYIOT
 	SkyBleMesh_ReadConfig();
@@ -1732,37 +1790,43 @@ static void Main_Upload_State(void)
 
 
 
-// #define MY_TEST_TIMER
+#define MY_TEST_TIMER
 #ifdef MY_TEST_TIMER
-static mesh_tb_timer_t skymesh_test_timer;
-static void SkyBleMesh_Test_timer(void *timer)
+static plt_timer_t skymesh_test_timer = NULL;
+static void SkyBleMesh_Test_Timeout_cb(void *timer)
 {	
 	static uint8_t testcnt=0,reconflag=0;
 //	 APP_DBG_PRINTF("%s prostate %d \r\n",__func__, SkyBleMesh_IsProvision_Sate() );
 
-	if(testperid){
-		if (mIotManager.alive_status == 1){
-			if(++testcnt >= testperid){
-				if(reconflag==0){
-					test_update_attr();
-				}else{
-					reconflag = 0;
-				}
-				testcnt = 0;
-			}			
-		}else{
-			testcnt = 0;
-			reconflag = 1;
-		}
-	}else{
-		testcnt = 0;
-	}
 
-		
-		// keep loop
-	skymesh_test_timer.cb = SkyBleMesh_Test_timer;
-	skymesh_test_timer.period = 1000;
-	mesh_tb_timer_set(&skymesh_test_timer, skymesh_test_timer.period);
+	APP_PRINT_WARN1("SkyBleMesh_Test_Timeout_cb = %d\n", os_sys_tick_get());
+
+//	if(testperid){
+//		if (mIotManager.alive_status == 1){
+//			if(++testcnt >= testperid){
+//				if(reconflag==0){
+//					test_update_attr();
+//				}else{
+//					reconflag = 0;
+//				}
+//				testcnt = 0;
+//			}			
+//		}else{
+//			testcnt = 0;
+//			reconflag = 1;
+//		}
+//	}else{
+//		testcnt = 0;
+//	}
+}
+static void SkyBleMesh_Test_timer(void)
+{	
+	if(skymesh_test_timer == NULL){		
+		skymesh_test_timer = plt_timer_create("test", 10000, true, 0, SkyBleMesh_Test_Timeout_cb);
+		if (skymesh_test_timer != NULL){
+			plt_timer_start(skymesh_test_timer, 0);
+		}
+	}
 }
 #endif
 
@@ -1795,7 +1859,7 @@ extern void test_update_attr(void)
 }
 #endif
 
-extern void SkyBleMesh_MainLoop_timer(void )
+extern void SkyBleMesh_MainLoop_Timeout_cb(void *time)
 {	
 					
 	if(IsSkyAppInited==false){
@@ -1828,6 +1892,16 @@ extern void SkyBleMesh_MainLoop_timer(void )
 	
 }
 
+static void SkyBleMesh_MainLoop_timer(void)
+{	
+	if(skyblemainloop_timer == NULL){		
+		skyblemainloop_timer = plt_timer_create("main", 50, true, 0, SkyBleMesh_MainLoop_Timeout_cb);
+		if (skyblemainloop_timer != NULL){
+			plt_timer_start(skyblemainloop_timer, 0);
+		}
+	}
+}
+
 extern void SkyBleMesh_App_Init(void)
 {
     uint32_t ret;
@@ -1855,40 +1929,26 @@ extern void SkyBleMesh_App_Init(void)
     ret = SkyBleMesh_ReadConfig();
     if(ret != 0){ 		
         APP_DBG_PRINTF("SkyBleMesh_ReadConfig read failed\r\n");
-				  
+		
+		uint8_t macaddr[6];		  
  		if( Hal_Get_Ble_MacAddr(macaddr) ) {       			
 			/*创维设备mesh UUID:     MAC地址(6Byte) + PRODUCT_TYPE(4Byte) + 随机数(6Byte) */
 			memcpy(mIotManager.mac_address, macaddr, 6); 
-			Regain_Random_UUID(mIotManager.device_uuid, MESH_DEV_UUID_LEN);	
-			memcpy(mIotManager.device_uuid, mIotManager.mac_address, MAC_ADDRESS_LEN);	
-			mIotManager.device_uuid[MAC_ADDRESS_LEN]   = PRODUCT_TYPE & 0xFF;
-			mIotManager.device_uuid[MAC_ADDRESS_LEN+1] = (PRODUCT_TYPE>>8) & 0xFF;
-			mIotManager.device_uuid[MAC_ADDRESS_LEN+2] = (PRODUCT_TYPE>>16) & 0xFF;
-			mIotManager.device_uuid[MAC_ADDRESS_LEN+3] = (PRODUCT_TYPE>>24) & 0xFF;		
-			#if MESH_TEST_PRESSURE == 1
-			mIotManager.device_uuid[10]   = PRODUCT_TYPE & 0xFF;	// used in test
-			mIotManager.device_uuid[11]   = PRODUCT_TYPE & 0xFF;	
-			mIotManager.device_uuid[12]   = PRODUCT_TYPE & 0xFF;	
-			mIotManager.device_uuid[13]   = PRODUCT_TYPE & 0xFF;	
-			mIotManager.device_uuid[14]   = PRODUCT_TYPE & 0xFF;	
-			mIotManager.device_uuid[15]   = PRODUCT_TYPE & 0xFF;
-			#endif			
-		} else{
-			Regain_Random_UUID(mIotManager.device_uuid, MESH_DEV_UUID_LEN);	
-			memcpy(mIotManager.device_uuid, mIotManager.mac_address, MAC_ADDRESS_LEN);	
-			mIotManager.device_uuid[MAC_ADDRESS_LEN]   = PRODUCT_TYPE & 0xFF;
-			mIotManager.device_uuid[MAC_ADDRESS_LEN+1] = (PRODUCT_TYPE>>8) & 0xFF;
-			mIotManager.device_uuid[MAC_ADDRESS_LEN+2] = (PRODUCT_TYPE>>16) & 0xFF;
-			mIotManager.device_uuid[MAC_ADDRESS_LEN+3] = (PRODUCT_TYPE>>24) & 0xFF;	
-			#if MESH_TEST_PRESSURE == 1
-			mIotManager.device_uuid[10]   = PRODUCT_TYPE & 0xFF;	// used in test
-			mIotManager.device_uuid[11]   = PRODUCT_TYPE & 0xFF;	
-			mIotManager.device_uuid[12]   = PRODUCT_TYPE & 0xFF;	
-			mIotManager.device_uuid[13]   = PRODUCT_TYPE & 0xFF;	
-			mIotManager.device_uuid[14]   = PRODUCT_TYPE & 0xFF;	
-			mIotManager.device_uuid[15]   = PRODUCT_TYPE & 0xFF;
-			#endif					
 		}
+		Regain_Random_UUID(mIotManager.device_uuid, MESH_DEV_UUID_LEN);	
+		memcpy(mIotManager.device_uuid, mIotManager.mac_address, MAC_ADDRESS_LEN);	
+		mIotManager.device_uuid[MAC_ADDRESS_LEN]   = PRODUCT_TYPE & 0xFF;
+		mIotManager.device_uuid[MAC_ADDRESS_LEN+1] = (PRODUCT_TYPE>>8) & 0xFF;
+		mIotManager.device_uuid[MAC_ADDRESS_LEN+2] = (PRODUCT_TYPE>>16) & 0xFF;
+		mIotManager.device_uuid[MAC_ADDRESS_LEN+3] = (PRODUCT_TYPE>>24) & 0xFF;		
+		#if MESH_TEST_PRESSURE == 1
+		mIotManager.device_uuid[10]   = PRODUCT_TYPE & 0xFF;	// used in test
+		mIotManager.device_uuid[11]   = PRODUCT_TYPE & 0xFF;	
+		mIotManager.device_uuid[12]   = PRODUCT_TYPE & 0xFF;	
+		mIotManager.device_uuid[13]   = PRODUCT_TYPE & 0xFF;	
+		mIotManager.device_uuid[14]   = PRODUCT_TYPE & 0xFF;	
+		mIotManager.device_uuid[15]   = PRODUCT_TYPE & 0xFF;
+		#endif			
 			
 		SkyiotManager_Default_Config();  // 设备默认配置 并 控制
 		SkyBleMesh_WriteConfig();        // 保存参数
@@ -1942,11 +2002,10 @@ extern void SkyBleMesh_App_Init(void)
 	#endif
 	
 #ifdef MY_TEST_TIMER
-	skymesh_test_timer.cb = SkyBleMesh_Test_timer;
-	skymesh_test_timer.period = 1000;
-	mesh_tb_timer_set(&skymesh_test_timer, 60000);
+	SkyBleMesh_Test_timer();
 #endif
-
+	
+	SkyBleMesh_MainLoop_timer();
 }
 
 
