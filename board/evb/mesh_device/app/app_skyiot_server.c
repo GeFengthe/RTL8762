@@ -885,7 +885,7 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 	
 	cmd_type = p_data[MESH_COMMAND_POS];   // 获得命令码  ，
 	
-	// APP_DBG_PRINTF("%s opcode %02X, type %02X\r\n",__func__, opcode, cmd_type);	
+	APP_DBG_PRINTF("%s opcode %02X, type %02X\r\n",__func__, opcode, cmd_type);	
 	
     switch (opcode)
     {

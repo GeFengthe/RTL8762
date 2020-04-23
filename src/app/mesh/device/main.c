@@ -70,10 +70,21 @@ void mesh_stack_init(void)
     log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_INFO, 0);
     log_module_trace_set(MODULE_LOWERSTACK, LEVEL_ERROR, 0);
     log_module_trace_set(MODULE_SNOOP, LEVEL_ERROR, 0);
+	
+    log_module_trace_set(MM_GAP_SCHED, LEVEL_INFO, 0);
+    log_module_trace_set(MM_GAP_SCHED, LEVEL_TRACE, 0);
+    log_module_trace_set(MM_GAP_SCHED, LEVEL_WARN, 0);
+    log_module_trace_set(MM_GAP_SCHED, LEVEL_ERROR, 0);
+	
+    log_module_trace_set(MM_BEACON, LEVEL_INFO, 0);
+    log_module_trace_set(MM_BEACON, LEVEL_TRACE, 0);
+    log_module_trace_set(MM_BEACON, LEVEL_WARN, 0);
+    log_module_trace_set(MM_BEACON, LEVEL_ERROR, 0);
 
+	
     /** set mesh stack log level, default all on, disable the log of level LEVEL_TRACE */
     uint32_t module_bitmap[MESH_LOG_LEVEL_SIZE] = {0};
-   // diag_level_set(LEVEL_TRACE, module_bitmap);
+    diag_level_set(LEVEL_TRACE, module_bitmap);
 	
     /** print the mesh sdk & lib version */
     mesh_sdk_version();
@@ -150,6 +161,8 @@ void mesh_stack_init(void)
 //    tp_control_reg(tp_reveive);
 	
     datatrans_server_model_init( NULL );   // vendor model
+	// SkyBleMesh_Vendormodel_init();
+
     compo_data_page0_header_t compo_data_page0_header = {COMPANY_ID, PRODUCT_ID, VERSION_ID};
     compo_data_page0_gen(&compo_data_page0_header);
 

@@ -26,10 +26,16 @@ static int32_t datatrans_server_data(const mesh_model_info_p pmodel_info,
                                      uint32_t type, void *pargs)
 {
     UNUSED(pmodel_info);
+	
+				datatrans_server_write_t *pdata = pargs;
+	printw("datatrans_server_data type %d, %d \n", type, pdata->data_len );
+	for(int i=0; i<pdata->data_len;i++){
+		printw("%02X ",  pdata->data[i] );
+	}
     switch (type)
     {
 		case DATATRANS_SERVER_WRITE:{
-				datatrans_server_write_t *pdata = pargs;
+				// datatrans_server_write_t *pdata = pargs;
 				data_uart_debug("remote write %d bytes: ", pdata->data_len);
 				data_uart_dump(pdata->data, pdata->data_len);
 				

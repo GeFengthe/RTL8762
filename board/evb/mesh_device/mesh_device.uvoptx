@@ -164,6 +164,54 @@
           <ExecCommand></ExecCommand>
           <Expression>0x002082c9</Expression>
         </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>77</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>8460672</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\..\..\src\app\mesh\lib\model\realtek\datatrans_model_server.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\app\../../../src/app/mesh/lib/model/realtek/datatrans_model_server.c\77</Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>160</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>8460820</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\..\..\src\app\mesh\lib\model\realtek\datatrans_model_server.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\app\../../../src/app/mesh/lib/model/realtek/datatrans_model_server.c\160</Expression>
+        </Bp>
+        <Bp>
+          <Number>3</Number>
+          <Type>0</Type>
+          <LineNumber>163</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>8460196</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>..\..\..\src\app\mesh\device\main.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\app\../../../src/app/mesh/device/main.c\163</Expression>
+        </Bp>
       </Breakpoint>
       <WatchWindow1>
         <Ww>

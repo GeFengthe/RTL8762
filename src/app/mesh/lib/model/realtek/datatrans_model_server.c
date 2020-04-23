@@ -76,9 +76,18 @@ static bool datatrans_server_receive(mesh_msg_p pmesh_msg)
 	#if 1
 	uint16_t tmp_cpyid = (BLEMESH_VENDOR_COMPANY_ID<<8) | (BLEMESH_VENDOR_COMPANY_ID>>8);
 	
+	data_uart_debug("datatrans_server_receive write %d bytes: ", pmesh_msg->msg_len);
+	
+	
+	 datatrans_write_t *pmsg = (datatrans_write_t *)pbuffer;
+	printw("datatrans_server_receive OPCODE %08X, %d \n", pmesh_msg->access_opcode, pmesh_msg->msg_len );
+	for(int i=0; i<pmesh_msg->msg_len;i++){
+		printw("%02X ",  pmsg->data[i] );
+	}
+	
 	if( (pmesh_msg->access_opcode&0xFFFF) == tmp_cpyid ){
 		
-        datatrans_write_t *pmsg = (datatrans_write_t *)pbuffer;
+       // datatrans_write_t *pmsg = (datatrans_write_t *)pbuffer;
 		uint16_t data_len = pmesh_msg->msg_len - sizeof(datatrans_write_t);
 		datatrans_server_write_t write_data = {data_len, NULL, DATATRANS_SUCCESS, data_len};
 		if (NULL != pmodel_info->model_data_cb)
