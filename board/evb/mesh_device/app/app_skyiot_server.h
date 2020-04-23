@@ -50,10 +50,27 @@
 #define SKYBLEMESH_MAINLOOP_TIMER  (5)      // 50ms
 // #define SKYBLEMESH_USR_TIMER       (2)      // 20ms
 
-#define FLASH_USERDATA_SAVE_ADDR       (0x7D000)   // 0x7D000~7E000
-#define FLASH_USERDATA_SAVE_LEN        (64)  // 大于 sizeof(SkyBleMeshIotManager) 
 
 
+/* APP CONFIG DATA */
+// max size, 32bit alignment
+#define FTLMAP_APPCFGDATA_OFFSET   0
+#define FTLMAP_APPCFGDATA_SIZE     100  
+
+/* quick onoff */
+#define FTLMAP_QUICK_ONOFF_OFFSET   200
+#define FTLMAP_QUICK_ONOFF_SIZE     8  
+
+typedef enum
+{
+    FLASH_PARAM_TYPE_APP_CMFDATA,
+    FLASH_PARAM_TYPE_QUICK_ONOFF_CNT,
+} FLASH_PARAM_TYPE_t;
+
+
+#define FLASH_USERDATA_SAVE_LEN        (64)    // 大于 sizeof(SkyBleMeshIotManager) 
+
+#define MESH_DEV_UUID_LEN  16
 
 
 extern bool Hal_Get_Ble_MacAddr(uint8_t* mac);
@@ -86,6 +103,21 @@ extern uint32_t sendpackcnt ;
 extern uint32_t revackpackcnt ;
 extern uint32_t acktimoutcnt  ;
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #endif // 
 

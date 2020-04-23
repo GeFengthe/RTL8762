@@ -14,6 +14,7 @@
 #define _DATATRANS_SERVER_APP_H_
 
 #include "platform_types.h"
+#include "datatrans_model.h"
 
 BEGIN_DECLS
 
@@ -91,6 +92,8 @@ BEGIN_DECLS
 
 #endif
 
+
+extern mesh_model_info_t datatrans_server;  
 
 /**
  * @defgroup Datatrans_Server_Exported_Functions Datatrans Server Exported Functions

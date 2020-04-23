@@ -14,7 +14,7 @@
 #include "datatrans_model.h"
 
 
-static mesh_model_info_t datatrans_server;    // vendor model
+mesh_model_info_t datatrans_server;    // vendor model
 
 
 

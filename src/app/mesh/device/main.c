@@ -53,6 +53,8 @@
 #include "rtl876x_io_dlps.h"
 #include "io_management.h"
 
+#include "app_skyiot_server.h"
+
 mesh_model_info_t health_server_model;
 
 /******************************************************************
@@ -90,10 +92,12 @@ void mesh_stack_init(void)
 #endif
 
     /** set device uuid according to bt address */
-    uint8_t bt_addr[6];
+    // uint8_t bt_addr[6];
     uint8_t dev_uuid[16] = MESH_DEVICE_UUID;
-    gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
-    memcpy(dev_uuid, bt_addr, sizeof(bt_addr));
+    // gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
+    // memcpy(dev_uuid, bt_addr, sizeof(bt_addr));	
+	SkyBleMesh_App_Init();
+	SkyBleMesh_Get_UUID(dev_uuid, MESH_DEV_UUID_LEN);	// qlj ХыАн
     device_uuid_set(dev_uuid);
 
     /** configure provisioning parameters */

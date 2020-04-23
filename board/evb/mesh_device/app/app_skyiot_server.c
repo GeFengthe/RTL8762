@@ -11,7 +11,6 @@
 #define APP_DBG_PRINTF(fmt, ...)  
 
 static uint8_t macaddr[6];
-#define MESH_DEV_UUID_LEN  16
 /*
  * DEFINES
  ****************************************************************************************
@@ -25,18 +24,18 @@ uint32_t acktimoutcnt = 0;
 uint8_t  ackattrsval=0;
 #endif
 
-//// timer 
-//#define MAX_QUICK_ONOFF_CNT        (5)
-//#define DEVICE_POWER_ON_TIMEOUT    (3000)    // ms  快速开关进配网，检查间隔3s
-//#define PROV_FLASH_LIGHT_INTERVAL  (500)     // ms
+// timer 
+#define MAX_QUICK_ONOFF_CNT        (5)
+#define DEVICE_POWER_ON_TIMEOUT    (3000)    // ms  快速开关进配网，检查间隔3s
+#define PROV_FLASH_LIGHT_INTERVAL  (500)     // ms
 
-//#define SKYBLERESET_MAXCNT         (10)    // 重配网延时服务，延时次数，即重配网闪灯次数
-//#define SKYBLERESET_TIMEOUT        (150)
+#define SKYBLERESET_MAXCNT         (10)    // 重配网延时服务，延时次数，即重配网闪灯次数
+#define SKYBLERESET_TIMEOUT        (150)
 
 //#define SKYBLEPROVSUCCESS_MAXCNT   (10)    // 配网成功闪
 //#define SKYBLEPROVSUCCESS_TIMEOUT  (500)
 
-//#define SKYIOTSAVEATTR_INTERVAL    (5000)  // 定时保存attr的参数
+#define SKYIOTSAVEATTR_INTERVAL    (5000)  // 定时保存attr的参数
 
 
 // FIFO
@@ -181,7 +180,10 @@ typedef struct {
  ****************************************************************************************
  */
 
-
+// timer
+static plt_timer_t quick_onoff_timer = NULL;
+static plt_timer_t skyblereset_timer = NULL;
+static plt_timer_t skyiot_SaveAttr_timer = NULL;
 
 // FIFO
 static main_msg_fifo_t MainMsg_fifo={
@@ -193,7 +195,7 @@ static SkyBleMeshIotManager mIotManager;
 static int8_t   g_aliveTimerCnt = 0;
 static uint16_t g_quick_onoff_Cnt = 0;
 static bool IsSkyAppInited = false;
-static uint8_t skybleresetcnt=0;     // 重配网延时服务，延时次数，即重配网闪灯次数
+static uint8_t g_skybleresetcnt=0;     // 重配网延时服务，延时次数，即重配网闪灯次数
 static uint8_t skybleprovsucesscnt=0;     
 static bool g_needsaveattr = false;  // 定时保存标志，给主进程写
 
@@ -229,52 +231,55 @@ static uint32_t pwm2timercnt=0;   //for 2ms timer
 
 
 #if 1
-
-void Hal_EraseFlash ( uint32_t baseaddr )
+// qlj len 加长度越界判断
+static bool Hal_FlashWrite(FLASH_PARAM_TYPE_t type, uint16_t len, void *pdata)
 {
-	flash_erase_locked(FLASH_ERASE_SECTOR, baseaddr);
+    uint32_t ret = 0;
+	
+    switch (type) {       
+		case FLASH_PARAM_TYPE_APP_CMFDATA:{
+            ret = ftl_save(pdata, FTLMAP_APPCFGDATA_OFFSET, len);
+			break;
+		}
+		case FLASH_PARAM_TYPE_QUICK_ONOFF_CNT:{
+            ret = ftl_save(pdata, FTLMAP_QUICK_ONOFF_OFFSET, len);
+			 break;			   
+        }
+        
+		default:
+        break;
+    }
+
+    if (0 != ret){
+        printe("Hal_FlashWrite: failed, type = %d, cause = %d", type, ret);
+    }
+
+    return (0 == ret);
 }
-/******************************************************
 
-输入	baseaddr flash的基地址(前64字节记录偏移组数，从1开始记)
-			data	读写数据
-			len		读写数据长度
-			wr    0写   1读
-返回  0成功  1flash写满  2无可读数据 
-实际一次操作，占用flash 128字节
-******************************************************/
-uint8_t Hal_WrRdFlash ( uint32_t baseaddr, uint8_t *data, uint16_t len, uint8_t wr )
+static bool Hal_FlashRead(FLASH_PARAM_TYPE_t type, uint16_t len, void *pdata)
 {
-	uint8_t addr[ 64 ] , i=0 ; 
-	uint32_t wraddr;
-		
-	flash_read_locked(baseaddr, 64, addr);
-	for ( i=31; i>0; i-- )
-	{
-		if ( addr[ i-1 ] != 0xFF ) break;
-	}
+    uint32_t ret = 0;
 	
-	if ( wr==0 )
-	{
-		if ( i == 31 ) {
-			return 1;
+    switch (type) {       
+		case FLASH_PARAM_TYPE_APP_CMFDATA:{
+            ret = ftl_load(pdata, FTLMAP_APPCFGDATA_OFFSET, len);
+			break;
 		}
-		
-		wraddr = baseaddr + 64 + i*128;
-		flash_write_locked(wraddr, len, data);
-		addr[i] = i;
-		flash_write_locked(baseaddr, 64, addr);
-	}
-	else 
-	{
-		if ( i == 0 )       {
-			return 2;
-		}
-		wraddr = baseaddr + 64 + (i-1)*128;
-		flash_read_locked(wraddr, len, data);
-	}
-	
-	return 0;	
+		case FLASH_PARAM_TYPE_QUICK_ONOFF_CNT:{
+            ret = ftl_load(pdata, FTLMAP_QUICK_ONOFF_OFFSET, len);
+			 break;			   
+        }
+        
+		default:
+        break;
+    }
+
+    if (0 != ret){
+        printe("Hal_FlashRead: failed, type = %d, cause = %d", type, ret);
+    }
+
+    return (0 == ret);
 }
 
 #endif
@@ -322,27 +327,30 @@ static uint8_t HAL_IntToString(int num, char* str)
 */
 static uint32_t HAL_GetTickCount(void)
 {
-	return pwm2timercnt;
+	return (os_sys_time_get() & 0xFFFFFFFF);
 }
 
-/*
-** clear params
-*/
-static void HAL_ClearSkyiotParams(void)
+static uint32_t HAL_CalculateTickDiff(uint32_t oldtick, uint32_t newtick)
 {
-// 需要时增加	
+	uint32_t ms=0;
 	
+	if(newtick >= oldtick){
+		ms = newtick - oldtick;
+	} else {
+		ms = (0xFFFFFFFF - oldtick) + newtick;
+	}
+	
+	return ms;
 }
-
 
 /*
 ** reset
 */
 static void HAL_ResetBleDevice(void)
 {
-//	GLOBAL_INT_STOP();
-//	DisableSoftWdt();
-//	while(1);
+	// DisableSoftWdt();
+	WDG_SystemReset(RESET_ALL, SW_RESET_APP_START);
+	while(1);
 }
 
 
@@ -396,8 +404,9 @@ static void Regain_Random_UUID(uint8_t *uuid, uint8_t len)
 	
 	while(len){
 		
-		val = rand();
-
+		// val = rand();
+		val = platform_random(0xFFFFFFFF);
+		
 		slen = len > 4 ? 4: len;
 		len -= slen;
 		while(slen--){
@@ -412,15 +421,18 @@ extern bool Hal_Get_Ble_MacAddr(uint8_t* mac)
 {
     bool isgetted=false;
 	
-//    flash_read_data(co_bdaddr->addr, FLASH_MACADDR_SAVE_ADDR, 6);    
-//	if(co_bdaddr->addr[0]!=0xff ||co_bdaddr->addr[1]!=0xff||
-//	   co_bdaddr->addr[2]!=0xff||co_bdaddr->addr[3]!=0xff||        
-//	   co_bdaddr->addr[4]!=0xff||co_bdaddr->addr[5]!=0xff )    
-//	{        
-		isgetted = true;
-//	} else{
-//		APP_DBG_PRINTF("%s error!!!\r\n",__func__);
-//	}
+	if(mac){
+		if( GAP_CAUSE_SUCCESS == gap_get_param(GAP_PARAM_BD_ADDR, mac) ){
+			if(mac[0]!=0xFF||mac[1]!=0xFF||mac[2]!=0xFF||mac[3]!=0xFF||mac[4]!=0xFF||mac[5]!=0xFF){
+				
+				isgetted = true;
+			}
+		}
+	}
+	
+	if(isgetted==false){
+		APP_DBG_PRINTF("%s error!!!\r\n",__func__);
+	}
 	
 	return isgetted;
 }
@@ -599,7 +611,6 @@ static void BleMesh_Vendor_Make_Packet(uint8_t *buf, uint8_t len, bool needack )
 static void BleMesh_Vendor_Send_Packet(void)
 {
 	static uint16_t delaycnt=0;
-	int sendret=0;
 	uint8_t  i=0;
 	uint32_t sub_timeout_ms=0, tick=HAL_GetTickCount();
 	
@@ -620,11 +631,7 @@ static void BleMesh_Vendor_Send_Packet(void)
 			if(MeshTxAttrStruct[i].txtick==0){
 				sub_timeout_ms=0;
 			}else{
-				if(tick>=MeshTxAttrStruct[i].txtick){
-					sub_timeout_ms = tick-MeshTxAttrStruct[i].txtick;
-				} else {
-					sub_timeout_ms = (0xFFFFFFFF - MeshTxAttrStruct[i].txtick) + tick;
-				}
+				sub_timeout_ms = HAL_CalculateTickDiff(MeshTxAttrStruct[i].txtick, tick);
 			}
 			
 			if( MeshTxAttrStruct[i].txtick==0 || sub_timeout_ms>=maxacktimout){
@@ -642,10 +649,10 @@ static void BleMesh_Vendor_Send_Packet(void)
 					sendpackcnt++;
 				}
 				#endif
-				// sendret = mm_vendor_attr_indication(MeshTxAttrStruct[i].buf[TX_OPENCODE_POS], MeshTxAttrStruct[i].len, MeshTxAttrStruct[i].buf);
-				if(sendret == -2){
-					HAL_ResetBleDevice();
-				}
+				
+				// MESH_MSG_SEND_CAUSE_SUCCESS = 0
+				datatrans_publish(&datatrans_server, MeshTxAttrStruct[i].len,  MeshTxAttrStruct[i].buf);
+
 				MeshTxAttrStruct[i].txcnt--;
 				MeshTxAttrStruct[i].txtick = tick;
 				if( MeshTxAttrStruct[i].txcnt==0 ){
@@ -1077,16 +1084,6 @@ extern void SkyBleMesh_Provision_Fail(void)
 	APP_DBG_PRINTF("%s\r\n",__func__);	
 }
 
-static void SkyBleMesh_Prov_Success_timer(void *timer)
-{
-
-
-}
-
-extern void SkyBleMesh_Provision_Success(void)
-{	
-}
-
 
 // 进入重配网模式
 extern void SkyBleMesh_unBind_complete(void)
@@ -1104,9 +1101,8 @@ extern void SkyBleMesh_unBind_complete(void)
 	SkyBleMesh_WriteConfig();
 	#endif
 	
-	// qlj 恢复重配网
-	
-	
+	mesh_node_clear(); // 恢复重配网
+
 }
 
 /*
@@ -1115,80 +1111,89 @@ extern void SkyBleMesh_unBind_complete(void)
 static void SkyBleMesh_PowerOn_Timeout_cb(void *timer)
 {
     if(g_quick_onoff_Cnt != 0){
-			g_quick_onoff_Cnt = 0;
-
-			// nvds_put(NVDS_TAG_POWER_RESET_CNT, sizeof(g_quick_onoff_Cnt), (uint8_t*)&g_quick_onoff_Cnt);
+		
+		g_quick_onoff_Cnt = 0;
+		Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
     }
-
+	
+	if(quick_onoff_timer){
+		quick_onoff_timer = NULL;
+	}
 }
 
 static void SkyBleMesh_Check_Quick_onoff_timer(void)
 {
-//	if(quick_onoff_timer.cb == NULL){
-//		quick_onoff_timer.cb     = SkyBleMesh_PowerOn_Timeout_cb;
-//		quick_onoff_timer.period = DEVICE_POWER_ON_TIMEOUT;
-//		mesh_tb_timer_set(&quick_onoff_timer, quick_onoff_timer.period);
-//	}
+	if(quick_onoff_timer == NULL){		
+		quick_onoff_timer = plt_timer_create("onff", DEVICE_POWER_ON_TIMEOUT, false, 0, SkyBleMesh_PowerOn_Timeout_cb);
+		if (quick_onoff_timer != NULL){
+			plt_timer_start(quick_onoff_timer, DEVICE_POWER_ON_TIMEOUT);
+		}
+	}
 }
 
 static bool SkyBleMesh_Check_Quick_onoff(void)
 {
-	uint8_t len=0, nvdsret=0;
-	bool ifreset = false;
+	bool ifreset=false, flashret=false;
 	
-//	len = sizeof(g_quick_onoff_Cnt);
-//	nvdsret = nvds_get(NVDS_TAG_POWER_RESET_CNT, &len, (uint8_t*)&g_quick_onoff_Cnt);
-//    if(nvdsret == NVDS_OK) {
-//        g_quick_onoff_Cnt++;
-//        if(g_quick_onoff_Cnt < MAX_QUICK_ONOFF_CNT) {
-//            APP_DBG_PRINTF("-------------------------------------------------quick_onoff_cnt %d\r\n", g_quick_onoff_Cnt);
+	flashret = Hal_FlashRead(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
+    if(flashret == true) {
+        g_quick_onoff_Cnt++;
+        if(g_quick_onoff_Cnt < MAX_QUICK_ONOFF_CNT) {
+            APP_DBG_PRINTF("-------------------------------------------------quick_onoff_cnt %d\r\n", g_quick_onoff_Cnt);
+			SkyBleMesh_Check_Quick_onoff_timer();
+            Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
 
-//			SkyBleMesh_Check_Quick_onoff_timer();
-//            nvds_put(NVDS_TAG_POWER_RESET_CNT, sizeof(g_quick_onoff_Cnt), (uint8_t*)&g_quick_onoff_Cnt);
+		}  else { 
+			APP_DBG_PRINTF("+++++++++++++++++++++++++++++++++++++++++++++++++quick_onoff_cnt %d,do factory reset\r\n", g_quick_onoff_Cnt);
+			
+			// when reset clear cnt
+			Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
 
-//		}  else { 
-//            APP_DBG_PRINTF("+++++++++++++++++++++++++++++++++++++++++++++++++quick_onoff_cnt %d,do factory reset\r\n", g_quick_onoff_Cnt);
-//  
-//            nvds_put(NVDS_TAG_POWER_RESET_CNT, sizeof(g_quick_onoff_Cnt), (uint8_t*)&g_quick_onoff_Cnt);
-
-//			ifreset = true;
-//        }
-//        
-//    } else {
-//        APP_DBG_PRINTF("get quick_onoff_cnt error %X!!!\r\n", nvdsret);
-//		
-//        g_quick_onoff_Cnt = 1;
-//        nvds_put(NVDS_TAG_POWER_RESET_CNT, sizeof(g_quick_onoff_Cnt), (uint8_t*)&g_quick_onoff_Cnt);
-//        SkyBleMesh_Check_Quick_onoff_timer();
-
-//    }
+			ifreset = true;
+        }
+        
+    } else {
+		APP_DBG_PRINTF("get quick_onoff_cnt error %X!!!\r\n", nvdsret);
+		
+        g_quick_onoff_Cnt = 1;
+        Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
+        SkyBleMesh_Check_Quick_onoff_timer();
+    }
 
 	return ifreset;
 }
 
-
-static void SkyBleMesh_Reset_timer(void *timer)
+static void SkyBleMesh_Reset_Timeout_cb(void *timer)
 {
-//	if( ++skybleresetcnt > SKYBLERESET_MAXCNT ){
-//		HAL_ResetBleDevice(); 
-//	} else {
-//		if( skybleresetcnt&0x01 ){
-//			#if USE_LIGHT_FOR_SKYIOT
-//			HAL_Lighting_ON();
-//			#endif
-//		}else{
-//			#if USE_LIGHT_FOR_SKYIOT
-//			HAL_Lighting_OFF();
-//			#endif
-//		}
-//		skyblereset_timer.cb     = SkyBleMesh_Reset_timer;
-//		skyblereset_timer.period = SKYBLERESET_TIMEOUT;
-//		mesh_tb_timer_set(&skyblereset_timer, skyblereset_timer.period);
-//	}
-
+	if( ++g_skybleresetcnt > SKYBLERESET_MAXCNT ){
+		HAL_ResetBleDevice(); 
+	} else {
+		if( g_skybleresetcnt&0x01 ){
+			#if USE_LIGHT_FOR_SKYIOT
+			HAL_Lighting_ON();
+			#endif
+		}else{
+			#if USE_LIGHT_FOR_SKYIOT
+			HAL_Lighting_OFF();
+			#endif
+		}
+		if(skyblereset_timer){
+			plt_timer_delete(skyblereset_timer, 0);
+			skyblereset_timer = NULL;
+		}
+	}
+}
+static void SkyBleMesh_Reset_timer(void)
+{
+	if(skyblereset_timer == NULL){		
+		skyblereset_timer = plt_timer_create("rest", SKYBLERESET_TIMEOUT, true, 0, SkyBleMesh_Reset_Timeout_cb);
+		if (skyblereset_timer != NULL){
+			plt_timer_start(skyblereset_timer, 0);
+		}
+	}
 }
 
-static void SkyIotSaveAttr_timer(void *timer)
+static void SkyIotSaveAttr_Timeout_cb(void *timer)
 {
 #if USE_LIGHT_FOR_SKYIOT
 	#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
@@ -1212,10 +1217,17 @@ static void SkyIotSaveAttr_timer(void *timer)
 	
 	#endif
 #endif
-//	skyiot_SaveAttr_timer.cb     = SkyIotSaveAttr_timer;
-//	skyiot_SaveAttr_timer.period = SKYIOTSAVEATTR_INTERVAL;
-//	mesh_tb_timer_set(&skyiot_SaveAttr_timer, skyiot_SaveAttr_timer.period);
 }
+static void SkyIotSaveAttr_timer(void)
+{
+	if(skyiot_SaveAttr_timer == NULL){		
+		skyiot_SaveAttr_timer = plt_timer_create("save", SKYIOTSAVEATTR_INTERVAL, true, 0, SkyIotSaveAttr_Timeout_cb);
+		if (skyiot_SaveAttr_timer != NULL){
+			plt_timer_start(skyiot_SaveAttr_timer, SKYIOTSAVEATTR_INTERVAL);
+		}
+	}
+}
+
 extern void SkyIotSaveAttr(void)
 {
 	if(g_needsaveattr ){
@@ -1233,10 +1245,10 @@ extern void SkyIotSaveAttr(void)
 /*
 ** resotre/store param config
 */
-// uint8_t skyconfig_buffer[FLASH_USERDATA_SAVE_LEN];
 static int SkyBleMesh_WriteConfig(void)
 {	
-	uint8_t offset=0, ret=0;
+	uint8_t offset=0;
+	bool flashret=false;
 	uint8_t *buffer=NULL; // skyconfig_buffer;
 	iot_md5_context context;
 
@@ -1288,20 +1300,12 @@ static int SkyBleMesh_WriteConfig(void)
 	utils_md5_finish(&context, mIotManager.critical_md5);		
 	memcpy(buffer + offset, mIotManager.critical_md5, MD5_LEN);
 
-//	GLOBAL_INT_DISABLE();
-//	ret = Hal_WrRdFlash(FLASH_USERDATA_SAVE_ADDR, buffer, FLASH_USERDATA_SAVE_LEN, 0);
-//	GLOBAL_INT_RESTORE();
-//	if(ret==1){
-//		GLOBAL_INT_DISABLE();
-//		Hal_EraseFlash(FLASH_USERDATA_SAVE_ADDR);
-//		ret = Hal_WrRdFlash(FLASH_USERDATA_SAVE_ADDR, buffer, FLASH_USERDATA_SAVE_LEN, 0);
-//		GLOBAL_INT_RESTORE();
-//		if (ret != 0) {
-//			os_mem_free(buffer);
-//			APP_DBG_PRINTF("SkyBleMesh_WriteConfig failed: %d. \r\n", ret);
-//			return -1;
-//		}
-//	}
+	flashret = Hal_FlashWrite(FLASH_PARAM_TYPE_APP_CMFDATA, FLASH_USERDATA_SAVE_LEN, buffer );
+	if(flashret==false){
+		os_mem_free(buffer);
+		APP_DBG_PRINTF("SkyBleMesh_WriteConfig failed: %d. \r\n", ret);
+		return -1;
+	}
 	
 	os_mem_free(buffer);
 	return 0;
@@ -1309,7 +1313,8 @@ static int SkyBleMesh_WriteConfig(void)
 
 static int SkyBleMesh_ReadConfig(void)
 {
-	uint8_t offset=0, ret=0;
+	uint8_t offset=0;
+	bool flashret=false;
 	unsigned char md5[MD5_LEN];
 	uint8_t *buffer=NULL; // skyconfig_buffer;
 	iot_md5_context context;
@@ -1324,14 +1329,12 @@ static int SkyBleMesh_ReadConfig(void)
 	utils_md5_init(&context);									   // init context for 1st pass 
 	utils_md5_starts(&context); 								   // setup context for 1st pass 
 
-//	GLOBAL_INT_DISABLE();
-//	ret = Hal_WrRdFlash(FLASH_USERDATA_SAVE_ADDR, buffer, FLASH_USERDATA_SAVE_LEN, 1);
-//	GLOBAL_INT_RESTORE();
-//	if (ret != 0) {
-//		os_mem_free(buffer);
-//		APP_DBG_PRINTF("SkyBleMesh_ReadConfig [%d] no valid data, create one. \r\n", ret);
-//		return -1;
-//	}
+	flashret = Hal_FlashRead(FLASH_PARAM_TYPE_APP_CMFDATA, FLASH_USERDATA_SAVE_LEN, buffer );
+	if (flashret == false) {
+		os_mem_free(buffer);
+		APP_DBG_PRINTF("SkyBleMesh_ReadConfig [%d] no valid data, create one. \r\n", ret);
+		return -1;
+	}
 	
 	//
 	memcpy(mIotManager.device_uuid, buffer + offset, BT_MESH_UUID_SIZE);	
@@ -1371,9 +1374,7 @@ static int SkyBleMesh_ReadConfig(void)
 	
 #endif
 
-
 	utils_md5_finish(&context, md5);  
-
 	//copy critical md5 to nvram
 	memcpy(mIotManager.critical_md5, buffer + offset, MD5_LEN);			
 	if (memcmp(mIotManager.critical_md5, md5, MD5_LEN) != 0) { 
@@ -1606,7 +1607,6 @@ static void Main_WithoutNet_Handle(void)
 
 static bool Main_Check_Online(void)
 {	
-
 	if (++g_aliveTimerCnt >= 30){  // 30*50ms
 		uint32_t tick = HAL_GetTickCount();	
 		if (mIotManager.alive_wakeup_cnt < DEFAULT_WAKEUP_ALIVE_CNT){
@@ -1616,11 +1616,7 @@ static bool Main_Check_Online(void)
 				mIotManager.send_alive_tick = tick;
 			}else{
 				int sub_timeout_ms;
-				if(tick>=mIotManager.recv_alive_tick){
-					sub_timeout_ms = tick-mIotManager.recv_alive_tick;
-				} else {
-					sub_timeout_ms = (0xFFFFFFFF - mIotManager.recv_alive_tick) + tick;
-				}
+				sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);
 				// APP_DBG_PRINTF("Main_Check_Online wakeupcnt %d %d\r\n", mIotManager.alive_wakeup_cnt, sub_timeout_ms);
 				if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
 					SkyIotSendKeepAlivePacket();
@@ -1630,11 +1626,7 @@ static bool Main_Check_Online(void)
 			mIotManager.alive_wakeup_cnt++;
 		}else {
 			int sub_timeout_ms;
-			if(tick>=mIotManager.send_alive_tick){
-				sub_timeout_ms = tick-mIotManager.send_alive_tick;
-			} else {
-				sub_timeout_ms = (0xFFFFFFFF - mIotManager.send_alive_tick) + tick;
-			}
+			sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.send_alive_tick, tick);
 			if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
 				APP_DBG_PRINTF("Main_Check_Online sub_timeout_ms %d\r\n", sub_timeout_ms);
 				//SEND ALIVE PACKET
@@ -1648,11 +1640,7 @@ static bool Main_Check_Online(void)
 		//判断路由器是否在线
 		if (mIotManager.alive_status == 1){
 			int sub_timeout_ms;
-			if(tick>=mIotManager.recv_alive_tick){
-				sub_timeout_ms = tick-mIotManager.recv_alive_tick;
-			} else {
-				sub_timeout_ms = (0xFFFFFFFF - mIotManager.recv_alive_tick) + tick;
-			}
+			sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);
 			if (sub_timeout_ms >= DEFAULT_GATEWAY_ALIVE_MS){
 				mIotManager.alive_status        = 0;		
 				mIotManager.report_flag         = 0;
@@ -1858,11 +1846,10 @@ extern void SkyBleMesh_App_Init(void)
 		SkyBleMesh_unBind_complete();      // 进入重配网模式
  		SkyBleMesh_PowerOn_Timeout_cb(0);  // 清快速开关计次
 
-		// ret = SkyBleMesh_ReadConfig(); // 仅仅为了取灯的参数。
-		skybleresetcnt = 0; 
-		SkyBleMesh_Reset_timer(0);
+		g_skybleresetcnt = 0; 
+		SkyBleMesh_Reset_timer();
 		
-		 return; // do factory reset  
+		return; // do factory reset  
 	}
 
     ret = SkyBleMesh_ReadConfig();
@@ -1913,17 +1900,17 @@ extern void SkyBleMesh_App_Init(void)
 		// 按保存的参数，恢复对设备的控制
     }	
 	
+	
 #if USE_LIGHT_FOR_SKYIOT
 	mIotManager.mLightManager.status = 1;  // 不保存，默认开
 	HAL_Lighting_ON();
 #endif
 	
-    for(int i =0 ;i < 16;i++)
-    {
+    for(int i =0 ;i < 16;i++){
         APP_DBG_PRINTF("mIotManager.device_uuid[%d] = 0x%02x\r\n",i,mIotManager.device_uuid[i]);
     }
 	
-	mIotManager.alive_wakeup_cnt = 0;
+	mIotManager.alive_wakeup_cnt    = 0;
 	mIotManager.alive_status        = 0;		
 	mIotManager.report_flag         = 0;
 	mIotManager.send_alive_tick     = 0;
@@ -1951,8 +1938,8 @@ extern void SkyBleMesh_App_Init(void)
 	#if USE_LIGHT_FOR_SKYIOT
 	save_oldbri = mIotManager.mLightManager.bri;
 	save_oldctp = mIotManager.mLightManager.ctp;
+	SkyIotSaveAttr_timer();
 	#endif
-	SkyIotSaveAttr_timer(0);
 	
 #ifdef MY_TEST_TIMER
 	skymesh_test_timer.cb = SkyBleMesh_Test_timer;
@@ -1969,6 +1956,7 @@ extern void SkyBleMesh_App_Init(void)
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx)
 {
 	// qlj 考虑从 datatrans_server_model_init 移植过来
+	datatrans_server_model_init(SkyBleMesh_handle_vendor_rx_cb);
 }
 
 
