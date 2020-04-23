@@ -36,6 +36,8 @@
 #include "user_cmd_parse.h"
 #include "device_cmd.h"
 
+#include "app_skyiot_server.h"
+
 /*============================================================================*
  *                              Macros
  *============================================================================*/
@@ -143,6 +145,9 @@ void app_main_task(void *p_param)
                 gap_handle_msg(event);
             }
         }
+		
+		
+		// SkyIotSaveAttr();
     }
 }
 

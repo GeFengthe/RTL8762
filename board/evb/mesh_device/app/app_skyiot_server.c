@@ -5,10 +5,11 @@
 #include "datatrans_server_app.h"
 #include "datatrans_model.h"
 #include "utils_md5.h"
+#include "platform_utils.h"
 // #include "soft_wdt.h"
 
 
-#define APP_DBG_PRINTF(fmt, ...)  
+#define APP_DBG_PRINTF(fmt, ...)   printw(fmt, ##__VA_ARGS__)
 
 MESH_PROVISION_STATE_e mesh_provison_state = MESH_PROVISION_STATE_UNPROV;
 /*
@@ -227,8 +228,6 @@ static int SkyBleMesh_WriteConfig(void);
  ****************************************************************************************
  */
  
-static uint32_t pwm2timercnt=0;   //for 2ms timer
-
 #if 1
 // qlj len 加长度越界判断
 static bool Hal_FlashWrite(FLASH_PARAM_TYPE_e type, uint16_t len, void *pdata)
@@ -326,8 +325,12 @@ static uint8_t HAL_IntToString(int num, char* str)
 */
 static uint32_t HAL_GetTickCount(void)
 {
-	// return (os_sys_time_get() & 0xFFFFFFFF);
-	return (os_sys_tick_get() & 0xFFFFFFFF);
+	uint32_t tmp32 = 0;
+	
+	tmp32 = os_sys_time_get();
+	// tmp32 = os_sys_tick_get(); // *portTICK_PERIOD_MS
+	
+	return (tmp32 & 0xFFFFFFFF);
 }
 
 static uint32_t HAL_CalculateTickDiff(uint32_t oldtick, uint32_t newtick)
@@ -872,21 +875,6 @@ static void SkyIotReportPropertyPacket(uint16_t attrID, int value, uint8_t seq_n
 #endif
 
 
-static bool SkyBleMesh_check_vendor_opcode_cb(uint8_t opcode)
-{
-	bool isvalid = false;
-	
-    if ((opcode == BLEMESH_SKYWORTH_OPCODE_DEVINFO) \
-        || (opcode == BLEMESH_SKYWORTH_OPCODE_PROPERTY) \
-        || (opcode == BLEMESH_SKYWORTH_OPCODE_HEARTBEAT) )
-    {
-        isvalid = true;
-    }
-		
-	return isvalid;
-}
-
-
 static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t *data)
 {
 	uint8_t *p_data = data;
@@ -1211,7 +1199,7 @@ static bool SkyBleMesh_Check_Quick_onoff(void)
         }
         
     } else {
-		APP_DBG_PRINTF("get quick_onoff_cnt error %X!!!\r\n", nvdsret);
+		APP_DBG_PRINTF("get quick_onoff_cnt error !!!\r\n");
 		
         g_quick_onoff_Cnt = 1;
         Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
@@ -1361,7 +1349,7 @@ static int SkyBleMesh_WriteConfig(void)
 	flashret = Hal_FlashWrite(FLASH_PARAM_TYPE_APP_CMFDATA, FLASH_USERDATA_SAVE_LEN, buffer );
 	if(flashret==false){
 		os_mem_free(buffer);
-		APP_DBG_PRINTF("SkyBleMesh_WriteConfig failed: %d. \r\n", ret);
+		APP_DBG_PRINTF("SkyBleMesh_WriteConfig failed\r\n");
 		return -1;
 	}
 	
@@ -1390,7 +1378,7 @@ static int SkyBleMesh_ReadConfig(void)
 	flashret = Hal_FlashRead(FLASH_PARAM_TYPE_APP_CMFDATA, FLASH_USERDATA_SAVE_LEN, buffer );
 	if (flashret == false) {
 		os_mem_free(buffer);
-		APP_DBG_PRINTF("SkyBleMesh_ReadConfig [%d] no valid data, create one. \r\n", ret);
+		APP_DBG_PRINTF("SkyBleMesh_ReadConfig error \r\n");
 		return -1;
 	}
 	
@@ -1795,11 +1783,15 @@ static void Main_Upload_State(void)
 static plt_timer_t skymesh_test_timer = NULL;
 static void SkyBleMesh_Test_Timeout_cb(void *timer)
 {	
-	static uint8_t testcnt=0,reconflag=0;
+//	static uint8_t testcnt=0,reconflag=0;
 //	 APP_DBG_PRINTF("%s prostate %d \r\n",__func__, SkyBleMesh_IsProvision_Sate() );
 
-
-	APP_PRINT_WARN1("SkyBleMesh_Test_Timeout_cb = %d\n", os_sys_tick_get());
+uint32_t time = os_sys_time_get();
+uint32_t tick = os_sys_tick_get();
+	APP_PRINT_TRACE2("SkyBleMesh_Test_Timeout_cb1 = %ld %ld\n", time, tick);
+	APP_PRINT_INFO2("SkyBleMesh_Test_Timeout_cb2 = %ld %ld\n", time, tick);
+	APP_PRINT_WARN2("SkyBleMesh_Test_Timeout_cb3 = %ld %ld\n", time, tick);
+	APP_PRINT_ERROR2("SkyBleMesh_Test_Timeout_cb4 = %ld %ld\n", time, tick);
 
 //	if(testperid){
 //		if (mIotManager.alive_status == 1){
@@ -1998,8 +1990,8 @@ extern void SkyBleMesh_App_Init(void)
 	#if USE_LIGHT_FOR_SKYIOT
 	save_oldbri = mIotManager.mLightManager.bri;
 	save_oldctp = mIotManager.mLightManager.ctp;
-	SkyIotSaveAttr_timer();
 	#endif
+	SkyIotSaveAttr_timer();
 	
 #ifdef MY_TEST_TIMER
 	SkyBleMesh_Test_timer();

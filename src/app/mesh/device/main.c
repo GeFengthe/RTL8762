@@ -74,7 +74,7 @@ void mesh_stack_init(void)
     /** set mesh stack log level, default all on, disable the log of level LEVEL_TRACE */
     uint32_t module_bitmap[MESH_LOG_LEVEL_SIZE] = {0};
    // diag_level_set(LEVEL_TRACE, module_bitmap);
-
+	
     /** print the mesh sdk & lib version */
     mesh_sdk_version();
 
