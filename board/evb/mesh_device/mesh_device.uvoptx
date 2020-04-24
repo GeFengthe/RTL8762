@@ -151,9 +151,9 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>1928</LineNumber>
+          <LineNumber>1191</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8474328</Address>
+          <Address>8474922</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -162,14 +162,14 @@
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>.\app\app_skyiot_server.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\app\app/app_skyiot_server.c\1928</Expression>
+          <Expression>\\app\app/app_skyiot_server.c\1191</Expression>
         </Bp>
         <Bp>
           <Number>1</Number>
           <Type>0</Type>
-          <LineNumber>1930</LineNumber>
+          <LineNumber>1193</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8474346</Address>
+          <Address>8474954</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -178,14 +178,14 @@
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>.\app\app_skyiot_server.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\\app/app_skyiot_server.c\1930</Expression>
+          <Expression>\\app\app/app_skyiot_server.c\1193</Expression>
         </Bp>
         <Bp>
           <Number>2</Number>
           <Type>0</Type>
-          <LineNumber>1956</LineNumber>
+          <LineNumber>1209</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8474522</Address>
+          <Address>8475010</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -194,7 +194,7 @@
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>.\app\app_skyiot_server.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\app\app/app_skyiot_server.c\1956</Expression>
+          <Expression>\\app\app/app_skyiot_server.c\1209</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>

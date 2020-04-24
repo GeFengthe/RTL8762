@@ -202,7 +202,7 @@ static main_msg_fifo_t MainMsg_fifo={
 	
 static SkyBleMeshIotManager mIotManager;
 static int8_t   g_aliveTimerCnt = 0;
-static uint16_t g_quick_onoff_Cnt = 0;
+static uint32_t g_quick_onoff_Cnt = 0;
 static bool IsSkyAppInited = false;
 static uint8_t g_skybleresetcnt=0;     // 重配网延时服务，延时次数，即重配网闪灯次数
 static uint8_t skybleprovsucesscnt=0;     
@@ -241,7 +241,7 @@ static bool Hal_FlashWrite(FLASH_PARAM_TYPE_e type, uint16_t len, void *pdata)
     uint32_t ret = 0;
 	
     switch (type) {       
-		case FLASH_PARAM_TYPE_APP_CMFDATA:{
+		case FLASH_PARAM_TYPE_APP_CFGDATA:{
             ret = ftl_save(pdata, FTLMAP_APPCFGDATA_OFFSET, len);
 			break;
 		}
@@ -266,7 +266,7 @@ static bool Hal_FlashRead(FLASH_PARAM_TYPE_e type, uint16_t len, void *pdata)
     uint32_t ret = 0;
 	
     switch (type) {       
-		case FLASH_PARAM_TYPE_APP_CMFDATA:{
+		case FLASH_PARAM_TYPE_APP_CFGDATA:{
             ret = ftl_load(pdata, FTLMAP_APPCFGDATA_OFFSET, len);
 			break;
 		}
@@ -1192,12 +1192,12 @@ static bool SkyBleMesh_Check_Quick_onoff(void)
     if(flashret == true) {
         g_quick_onoff_Cnt++;
         if(g_quick_onoff_Cnt < MAX_QUICK_ONOFF_CNT) {
-            APP_DBG_PRINTF1("-------------------------------------------------quick_onoff_cnt %d\n", g_quick_onoff_Cnt);
+            APP_DBG_PRINTF1("---quick_onoff_cnt %d\n", g_quick_onoff_Cnt);
 			SkyBleMesh_Check_Quick_onoff_timer();
             Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
 
 		}  else { 
-			APP_DBG_PRINTF1("+++++++++++++++++++++++++++++++++++++++++++++++++quick_onoff_cnt %d,do factory reset\n", g_quick_onoff_Cnt);
+			APP_DBG_PRINTF1("+++quick_onoff_cnt %d,do factory reset\n", g_quick_onoff_Cnt);
 			
 			// when reset clear cnt
 			Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
@@ -1353,7 +1353,7 @@ static int SkyBleMesh_WriteConfig(void)
 	utils_md5_finish(&context, mIotManager.critical_md5);		
 	memcpy(buffer + offset, mIotManager.critical_md5, MD5_LEN);
 
-	flashret = Hal_FlashWrite(FLASH_PARAM_TYPE_APP_CMFDATA, FLASH_USERDATA_SAVE_LEN, buffer );
+	flashret = Hal_FlashWrite(FLASH_PARAM_TYPE_APP_CFGDATA, FLASH_USERDATA_SAVE_LEN, buffer );
 	if(flashret==false){
 		os_mem_free(buffer);
 		APP_DBG_PRINTF0("SkyBleMesh_WriteConfig failed\n");
@@ -1382,7 +1382,7 @@ static int SkyBleMesh_ReadConfig(void)
 	utils_md5_init(&context);									   // init context for 1st pass 
 	utils_md5_starts(&context); 								   // setup context for 1st pass 
 
-	flashret = Hal_FlashRead(FLASH_PARAM_TYPE_APP_CMFDATA, FLASH_USERDATA_SAVE_LEN, buffer );
+	flashret = Hal_FlashRead(FLASH_PARAM_TYPE_APP_CFGDATA, FLASH_USERDATA_SAVE_LEN, buffer );
 	if (flashret == false) {
 		os_mem_free(buffer);
 		APP_DBG_PRINTF0("SkyBleMesh_ReadConfig error \n");
