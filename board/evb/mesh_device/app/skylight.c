@@ -53,15 +53,15 @@ typedef struct
 static light_t pwm[ TOTALPWMNUMBER ] =
 {
     /** cold */
-    {P4_3, timer_pwm2, TIM2, PWM_DUTY_INIT},
+    {P3_0, timer_pwm3, TIM3, PWM_DUTY_INIT},
     /** warm: use blue channel */
-    {P4_0, timer_pwm6, TIM6, PWM_DUTY_INIT},
+    {P4_3, timer_pwm2, TIM2, PWM_DUTY_INIT},
     /** red */
     {P4_1, timer_pwm4, TIM4, PWM_DUTY_INIT},
     /** green */
     {P4_2, timer_pwm5, TIM5, PWM_DUTY_INIT},
     /** blue */
-    {P3_0, timer_pwm3, TIM3, PWM_DUTY_INIT},
+    {P4_0, timer_pwm6, TIM6, PWM_DUTY_INIT},
 };
 
 #define GAIN (10)
