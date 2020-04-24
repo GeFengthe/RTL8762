@@ -136,10 +136,10 @@ void mesh_stack_init(void)
     };
     mesh_node_cfg_t node_cfg =
     {
-        .dev_key_num = 2,
-        .net_key_num = 3,
-        .app_key_num = 3,
-        .vir_addr_num = 3,
+        .dev_key_num = 1,
+        .net_key_num = 1,
+        .app_key_num = 1,
+        .vir_addr_num = 1,
         .rpl_num = 20,
         .sub_addr_num = 10,
         .proxy_num = 1,

@@ -20,7 +20,7 @@
 
 #include "skylight.h"
 
-#define MESH_TEST_PRESSURE 0
+#define MESH_TEST_PRESSURE 1
 
 #if (SKY_LIGHT_TYPE == SKY_LIGHT_BELT_TYPE)
 

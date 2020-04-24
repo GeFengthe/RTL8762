@@ -60,15 +60,20 @@ static mesh_msg_send_cause_t datatrans_send_data(const mesh_model_info_p pmodel_
 mesh_msg_send_cause_t datatrans_publish(const mesh_model_info_p pmodel_info,
                                         uint16_t data_len, uint8_t *data)
 {
+	bool checkret=false;
     mesh_msg_send_cause_t ret = MESH_MSG_SEND_CAUSE_INVALID_DST;
-//    if (mesh_model_pub_check(pmodel_info))
+	checkret = mesh_model_pub_check(pmodel_info);
+	data_uart_debug("mesh_model_pub_check %d \r\n", checkret);
+    // if (checkret)
     {
-        ret = datatrans_send_data(pmodel_info, 0x7fff, 0x123, data_len, data);
+		//    接收处打印appkey_index=0, 但是网关不是0x123吗？
+        ret = datatrans_send_data(pmodel_info, 0x7fff, 0, data_len, data); 
     }
 
     return ret;
 }
 
+uint8_t testdata[8]={0XC5, 0X94, 0X00, 0x02, 0x6B, 0X00, 0X00, 0X00};
 static bool datatrans_server_receive(mesh_msg_p pmesh_msg)
 {
     bool ret = TRUE;
@@ -78,7 +83,7 @@ static bool datatrans_server_receive(mesh_msg_p pmesh_msg)
 	#if 1
 	uint16_t tmp_cpyid = (BLEMESH_VENDOR_COMPANY_ID<<8) | (BLEMESH_VENDOR_COMPANY_ID>>8);
 	
-	data_uart_debug("datatrans_server_receive write %d bytes: ", pmesh_msg->msg_len);
+	data_uart_debug("datatrans_server_receive write %d %X %X \r\n", pmesh_msg->msg_len,pmesh_msg->src, pmesh_msg->app_key_index);
 	
 		
 	if( (pmesh_msg->access_opcode&0xFFFF) == tmp_cpyid ){
@@ -91,6 +96,7 @@ static bool datatrans_server_receive(mesh_msg_p pmesh_msg)
 			write_data.data = pmsg->data;
 			pmodel_info->model_data_cb(pmodel_info, pmesh_msg->access_opcode, &write_data);  // receive date from gateway
 		}	
+		// datatrans_send_data(pmodel_info, pmesh_msg->src, pmesh_msg->app_key_index, 8, testdata);
 		
 	} else {		
 		ret = FALSE;
