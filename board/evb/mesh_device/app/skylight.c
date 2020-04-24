@@ -61,7 +61,7 @@ static light_t pwm[ TOTALPWMNUMBER ] =
     /** green */
     {P4_2, timer_pwm5, TIM5, PWM_DUTY_INIT},
     /** blue */
-    {P4_0, timer_pwm6, TIM6, PWM_DUTY_INIT},
+    {P3_0, timer_pwm3, TIM3, PWM_DUTY_INIT},
 };
 
 #define GAIN (10)
@@ -93,14 +93,14 @@ static void Pwm_Pin_Tmr_Config(const light_t *light)
     TIM_TimeBaseInitTypeDef TIM_InitStruct;
     TIM_StructInit(&TIM_InitStruct);
     TIM_InitStruct.TIM_PWM_En = PWM_ENABLE;
-    /*<! PWM output freqency = 40M/(TIM_PWM_High_Count + TIM_PWM_Low_Count) */
+    /*<! PWM output freqency = 20M/(TIM_PWM_High_Count + TIM_PWM_Low_Count) */
     /*<! PWM duty cycle = TIM_PWM_High_Count/(TIM_PWM_High_Count + TIM_PWM_Low_Count) */
 
 	TIM_InitStruct.TIM_PWM_High_Count = PWM_DUTY_INIT;
 	TIM_InitStruct.TIM_PWM_Low_Count  = PWM_FREQUENCY;
 
     TIM_InitStruct.TIM_Mode = TIM_Mode_UserDefine;
-    TIM_InitStruct.TIM_SOURCE_DIV = TIM_CLOCK_DIVIDER_1;
+    TIM_InitStruct.TIM_SOURCE_DIV = TIM_CLOCK_DIVIDER_2;
     TIM_TimeBaseInit(light->tim_id, &TIM_InitStruct);
     /* Enable PWM output */
     TIM_Cmd(light->tim_id, ENABLE);

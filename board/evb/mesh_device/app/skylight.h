@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 #if 1
-#define USE_LIGHT_FOR_SKYIOT  0
+#define USE_LIGHT_FOR_SKYIOT  1
 
 
 #define SKY_LIGHT_BELT_TYPE         1   // 灯带
@@ -21,11 +21,10 @@
 
 
 //PWM时钟选择为16M时，周期(endvalue)计算方法为，
-//endvalue = 16MHZ /目标值，
-//frequency = 16MHZ / PWM_FREQUENCY = 6274.5HZ
+//endvalue = 20MHZ /目标值，
+//frequency = 20MHZ / PWM_FREQUENCY = 7837HZ
 #define 	PWM_FREQUENCY    	2552
 #define 	PWM_DUTY_INIT		0
-#define 	PWM_DUTY_STEP 	    10     // no use  
 
 #define DEFAULT_LIGHT_BRI_VALUE    (255)
 #define DEFAULT_SUNLIGHT_CTP_VALUE (3000)

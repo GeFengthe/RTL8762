@@ -47,7 +47,7 @@ static mesh_msg_send_cause_t datatrans_send_data(const mesh_model_info_p pmodel_
         return MESH_MSG_SEND_CAUSE_NO_MEMORY;
     }
 
-	opcde_3B = (data[0]<<16) | (data[1]<<16) | data[2];
+	opcde_3B = (data[0]<<16) | (data[1]<<8) | data[2];
     ACCESS_OPCODE_BYTE(pmsg->opcode, opcde_3B);
     memcpy(pmsg->data, data+3, data_len-3);
 
@@ -80,10 +80,7 @@ static bool datatrans_server_receive(mesh_msg_p pmesh_msg)
 	
 	data_uart_debug("datatrans_server_receive write %d bytes: ", pmesh_msg->msg_len);
 	
-	
-	 datatrans_write_t *pmsg = (datatrans_write_t *)pbuffer;
-
-	
+		
 	if( (pmesh_msg->access_opcode&0xFFFF) == tmp_cpyid ){
 		
         datatrans_write_t *pmsg = (datatrans_write_t *)pbuffer;
