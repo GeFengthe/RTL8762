@@ -71,15 +71,11 @@ void mesh_stack_init(void)
     log_module_trace_set(MODULE_LOWERSTACK, LEVEL_ERROR, 0);
     log_module_trace_set(MODULE_SNOOP, LEVEL_ERROR, 0);
 	
-    log_module_trace_set(MM_GAP_SCHED, LEVEL_INFO, 0);
-    log_module_trace_set(MM_GAP_SCHED, LEVEL_TRACE, 0);
-    log_module_trace_set(MM_GAP_SCHED, LEVEL_WARN, 0);
-    log_module_trace_set(MM_GAP_SCHED, LEVEL_ERROR, 0);
+    log_module_trace_set(MODULE_GAP, LEVEL_INFO, 0);
+    log_module_trace_set(MODULE_GAP, LEVEL_TRACE, 0);
+    log_module_trace_set(MODULE_GAP, LEVEL_WARN, 0);
+    log_module_trace_set(MODULE_GAP, LEVEL_ERROR, 0);
 	
-    log_module_trace_set(MM_BEACON, LEVEL_INFO, 0);
-    log_module_trace_set(MM_BEACON, LEVEL_TRACE, 0);
-    log_module_trace_set(MM_BEACON, LEVEL_WARN, 0);
-    log_module_trace_set(MM_BEACON, LEVEL_ERROR, 0);
 
 	
     /** set mesh stack log level, default all on, disable the log of level LEVEL_TRACE */
@@ -148,7 +144,12 @@ void mesh_stack_init(void)
         .vir_addr_num = 3,
         .rpl_num = 20,
         .sub_addr_num = 10,
-        .proxy_num = 1
+        .proxy_num = 1,
+		
+		.udb_interval = 1,
+		.prov_interval = 50,
+		.proxy_interval = 1,
+		.identity_interval = 20,
     };
     mesh_node_cfg(features, &node_cfg);
 
@@ -160,8 +161,8 @@ void mesh_stack_init(void)
 //    trans_ping_pong_init(ping_app_ping_cb, pong_receive);
 //    tp_control_reg(tp_reveive);
 	
-    datatrans_server_model_init( NULL );   // vendor model
-	// SkyBleMesh_Vendormodel_init();
+//    datatrans_server_model_init( NULL );   // vendor model
+	 SkyBleMesh_Vendormodel_init(0);
 
     compo_data_page0_header_t compo_data_page0_header = {COMPANY_ID, PRODUCT_ID, VERSION_ID};
     compo_data_page0_gen(&compo_data_page0_header);

@@ -150,67 +150,35 @@
       <Breakpoint>
         <Bp>
           <Number>0</Number>
-          <Type>2</Type>
-          <LineNumber>0</LineNumber>
+          <Type>0</Type>
+          <LineNumber>1910</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>2130633</Address>
+          <Address>8474324</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
-          <ManyObjects>1</ManyObjects>
-          <SizeOfObject>1</SizeOfObject>
-          <BreakByAccess>2</BreakByAccess>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename></Filename>
+          <Filename>.\app\app_skyiot_server.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>0x002082c9</Expression>
+          <Expression>\\app\app/app_skyiot_server.c\1910</Expression>
         </Bp>
         <Bp>
           <Number>1</Number>
           <Type>0</Type>
-          <LineNumber>77</LineNumber>
+          <LineNumber>1185</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8460672</Address>
+          <Address>8475396</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\..\..\src\app\mesh\lib\model\realtek\datatrans_model_server.c</Filename>
+          <Filename>.\app\app_skyiot_server.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\app\../../../src/app/mesh/lib/model/realtek/datatrans_model_server.c\77</Expression>
-        </Bp>
-        <Bp>
-          <Number>2</Number>
-          <Type>0</Type>
-          <LineNumber>160</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>8460820</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\..\..\src\app\mesh\lib\model\realtek\datatrans_model_server.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\app\../../../src/app/mesh/lib/model/realtek/datatrans_model_server.c\160</Expression>
-        </Bp>
-        <Bp>
-          <Number>3</Number>
-          <Type>0</Type>
-          <LineNumber>163</LineNumber>
-          <EnabledFlag>1</EnabledFlag>
-          <Address>8460196</Address>
-          <ByteObject>0</ByteObject>
-          <HtxType>0</HtxType>
-          <ManyObjects>0</ManyObjects>
-          <SizeOfObject>0</SizeOfObject>
-          <BreakByAccess>0</BreakByAccess>
-          <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\..\..\src\app\mesh\device\main.c</Filename>
-          <ExecCommand></ExecCommand>
-          <Expression>\\app\../../../src/app/mesh/device/main.c\163</Expression>
+          <Expression>\\app\app/app_skyiot_server.c\1185</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -229,12 +197,72 @@
           <WinNumber>1</WinNumber>
           <ItemText>node_cfg</ItemText>
         </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>opcode</ItemText>
+        </Ww>
+        <Ww>
+          <count>4</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>pmesh_msg</ItemText>
+        </Ww>
+        <Ww>
+          <count>5</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>pdata</ItemText>
+        </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>opcode_1B</ItemText>
+        </Ww>
+        <Ww>
+          <count>7</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>pmsg-&gt;data</ItemText>
+        </Ww>
+        <Ww>
+          <count>8</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>data</ItemText>
+        </Ww>
+        <Ww>
+          <count>9</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>p_data</ItemText>
+        </Ww>
+        <Ww>
+          <count>10</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>opcode</ItemText>
+        </Ww>
+        <Ww>
+          <count>11</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>opcode_1B</ItemText>
+        </Ww>
+        <Ww>
+          <count>12</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>flashret</ItemText>
+        </Ww>
+        <Ww>
+          <count>13</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>buffer</ItemText>
+        </Ww>
+        <Ww>
+          <count>14</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>buffer</ItemText>
+        </Ww>
       </WatchWindow1>
       <MemoryWindow1>
         <Mm>
           <WinNumber>1</WinNumber>
           <SubType>0</SubType>
-          <ItemText>gap_update_param_flags</ItemText>
+          <ItemText>0x00287178</ItemText>
           <AccSizeX>0</AccSizeX>
         </Mm>
       </MemoryWindow1>
