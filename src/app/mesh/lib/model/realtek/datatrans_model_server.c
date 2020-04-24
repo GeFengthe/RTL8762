@@ -24,11 +24,11 @@ static mesh_msg_send_cause_t datatrans_server_send(const mesh_model_info_p pmode
     access_cfg(&mesh_msg);
     mesh_msg.pbuffer = pmsg;
     mesh_msg.msg_len = msg_len;
-    if (0 != dst)
-    {
-        mesh_msg.dst = dst;
-        mesh_msg.app_key_index = app_key_index;
-    }
+	
+    mesh_msg.dst = dst;
+    mesh_msg.app_key_index = app_key_index;
+    // mesh_msg.delay_time = 10;
+	
     return access_send(&mesh_msg);
 }
 
@@ -36,18 +36,20 @@ static mesh_msg_send_cause_t datatrans_send_data(const mesh_model_info_p pmodel_
                                                  uint16_t dst, uint16_t app_key_index,
                                                  uint16_t data_len, uint8_t *data)
 {
+	uint32_t opcde_3B = 0;
     mesh_msg_send_cause_t ret;
     datatrans_data_t *pmsg;
     uint16_t msg_len = sizeof(datatrans_data_t);
-    msg_len += data_len;
+    msg_len += (data_len-3);
     pmsg = plt_malloc(msg_len, RAM_TYPE_DATA_ON);
     if (NULL == pmsg)
     {
         return MESH_MSG_SEND_CAUSE_NO_MEMORY;
     }
 
-    ACCESS_OPCODE_BYTE(pmsg->opcode, MESH_MSG_DATATRANS_DATA);
-    memcpy(pmsg->data, data, data_len);
+	opcde_3B = (data[0]<<16) | (data[1]<<16) | data[2];
+    ACCESS_OPCODE_BYTE(pmsg->opcode, opcde_3B);
+    memcpy(pmsg->data, data+3, data_len-3);
 
     ret = datatrans_server_send(pmodel_info, dst, app_key_index, (uint8_t *)pmsg, msg_len);
     plt_free(pmsg, RAM_TYPE_DATA_ON);
@@ -59,9 +61,9 @@ mesh_msg_send_cause_t datatrans_publish(const mesh_model_info_p pmodel_info,
                                         uint16_t data_len, uint8_t *data)
 {
     mesh_msg_send_cause_t ret = MESH_MSG_SEND_CAUSE_INVALID_DST;
-    if (mesh_model_pub_check(pmodel_info))
+    // if (mesh_model_pub_check(pmodel_info))
     {
-        ret = datatrans_send_data(pmodel_info, 0, 0, data_len, data);
+        ret = datatrans_send_data(pmodel_info, 0x7fff, 0x123, data_len, data);
     }
 
     return ret;

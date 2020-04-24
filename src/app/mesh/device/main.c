@@ -68,15 +68,13 @@ void mesh_stack_init(void)
     /** set ble stack log level, disable nonsignificant log */
     log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_TRACE, 0);
     log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_INFO, 0);
+    log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_WARN, 0);
+    log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_ERROR, 0);
     log_module_trace_set(MODULE_LOWERSTACK, LEVEL_ERROR, 0);
     log_module_trace_set(MODULE_SNOOP, LEVEL_ERROR, 0);
 	
-    log_module_trace_set(MODULE_GAP, LEVEL_INFO, 0);
-    log_module_trace_set(MODULE_GAP, LEVEL_TRACE, 0);
-    log_module_trace_set(MODULE_GAP, LEVEL_WARN, 0);
-    log_module_trace_set(MODULE_GAP, LEVEL_ERROR, 0);
 	
-
+    log_module_trace_set(MODULE_APP, LEVEL_WARN, 1);
 	
     /** set mesh stack log level, default all on, disable the log of level LEVEL_TRACE */
     uint32_t module_bitmap[MESH_LOG_LEVEL_SIZE] = {0};
@@ -103,9 +101,9 @@ void mesh_stack_init(void)
     uint8_t dev_uuid[16] = MESH_DEVICE_UUID;
     // gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
     // memcpy(dev_uuid, bt_addr, sizeof(bt_addr));	
-	SkyBleMesh_App_Init();
-	SkyBleMesh_Get_UUID(dev_uuid, MESH_DEV_UUID_LEN);	// qlj 整理
-    device_uuid_set(dev_uuid);
+//	SkyBleMesh_App_Init();
+//	SkyBleMesh_Get_UUID(dev_uuid, MESH_DEV_UUID_LEN);	// qlj 整理
+//    device_uuid_set(dev_uuid);
 
     /** configure provisioning parameters */
     prov_capabilities_t prov_capabilities =
@@ -166,7 +164,11 @@ void mesh_stack_init(void)
 
     compo_data_page0_header_t compo_data_page0_header = {COMPANY_ID, PRODUCT_ID, VERSION_ID};
     compo_data_page0_gen(&compo_data_page0_header);
-
+	
+	SkyBleMesh_App_Init();
+	SkyBleMesh_Get_UUID(dev_uuid, MESH_DEV_UUID_LEN);	// qlj 整理
+    device_uuid_set(dev_uuid);
+	
     /** init mesh stack */
     mesh_init();
 
