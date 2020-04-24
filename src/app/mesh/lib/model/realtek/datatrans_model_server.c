@@ -67,6 +67,7 @@ mesh_msg_send_cause_t datatrans_publish(const mesh_model_info_p pmodel_info,
     // if (checkret)
     {
 		//    接收处打印appkey_index=0, 但是网关不是0x123吗？
+		// mesh_node.app_key_list[appkey_index=0].app_key_index_g = 0x123.
         ret = datatrans_send_data(pmodel_info, 0x7fff, 0, data_len, data); 
     }
 
