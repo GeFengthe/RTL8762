@@ -9,7 +9,13 @@
 // #include "soft_wdt.h"
 
 
-#define APP_DBG_PRINTF(fmt, ...)   data_uart_debug(fmt, ##__VA_ARGS__)
+// #define APP_DBG_PRINTF(fmt, ...)   data_uart_debug(fmt, ##__VA_ARGS__)
+#define APP_DBG_PRINTF0  APP_PRINT_WARN0
+#define APP_DBG_PRINTF1  APP_PRINT_WARN1
+#define APP_DBG_PRINTF2  APP_PRINT_WARN2
+#define APP_DBG_PRINTF3  APP_PRINT_WARN3
+#define APP_DBG_PRINTF4  APP_PRINT_WARN4
+#define APP_DBG_PRINTF5  APP_PRINT_WARN5
 
 MESH_PROVISION_STATE_e mesh_provison_state = MESH_PROVISION_STATE_UNPROV;
 /*
@@ -384,7 +390,7 @@ static bool Pop_Msg_From_FIFO(req_event_t *event)
 	if(event) {
 		if(MainMsg_fifo.head != MainMsg_fifo.tail){
 				
-//		APP_DBG_PRINTF("Pop_Msg_From_FIFO %d %d \r\n", MainMsg_fifo.head , MainMsg_fifo.tail );
+//		APP_DBG_PRINTF2("Pop_Msg_From_FIFO %d %d \n", MainMsg_fifo.head , MainMsg_fifo.tail );
 		
 			memcpy(event, &(MainMsg_fifo.even_t[MainMsg_fifo.tail]), sizeof(req_event_t));
 
@@ -434,7 +440,7 @@ extern bool Hal_Get_Ble_MacAddr(uint8_t* mac)
 	}
 	
 	if(isgetted==false){
-		APP_DBG_PRINTF("%s error!!!\r\n",__func__);
+		APP_DBG_PRINTF0("Hal_Get_Ble_MacAddr error!!!\n");
 	}
 	
 	return isgetted;
@@ -475,7 +481,8 @@ extern void SkyBleMesh_Get_DeviceName(char *name, uint8_t *len)
 
 		*len = 11+typelen+1;
 	}
-	APP_DBG_PRINTF("%s :%s\r\n",__func__, name);	
+	APP_DBG_PRINTF1("SkyBleMesh_Get_DeviceName :%x\n", name[0]);	
+	// APP_DBG_PRINTF1("SkyBleMesh_Get_DeviceName :%s\n", name);	
 }
 
 static int SkyBleMesh_SetProductType(unsigned int type)
@@ -564,10 +571,10 @@ static void BleMesh_Vendor_Make_Packet(uint8_t *buf, uint8_t len, bool needack )
 	if(len<3 || len>MAX_TX_BUF_LEN){
 		return;
 	}
-	APP_DBG_PRINTF("%s opcode %02X  len%d\r\n",__func__, opcode, len);	
+	APP_DBG_PRINTF2("BleMesh_Vendor_Make_Packet opcode %02X  len%d\n", opcode, len);	
 	#if 0
 	for(int j=0; j<len ; j++){
-		APP_DBG_PRINTF("%02X ", buf[j]);
+		APP_DBG_PRINTF1("%02X ", buf[j]);
 	}
 	#endif
 	if( opcode==BLEMESH_SKYWORTH_OPCODE_PROPERTY ){		
@@ -578,7 +585,7 @@ static void BleMesh_Vendor_Make_Packet(uint8_t *buf, uint8_t len, bool needack )
 					&& buf[TX_ATTR_ID_POS+1]==MeshTxAttrStruct[i].buf[TX_ATTR_ID_POS+1]) {
 					// 同一属性上报，更新到一个报文中。不管之前报文是否重发，都按当前的needack来。
 					index = i;
-					APP_DBG_PRINTF("find same attr index=%d ATTRID:%02X%02X\r\n", index,buf[TX_ATTR_ID_POS+1],buf[TX_ATTR_ID_POS]);
+					APP_DBG_PRINTF3("find same attr index=%d ATTRID:%02X%02X\n", index,buf[TX_ATTR_ID_POS+1],buf[TX_ATTR_ID_POS]);
 					break;
 				}
 			}
@@ -596,7 +603,7 @@ static void BleMesh_Vendor_Make_Packet(uint8_t *buf, uint8_t len, bool needack )
 		}
 	}
 	
-	// APP_DBG_PRINTF("BleMesh_Vendor_Make_Packet buff index:%d i:%d\r\n",i,index);
+	// APP_DBG_PRINTF2("BleMesh_Vendor_Make_Packet buff index:%d i:%d\n",i,index);
 	if( index < MAX_TX_BUF_DEEP ){
 		MeshTxAttrStruct[index].fullflag = 1;
 		MeshTxAttrStruct[index].txtick   = 0;
@@ -641,10 +648,10 @@ static void BleMesh_Vendor_Send_Packet(void)
 				if(sub_timeout_ms>=maxacktimout){
 					maxacktimout = MAX_ACK_TIMEOUT - 100*(((uint32_t)rand())%11);
 				}
-				APP_DBG_PRINTF("%s opcode %02X  len%d time%d %d\r\n",__func__, MeshTxAttrStruct[i].buf[TX_OPENCODE_POS], MeshTxAttrStruct[i].len,sub_timeout_ms,maxacktimout);	
+				APP_DBG_PRINTF4("BleMesh_Vendor_Send_Packet opcode %02X  len%d time%d %d\n", MeshTxAttrStruct[i].buf[TX_OPENCODE_POS], MeshTxAttrStruct[i].len,sub_timeout_ms,maxacktimout);	
 				#if 1
 				for(int j=0; j<MeshTxAttrStruct[i].len ; j++){
-					APP_DBG_PRINTF("%02X ", MeshTxAttrStruct[i].buf[j]);
+					APP_DBG_PRINTF1("%02X ", MeshTxAttrStruct[i].buf[j]);
 				}
 				#endif
 				#if MESH_TEST_PRESSURE == 1
@@ -675,7 +682,7 @@ static void BleMesh_Vendor_Ack_Packet(uint8_t eventid, uint16_t attrID, uint32_t
 	uint8_t i=0;
 	uint16_t tmpid=0;
 	
-	// APP_DBG_PRINTF("%s opcode %04X  val%d\r\n",__func__, attrID, val);	
+	// APP_DBG_PRINTF3("%s opcode %04X  val%d\n",__func__, attrID, val);	
 	if( eventid==EVENT_TYPE_REPORT_PROPERTY_ACK ){		
 		for(i=0; i<MAX_TX_BUF_DEEP; i++){
 			if( MeshTxAttrStruct[i].fullflag==1 ){
@@ -837,7 +844,7 @@ static void SkyIotReportPropertyPacket(uint16_t attrID, int value, uint8_t seq_n
 			break;
 		}	
 		default:
-			APP_DBG_PRINTF("%s ERR attrID %04X\r\n",__func__, attrID);
+			APP_DBG_PRINTF1("SkyIotReportPropertyPacket ERR attrID %04X\n", attrID);
 			return;
 	}
 		
@@ -885,7 +892,7 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 	
 	cmd_type = p_data[MESH_COMMAND_POS];   // 获得命令码  ，
 	
-	data_uart_debug("%s opcode %02X, type %02X\r\n",__func__, opcode, cmd_type);	
+	APP_DBG_PRINTF2("SkyBleMesh_handle_vendor_rx_cb opcode %02X, type %02X\n", opcode, cmd_type);	
 	
     switch (opcode)
     {
@@ -937,12 +944,12 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 						break;
 					}	
 					default:{
-						APP_DBG_PRINTF("%s ERR proID %04X\r\n",__func__, prop_ID);
+						APP_DBG_PRINTF1("SkyBleMesh_handle_vendor_rx_cb ERR proID %04X\n", prop_ID);
 						return;
 					}
 						
 				}
-				// APP_DBG_PRINTF("%s prop_value %04X\r\n",__func__, prop_value);				
+				// APP_DBG_PRINTF2("%s prop_value %04X\n",__func__, prop_value);				
 				event.event_id = EVENT_TYPE_UPDATE_PROPERTY;
 				event.seqence_num = p_data[MESH_SEQUENCE_POS];
 				event.prop_ID     = prop_ID;
@@ -970,7 +977,7 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 						break;
 					}
 					default:{
-						APP_DBG_PRINTF("%s ERR proID %04X\r\n",__func__, prop_ID);
+						APP_DBG_PRINTF1("SkyBleMesh_handle_vendor_rx_cb ERR proID %04X\n", prop_ID);
 						return;
 					}
 					
@@ -1128,16 +1135,16 @@ static bool SkyBleMesh_IsProvision_Sate(void)
 */
 extern void SkyBleMesh_UnPro_Adv_timeout_cb(void)
 {
-	APP_DBG_PRINTF("%s\r\n",__func__);	
+	APP_DBG_PRINTF0("SkyBleMesh_handle_vendor_rx_cb\n");	
 }
 
 
 // 进入重配网模式
 extern void SkyBleMesh_unBind_complete(void)
 {	
-    APP_DBG_PRINTF("**********************************************************************\r\n");
-    APP_DBG_PRINTF("******************* SkyMesh_unBind_complete **************************\r\n");    
-    APP_DBG_PRINTF("**********************************************************************\r\n");
+    APP_DBG_PRINTF0("**********************************************************************\n");
+    APP_DBG_PRINTF0("******************* SkyMesh_unBind_complete **************************\n");    
+    APP_DBG_PRINTF0("**********************************************************************\n");
 	
 	#if USE_LIGHT_FOR_SKYIOT
 	SkyBleMesh_ReadConfig();
@@ -1185,12 +1192,12 @@ static bool SkyBleMesh_Check_Quick_onoff(void)
     if(flashret == true) {
         g_quick_onoff_Cnt++;
         if(g_quick_onoff_Cnt < MAX_QUICK_ONOFF_CNT) {
-            APP_DBG_PRINTF("-------------------------------------------------quick_onoff_cnt %d\r\n", g_quick_onoff_Cnt);
+            APP_DBG_PRINTF1("-------------------------------------------------quick_onoff_cnt %d\n", g_quick_onoff_Cnt);
 			SkyBleMesh_Check_Quick_onoff_timer();
             Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
 
 		}  else { 
-			APP_DBG_PRINTF("+++++++++++++++++++++++++++++++++++++++++++++++++quick_onoff_cnt %d,do factory reset\r\n", g_quick_onoff_Cnt);
+			APP_DBG_PRINTF1("+++++++++++++++++++++++++++++++++++++++++++++++++quick_onoff_cnt %d,do factory reset\n", g_quick_onoff_Cnt);
 			
 			// when reset clear cnt
 			Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
@@ -1199,7 +1206,7 @@ static bool SkyBleMesh_Check_Quick_onoff(void)
         }
         
     } else {
-		APP_DBG_PRINTF("get quick_onoff_cnt error !!!\r\n");
+		APP_DBG_PRINTF0("get quick_onoff_cnt error !!!\n");
 		
         g_quick_onoff_Cnt = 1;
         Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
@@ -1349,7 +1356,7 @@ static int SkyBleMesh_WriteConfig(void)
 	flashret = Hal_FlashWrite(FLASH_PARAM_TYPE_APP_CMFDATA, FLASH_USERDATA_SAVE_LEN, buffer );
 	if(flashret==false){
 		os_mem_free(buffer);
-		APP_DBG_PRINTF("SkyBleMesh_WriteConfig failed\r\n");
+		APP_DBG_PRINTF0("SkyBleMesh_WriteConfig failed\n");
 		return -1;
 	}
 	
@@ -1378,7 +1385,7 @@ static int SkyBleMesh_ReadConfig(void)
 	flashret = Hal_FlashRead(FLASH_PARAM_TYPE_APP_CMFDATA, FLASH_USERDATA_SAVE_LEN, buffer );
 	if (flashret == false) {
 		os_mem_free(buffer);
-		APP_DBG_PRINTF("SkyBleMesh_ReadConfig error \r\n");
+		APP_DBG_PRINTF0("SkyBleMesh_ReadConfig error \n");
 		return -1;
 	}
 	
@@ -1425,7 +1432,7 @@ static int SkyBleMesh_ReadConfig(void)
 	memcpy(mIotManager.critical_md5, buffer + offset, MD5_LEN);			
 	if (memcmp(mIotManager.critical_md5, md5, MD5_LEN) != 0) { 
 		os_mem_free(buffer);
-		APP_DBG_PRINTF("skyiot_mesh_readConfig critical md5 check error \r\n");
+		APP_DBG_PRINTF0("skyiot_mesh_readConfig critical md5 check error \n");
 		return -1;
 	}
 	
@@ -1513,7 +1520,7 @@ static void Main_Event_Handle(void)
 	}
 			
 	if (Pop_Msg_From_FIFO(&event)){
-		APP_DBG_PRINTF("Main_Event_Handle %X %d %X %04X \r\n",
+		APP_DBG_PRINTF4("Main_Event_Handle %X %d %X %04X \n",
 			event.event_id , event.seqence_num , event.prop_value, event.prop_ID );
 
 		switch(event.event_id)
@@ -1531,10 +1538,10 @@ static void Main_Event_Handle(void)
 					mIotManager.report_flag = 0;
 					delayreport = (uint8_t)(rand()%80) + 1; // 50~4000ms
 					
-					APP_DBG_PRINTF("Main_Event_Handle device online!\r\n");
+					APP_DBG_PRINTF0("Main_Event_Handle device online!\n");
 				}else {
 					mIotManager.recv_alive_tick = HAL_GetTickCount();	
-					APP_DBG_PRINTF("Main_Event_Handle recv keepalive tick: %d!\r\n", mIotManager.recv_alive_tick);
+					APP_DBG_PRINTF1("Main_Event_Handle recv keepalive tick: %d!\n", mIotManager.recv_alive_tick);
 				}			
 			break;
 			}
@@ -1591,7 +1598,7 @@ static void Main_Event_Handle(void)
 							HAL_Lighting_OFF();
 							
 						}else {
-							// APP_DBG_PRINTF("ctp: %d, bri: %d \r\n", mIotManager.mLightManager.ctp, mIotManager.mLightManager.bri);
+							// APP_DBG_PRINTF2("ctp: %d, bri: %d \n", mIotManager.mLightManager.ctp, mIotManager.mLightManager.bri);
 														
 						#if USE_LIGHT_FOR_SKYIOT
 							#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
@@ -1657,13 +1664,13 @@ static bool Main_Check_Online(void)
 		uint32_t tick = HAL_GetTickCount();	
 		if (mIotManager.alive_wakeup_cnt < DEFAULT_WAKEUP_ALIVE_CNT){
 			if (mIotManager.alive_status == 0){
-				APP_DBG_PRINTF("Main_Check_Online wakeupcnt %d\r\n", mIotManager.alive_wakeup_cnt);
+				APP_DBG_PRINTF1("Main_Check_Online wakeupcnt %d\n", mIotManager.alive_wakeup_cnt);
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
 			}else{
 				int sub_timeout_ms;
 				sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);
-				// APP_DBG_PRINTF("Main_Check_Online wakeupcnt %d %d\r\n", mIotManager.alive_wakeup_cnt, sub_timeout_ms);
+				// APP_DBG_PRINTF2("Main_Check_Online wakeupcnt %d %d\n", mIotManager.alive_wakeup_cnt, sub_timeout_ms);
 				if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
 					SkyIotSendKeepAlivePacket();
 					mIotManager.send_alive_tick = tick;
@@ -1674,7 +1681,7 @@ static bool Main_Check_Online(void)
 			int sub_timeout_ms;
 			sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.send_alive_tick, tick);
 			if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
-				APP_DBG_PRINTF("Main_Check_Online sub_timeout_ms %d\r\n", sub_timeout_ms);
+				APP_DBG_PRINTF1("Main_Check_Online sub_timeout_ms %d\n", sub_timeout_ms);
 				//SEND ALIVE PACKET
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
@@ -1784,7 +1791,7 @@ static plt_timer_t skymesh_test_timer = NULL;
 static void SkyBleMesh_Test_Timeout_cb(void *timer)
 {	
 //	static uint8_t testcnt=0,reconflag=0;
-//	 APP_DBG_PRINTF("%s prostate %d \r\n",__func__, SkyBleMesh_IsProvision_Sate() );
+//	 APP_DBG_PRINTF2("%s prostate %d \n",__func__, SkyBleMesh_IsProvision_Sate() );
 
 uint32_t time = os_sys_time_get();
 uint32_t tick = os_sys_tick_get();
@@ -1898,7 +1905,7 @@ extern void SkyBleMesh_App_Init(void)
 {
     uint32_t ret;
     
-    APP_DBG_PRINTF("%s\r\n",__func__);	
+    APP_DBG_PRINTF0("SkyBleMesh_App_Init\n");	
 		
 	SkyBleMesh_SetProductType(PRODUCT_TYPE);
 	SkyBleMesh_SetProductBrand(PRODUCT_BRAND);
@@ -1920,7 +1927,7 @@ extern void SkyBleMesh_App_Init(void)
 
     ret = SkyBleMesh_ReadConfig();
     if(ret != 0){ 		
-        APP_DBG_PRINTF("SkyBleMesh_ReadConfig read failed\r\n");
+        APP_DBG_PRINTF0("SkyBleMesh_ReadConfig read failed\n");
 		
 		uint8_t macaddr[6];		  
  		if( Hal_Get_Ble_MacAddr(macaddr) ) {       			
@@ -1946,7 +1953,7 @@ extern void SkyBleMesh_App_Init(void)
 		SkyBleMesh_WriteConfig();        // 保存参数
 				
     } else {
-        APP_DBG_PRINTF("SkyBleMesh_ReadConfig read succ\r\n");
+        APP_DBG_PRINTF0("SkyBleMesh_ReadConfig read succ\n");
 		
 		memcpy(mIotManager.mac_address, mIotManager.device_uuid, MAC_ADDRESS_LEN);
 		// 按保存的参数，恢复对设备的控制
@@ -1959,7 +1966,7 @@ extern void SkyBleMesh_App_Init(void)
 #endif
 	
     for(int i =0 ;i < 16;i++){
-        APP_DBG_PRINTF("mIotManager.device_uuid[%d] = 0x%02x\r\n",i,mIotManager.device_uuid[i]);
+        APP_DBG_PRINTF2("mIotManager.device_uuid[%d] = 0x%02x\n",i,mIotManager.device_uuid[i]);
     }
 	
 	mIotManager.alive_wakeup_cnt    = 0;
