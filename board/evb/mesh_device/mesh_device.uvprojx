@@ -489,6 +489,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\src\mcu\peripheral\rtl876x_gpio.c</FilePath>
             </File>
+            <File>
+              <FileName>rtl876x_tim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\mcu\peripheral\rtl876x_tim.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

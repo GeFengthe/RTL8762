@@ -61,7 +61,7 @@ mesh_msg_send_cause_t datatrans_publish(const mesh_model_info_p pmodel_info,
                                         uint16_t data_len, uint8_t *data)
 {
     mesh_msg_send_cause_t ret = MESH_MSG_SEND_CAUSE_INVALID_DST;
-    // if (mesh_model_pub_check(pmodel_info))
+//    if (mesh_model_pub_check(pmodel_info))
     {
         ret = datatrans_send_data(pmodel_info, 0x7fff, 0x123, data_len, data);
     }

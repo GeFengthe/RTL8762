@@ -6,8 +6,8 @@
 #include <stdint.h>    // standard integer definition
 #include <stdbool.h>
 
-#if 0
-#define USE_LIGHT_FOR_SKYIOT  1
+#if 1
+#define USE_LIGHT_FOR_SKYIOT  0
 
 
 #define SKY_LIGHT_BELT_TYPE         1   // µÆ´ø

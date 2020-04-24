@@ -4,18 +4,16 @@
 #include <stdint.h>    // standard integer definition
 #include <math.h>
 #include "skylight.h"
+#include "rtl876x.h"
+#include "rtl876x_rcc.h"
+#include "rtl876x_tim.h"
+#include "rtl876x_pinmux.h"
 
 
-#define APP_DBG_PRINTF  MESH_APP_PRINT_DEBUG
+#define APP_DBG_PRINTF(fmt, ...)   
 
 
-#if 0
-// PWM0--channel 0 -- P10 
-// PWM1--channel 1 -- P11 
-// PWM2--channel 2 -- P12 
-// PWM3--channel 3 -- P13 
-// PWM4--channel 4 -- P14 
-// PWM5--channel 5 -- P15 
+#if 1
 
 // represent channel and index
 #if (SKY_LIGHT_TYPE == SKY_LIGHT_BELT_TYPE)
@@ -35,15 +33,36 @@
 #elif (SKY_LIGHT_TYPE == SKY_LIGHT_BULB_RGBWY_TYPE)
 #define WARMWHITE_PWM      0   
 #define COLDWHITE_PWM      1
-#define RED_PWM            3
-#define GREEN_PWM          4
-#define BLUE_PWM           5
+#define RED_PWM            2
+#define GREEN_PWM          3
+#define BLUE_PWM           4
 
 #endif
 
-#define TOTALPWMNUMBER     6
-PWM_DRV_DESC pwm[TOTALPWMNUMBER];
+#define TOTALPWMNUMBER     5
 
+#define PIN_INVALID       0xff
+typedef struct
+{
+    uint8_t pin_num;
+    uint8_t pin_func;
+    TIM_TypeDef *tim_id;
+    uint16_t duty_cycle;
+} light_t;
+
+static light_t pwm[ TOTALPWMNUMBER ] =
+{
+    /** cold */
+    {P4_3, timer_pwm2, TIM2, PWM_DUTY_INIT},
+    /** warm: use blue channel */
+    {P4_0, timer_pwm6, TIM6, PWM_DUTY_INIT},
+    /** red */
+    {P4_1, timer_pwm4, TIM4, PWM_DUTY_INIT},
+    /** green */
+    {P4_2, timer_pwm5, TIM5, PWM_DUTY_INIT},
+    /** blue */
+    {P4_0, timer_pwm6, TIM6, PWM_DUTY_INIT},
+};
 
 #define GAIN (10)
 typedef struct
@@ -60,63 +79,77 @@ static SkyLightManager *mLightManager=NULL;
 /*
 ** PWM
 */
+static void Pwm_Pin_Tmr_Config(const light_t *light)
+{
+    if (PIN_INVALID == light->pin_num)
+    {
+        return ;
+    }
+    /* pad & pinmux */
+    Pad_Config(light->pin_num, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE,
+               PAD_OUT_LOW);
+    Pinmux_Config(light->pin_num, light->pin_func);
+    /* TIM */
+    TIM_TimeBaseInitTypeDef TIM_InitStruct;
+    TIM_StructInit(&TIM_InitStruct);
+    TIM_InitStruct.TIM_PWM_En = PWM_ENABLE;
+    /*<! PWM output freqency = 40M/(TIM_PWM_High_Count + TIM_PWM_Low_Count) */
+    /*<! PWM duty cycle = TIM_PWM_High_Count/(TIM_PWM_High_Count + TIM_PWM_Low_Count) */
+
+	TIM_InitStruct.TIM_PWM_High_Count = PWM_DUTY_INIT;
+	TIM_InitStruct.TIM_PWM_Low_Count  = PWM_FREQUENCY;
+
+    TIM_InitStruct.TIM_Mode = TIM_Mode_UserDefine;
+    TIM_InitStruct.TIM_SOURCE_DIV = TIM_CLOCK_DIVIDER_1;
+    TIM_TimeBaseInit(light->tim_id, &TIM_InitStruct);
+    /* Enable PWM output */
+    TIM_Cmd(light->tim_id, ENABLE);
+}
+
+static void pwm_disable(const light_t *light)
+{
+    if (PIN_INVALID == light->pin_num)
+    {
+        return ;
+    }
+	
+    /* DISENABLE PWM output */
+    TIM_Cmd(light->tim_id, DISABLE);
+}
+static void pwm_duty_cycle(const light_t *light)
+{
+    if (PIN_INVALID == light->pin_num)
+    {
+        return ;
+    }
+	
+    TIM_PWMChangeFreqAndDuty(light->tim_id, PWM_FREQUENCY-light->duty_cycle, light->duty_cycle);
+}
+
 void HAL_PwmForLight_Init(void)
 {
-	rwip_prevent_sleep_set(BK_DRIVER_TIMER_ACTIVE);
+    /* turn on timer clock */
+    RCC_PeriphClockCmd(APBPeriph_TIMER, APBPeriph_TIMER_CLOCK, ENABLE);
+    *((volatile uint32_t *)0x40000360UL) &= ~(1 << 10);
 
 	#ifdef WARMWHITE_PWM
-	pwm[WARMWHITE_PWM].channel = WARMWHITE_PWM;	//  
-	pwm[WARMWHITE_PWM].mode = (1 << 0) 	        // 
-			  | (1 << 4);	            // select 16MHz
-	pwm[WARMWHITE_PWM].pre_divid  = 1;
-	pwm[WARMWHITE_PWM].end_value  = PWM_FREQUENCY;
-	pwm[WARMWHITE_PWM].duty_cycle = PWM_DUTY_INIT ; 
-	pwm[WARMWHITE_PWM].duty_step  = PWM_DUTY_STEP;
-	pwm_init(&pwm[WARMWHITE_PWM]);
+	Pwm_Pin_Tmr_Config(&pwm[WARMWHITE_PWM]);  // 配置io为PWM
 	#endif
 
 	#ifdef COLDWHITE_PWM
-	pwm[COLDWHITE_PWM].channel = COLDWHITE_PWM;	//  
-	pwm[COLDWHITE_PWM].mode = (1 << 0) 	        // 
-			  | (1 << 4);	            // select 16MHz
-	pwm[COLDWHITE_PWM].pre_divid  = 1;
-	pwm[COLDWHITE_PWM].end_value  = PWM_FREQUENCY;
-	pwm[COLDWHITE_PWM].duty_cycle = PWM_DUTY_INIT ; 
-	pwm[COLDWHITE_PWM].duty_step  = PWM_DUTY_STEP;
-	pwm_init(&pwm[COLDWHITE_PWM]);
+	Pwm_Pin_Tmr_Config(&pwm[COLDWHITE_PWM]);  // 
 	#endif
 
 	#ifdef RED_PWM
-	pwm[RED_PWM].channel = RED_PWM;	//  
-	pwm[RED_PWM].mode = (1 << 0) 	        // 
-			  | (1 << 4);	            // select 16MHz
-	pwm[RED_PWM].pre_divid  = 1;
-	pwm[RED_PWM].end_value  = PWM_FREQUENCY;
-	pwm[RED_PWM].duty_cycle = PWM_DUTY_INIT ; 
-	pwm[RED_PWM].duty_step  = PWM_DUTY_STEP;
-	pwm_init(&pwm[RED_PWM]);
+	Pwm_Pin_Tmr_Config(&pwm[RED_PWM]);  // 
 	#endif
 
 	#ifdef GREEN_PWM
-	pwm[GREEN_PWM].channel = GREEN_PWM;	//  
-	pwm[GREEN_PWM].mode = (1 << 0) 	        // 
-			  | (1 << 4);	            // select 16MHz
-	pwm[GREEN_PWM].pre_divid  = 1;
-	pwm[GREEN_PWM].end_value  = PWM_FREQUENCY;
-	pwm[GREEN_PWM].duty_cycle = PWM_DUTY_INIT ; 
-	pwm[GREEN_PWM].duty_step  = PWM_DUTY_STEP;
-	pwm_init(&pwm[GREEN_PWM]);
+	Pwm_Pin_Tmr_Config(&pwm[GREEN_PWM]);  // 
 	#endif
 
 	#ifdef BLUE_PWM
-	pwm[BLUE_PWM].channel = BLUE_PWM;	//  
-	pwm[BLUE_PWM].mode = (1 << 0) 	        // 
-			  | (1 << 4);	            // select 16MHz
-	pwm[BLUE_PWM].pre_divid  = 1;
-	pwm[BLUE_PWM].end_value  = PWM_FREQUENCY;
-	pwm[BLUE_PWM].duty_cycle = PWM_DUTY_INIT ; 
-	pwm[BLUE_PWM].duty_step  = PWM_DUTY_STEP;
-	pwm_init(&pwm[BLUE_PWM]);
+	Pwm_Pin_Tmr_Config(&pwm[BLUE_PWM]);  // 
 	#endif
 
 }
@@ -124,22 +157,21 @@ void HAL_PwmForLight_Init(void)
 void HAL_PwmForLight_Deinit(void)
 {
 #ifdef WARMWHITE_PWM
-    pwm_disable(WARMWHITE_PWM);
+    pwm_disable(&pwm[WARMWHITE_PWM]);
 #endif
 #ifdef COLDWHITE_PWM
-    pwm_disable(COLDWHITE_PWM);
+    pwm_disable(&pwm[COLDWHITE_PWM]);
 #endif
 #ifdef RED_PWM
-    pwm_disable(RED_PWM);
+    pwm_disable(&pwm[RED_PWM]);
 #endif
 #ifdef GREEN_PWM
-    pwm_disable(GREEN_PWM);
+    pwm_disable(&pwm[GREEN_PWM]);
 #endif
 #ifdef BLUE_PWM
-    pwm_disable(BLUE_PWM);
+    pwm_disable(&pwm[BLUE_PWM]);
 #endif
 
-	rwip_prevent_sleep_clear(BK_DRIVER_TIMER_ACTIVE);
 }
 
 static int8_t HAL_UpdatePwmDuty(uint16_t r, uint16_t g, uint16_t b,uint16_t cw,uint16_t ww)
