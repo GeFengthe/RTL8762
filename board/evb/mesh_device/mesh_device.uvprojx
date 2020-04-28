@@ -639,6 +639,11 @@
               <FileType>1</FileType>
               <FilePath>.\app\utils_md5.c</FilePath>
             </File>
+            <File>
+              <FileName>soft_wdt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\soft_wdt.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
