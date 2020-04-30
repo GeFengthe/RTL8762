@@ -144,12 +144,17 @@ void mesh_stack_init(void)
         .sub_addr_num = 10,
         .proxy_num = 1,
 		
-		.udb_interval = 1,
-		.prov_interval = 50,
-		.proxy_interval = 1,
-		.identity_interval = 20,
+			  .udb_interval = 10,//
+			  .prov_interval =1,//
+			  .proxy_interval =5,//
     };
     mesh_node_cfg(features, &node_cfg);
+    mesh_node.pb_adv_retrans_count = 6;
+    mesh_node.pb_adv_retrans_steps = 1;
+	
+    mesh_node.net_trans_count = 5;
+    mesh_node.relay_retrans_count = 5;
+    mesh_node.trans_retrans_count = 7;
 
     /** create elements and register models */
     mesh_element_create(GATT_NS_DESC_UNKNOWN);

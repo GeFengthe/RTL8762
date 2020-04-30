@@ -3,7 +3,7 @@
 #include "rtl876x_wdg.h"
 #include "soft_wdt.h"
 
-#define SOFTWDT_PRINTF()
+#define SOFTWDT_PRINTF(fmt, ...)
 
 #define SOFTWDT_FEED_INTERVAL   (2)       // ms
 #define SOFTWDT_START_DELAY     (20000 / SOFTWDT_FEED_INTERVAL)   // 20000ms
