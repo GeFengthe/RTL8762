@@ -557,22 +557,32 @@
             <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\..\src\app\mesh\device\main.c</FilePath>
+              <FilePath>.\app\main.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\app_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>device_app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\device_app.c</FilePath>
+            </File>
+            <File>
+              <FileName>device_cmd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\device_cmd.c</FilePath>
+            </File>
+            <File>
+              <FileName>io_management.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\io_management.c</FilePath>
             </File>
             <File>
               <FileName>datatrans_model_server.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\src\app\mesh\lib\model\realtek\datatrans_model_server.c</FilePath>
-            </File>
-            <File>
-              <FileName>app_task.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\src\app\mesh\device\app_task.c</FilePath>
-            </File>
-            <File>
-              <FileName>device_app.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\src\app\mesh\device\device_app.c</FilePath>
             </File>
             <File>
               <FileName>ping_app.c</FileName>
@@ -595,11 +605,6 @@
               <FilePath>..\..\..\src\app\mesh\lib\cmd\mesh_cmd.c</FilePath>
             </File>
             <File>
-              <FileName>device_cmd.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\src\app\mesh\device\device_cmd.c</FilePath>
-            </File>
-            <File>
               <FileName>test_cmd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\src\app\mesh\lib\cmd\test_cmd.c</FilePath>
@@ -620,19 +625,9 @@
               <FilePath>..\..\..\src\app\mesh\lib\model\delay_msg_rsp.c</FilePath>
             </File>
             <File>
-              <FileName>io_management.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\src\app\mesh\device\io_management.c</FilePath>
-            </File>
-            <File>
               <FileName>app_skyiot_server.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\app_skyiot_server.c</FilePath>
-            </File>
-            <File>
-              <FileName>skylight.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\app\skylight.c</FilePath>
             </File>
             <File>
               <FileName>utils_md5.c</FileName>
@@ -643,6 +638,16 @@
               <FileName>soft_wdt.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\soft_wdt.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>control</GroupName>
+          <Files>
+            <File>
+              <FileName>skylight.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\skylight.c</FilePath>
             </File>
           </Files>
         </Group>
