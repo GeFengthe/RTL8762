@@ -11,7 +11,7 @@
 
 
 #define APP_DBG_PRINTF(fmt, ...)   
-
+#define GREEN_BOARD 0
 
 #if 1
 
@@ -31,8 +31,8 @@
 // #define BLUE_PWM           4
 
 #elif (SKY_LIGHT_TYPE == SKY_LIGHT_BULB_RGBWY_TYPE)
-#define WARMWHITE_PWM      0   
-#define COLDWHITE_PWM      1
+#define WARMWHITE_PWM      1   
+#define COLDWHITE_PWM      0
 #define RED_PWM            2
 #define GREEN_PWM          3
 #define BLUE_PWM           4
@@ -52,15 +52,10 @@ typedef struct
 
 static light_t pwm[ TOTALPWMNUMBER ] =
 {
-    /** cold */
     {P3_0, timer_pwm3, TIM3, PWM_DUTY_INIT},
-    /** warm: use blue channel */
     {P4_3, timer_pwm2, TIM2, PWM_DUTY_INIT},
-    /** red */
     {P4_1, timer_pwm4, TIM4, PWM_DUTY_INIT},
-    /** green */
     {P4_2, timer_pwm5, TIM5, PWM_DUTY_INIT},
-    /** blue */
     {P4_0, timer_pwm6, TIM6, PWM_DUTY_INIT},
 };
 
@@ -123,7 +118,11 @@ static void pwm_duty_cycle(const light_t *light)
         return ;
     }
 	
-    TIM_PWMChangeFreqAndDuty(light->tim_id, PWM_FREQUENCY-light->duty_cycle, light->duty_cycle);
+	#if GREEN_BOARD==1
+    TIM_PWMChangeFreqAndDuty(light->tim_id, PWM_FREQUENCY-light->duty_cycle, light->duty_cycle); // 绿色公版 直接接灯
+	#else 
+	TIM_PWMChangeFreqAndDuty(light->tim_id, light->duty_cycle, PWM_FREQUENCY-light->duty_cycle);   // 篮板，加三极管反向
+	#endif
 }
 
 void HAL_PwmForLight_Init(void)
@@ -314,7 +313,7 @@ void HAL_Lighting_Sunlight(int ctp, int ctp_bri)
 	if(sctp <= 3000){
           ww = (int)(255 * nGAIN);
           cw = 0;
-	}else if(sctp >= 6300){
+	}else if(sctp >= 6500){
           cw = (int)(255 * nGAIN);
           ww = 0;
 	} else {

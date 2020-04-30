@@ -126,6 +126,12 @@ extern "C"  {
      "testdata [test case]\n\r",\
      "test sample mesh pkt\n\r",\
      user_cmd_test_data\
+    },\
+    {\
+     "skytest",\
+     "skytest [test case]\n\r",\
+     "skytest\n\r",\
+     user_cmd_skytest\
     }
 /** @} */
 
@@ -149,6 +155,8 @@ user_cmd_parse_result_t user_cmd_rpl_clear(user_cmd_parse_value_t *pparse_value)
 user_cmd_parse_result_t user_cmd_subscribe(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_test_send(user_cmd_parse_value_t *pparse_value);
 user_cmd_parse_result_t user_cmd_test_data(user_cmd_parse_value_t *pparse_value);
+
+user_cmd_parse_result_t user_cmd_skytest(user_cmd_parse_value_t *pparse_value);
 /** @} */
 /** @} */
 

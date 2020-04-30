@@ -101,9 +101,6 @@ void mesh_stack_init(void)
     uint8_t dev_uuid[16] = MESH_DEVICE_UUID;
     // gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
     // memcpy(dev_uuid, bt_addr, sizeof(bt_addr));	
-//	SkyBleMesh_App_Init();
-//	SkyBleMesh_Get_UUID(dev_uuid, MESH_DEV_UUID_LEN);	// qlj ХыАн
-//    device_uuid_set(dev_uuid);
 
     /** configure provisioning parameters */
     prov_capabilities_t prov_capabilities =
@@ -132,7 +129,7 @@ void mesh_stack_init(void)
         .snb = 1,
         .bg_scan = 1,
         .flash = 1,
-        .flash_rpl = 1
+        .flash_rpl = 0
     };
     mesh_node_cfg_t node_cfg =
     {
@@ -164,7 +161,6 @@ void mesh_stack_init(void)
 //    trans_ping_pong_init(ping_app_ping_cb, pong_receive);
 //    tp_control_reg(tp_reveive);
 	
-//    datatrans_server_model_init( NULL );   // vendor model
 	 SkyBleMesh_Vendormodel_init(0);
 
     compo_data_page0_header_t compo_data_page0_header = {COMPANY_ID, PRODUCT_ID, VERSION_ID};
@@ -197,8 +193,7 @@ void app_le_gap_init(void)
     uint32_t auth_fix_passkey = 0;
     uint8_t  auth_sec_req_enable = false;
     uint16_t auth_sec_req_flags = GAP_AUTHEN_BIT_BONDING_FLAG;
-	
-	
+
     /* Setup the GAP Bond Manager */
     gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(auth_pair_mode), &auth_pair_mode);
     gap_set_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, sizeof(auth_flags), &auth_flags);
@@ -367,7 +362,6 @@ void pwr_mgr_init(void)
     lps_mode_set(LPM_DLPS_MODE);
 #endif
 }
-
 
 /**
  * @brief    Contains the initialization of all tasks

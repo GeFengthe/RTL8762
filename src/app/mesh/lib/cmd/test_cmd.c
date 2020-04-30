@@ -15,6 +15,8 @@
 #include "test_cmd.h"
 #include "mesh_api.h"
 
+#include "app_skyiot_server.h"
+
 user_cmd_parse_result_t user_cmd_node_state_set(user_cmd_parse_value_t *pparse_value)
 {
     mesh_node_state_t node_state = pparse_value->dw_parameter[0] == 0 ? UNPROV_DEVICE : PROV_NODE;
@@ -268,3 +270,39 @@ user_cmd_parse_result_t user_cmd_test_data(user_cmd_parse_value_t *pparse_value)
     return USER_CMD_RESULT_OK;
 }
 
+
+	
+user_cmd_parse_result_t user_cmd_skytest(user_cmd_parse_value_t *pparse_value)
+{
+	#if MESH_TEST_PRESSURE == 1	
+	// 1:mantest  2:result  3:setperid(0:stop other:xS)  4:clear
+    uint8_t test_case = pparse_value->dw_parameter[0]; 
+   
+    data_uart_debug("user_cmd_skytest:\r\n");
+    if (test_case == 1)
+    {
+		test_flag = 1;
+    }else if (test_case == 2)
+    {
+        data_uart_debug("TESTRESULT make:%d send:%d ack:%d timout:%d\n",makepackcnt ,sendpackcnt,revackpackcnt,acktimoutcnt);
+    }
+    else if (test_case == 3)
+    {
+		testperid = pparse_value->dw_parameter[1];
+		if(testperid < 200){
+			data_uart_debug("TESTPERID:%d s\n",testperid);
+		}
+    }
+    else if (test_case == 4)
+    {
+		makepackcnt = 0;
+		sendpackcnt = 0;
+		revackpackcnt = 0;
+		acktimoutcnt = 0;
+		data_uart_debug("TESTRESULT make:%d send:%d ack:%d timout:%d\n",makepackcnt ,sendpackcnt,revackpackcnt,acktimoutcnt);
+		
+    }
+	
+	#endif
+    return USER_CMD_RESULT_OK;
+}

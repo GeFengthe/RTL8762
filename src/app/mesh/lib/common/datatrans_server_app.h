@@ -32,24 +32,24 @@ BEGIN_DECLS
 #define ATTR_CLUSTER_ID_HUE (0x0007) // 4 byte
 #define ATTR_CLUSTER_ID_SAT (0x0008) // 4 byte
 
-// è¿™é‡Œçš„commandæ˜¯ä»Žç½‘å…³è§’åº¦æ¥å®šä¹‰çš„
+// ÕâÀïµÄcommandÊÇ´ÓÍø¹Ø½Ç¶ÈÀ´¶¨ÒåµÄ
 
-/*åˆ›ç»´è®¾å¤‡mesh UUID: éšæœºæ•° + MAC åœ°å€*/
+/*´´Î¬Éè±¸mesh UUID: Ëæ»úÊý + MAC µØÖ·*/
 #define BLEMESH_VENDOR_COMPANY_ID  (0x0094)   /*  MTK */
 #define BLEMESH_SKYWORTH_MODEL_ID  (0x5320)	  /*  SKYWORTH MODEL ID*/
 
 #define OPCODE_HEARTBEAT_CMD_PING 	(0x33)
 #define OPCODE_HEARTBEAT_CMD_PONG 	(0x34)
-//å­è®¾å¤‡æ²¡æœ‰æ”¶åˆ°å›žå¤ï¼Œé»˜è®¤ç½‘å…³æ–­çº¿ï¼ŒçŠ¶æ€ä¸ä¸ŠæŠ¥ã€‚åªå‘å¿ƒè·³æ¶ˆæ¯è¯·æ±‚ä¸Šçº¿
+//×ÓÉè±¸Ã»ÓÐÊÕµ½»Ø¸´£¬Ä¬ÈÏÍø¹Ø¶ÏÏß£¬×´Ì¬²»ÉÏ±¨¡£Ö»·¢ÐÄÌøÏûÏ¢ÇëÇóÉÏÏß
 //1.SEND PING TO GATEWAY opcode(1B) + company id(2B) + 0x33(1B)
 //2.GATEWAY REPONSE:     opcode(1B) + company id(2B) + 0x32(1B)
 #define BLEMESH_SKYWORTH_OPCODE_HEARTBEAT (0xC7)
 
-#define OPCODE_PROPERTY_CMD_GETATTR		(0x22)  /* ç½‘å…³-->èŠ‚ç‚¹ */
+#define OPCODE_PROPERTY_CMD_GETATTR		(0x22)  /* Íø¹Ø-->½Úµã */
 #define OPCODE_PROPERTY_CMD_GETATTR_ACK	(0x20)  
-#define OPCODE_PROPERTY_CMD_UPDATTR		(0x21)  /* ç½‘å…³-->èŠ‚ç‚¹ */
+#define OPCODE_PROPERTY_CMD_UPDATTR		(0x21)  /* Íø¹Ø-->½Úµã */
 #define OPCODE_PROPERTY_CMD_UPDATTR_ACK	(0x19)
-#define OPCODE_PROPERTY_CMD_RPTATTR		(0x23)  /* èŠ‚ç‚¹-->ç½‘å…³ */
+#define OPCODE_PROPERTY_CMD_RPTATTR		(0x23)  /* ½Úµã-->Íø¹Ø */
 #define OPCODE_PROPERTY_CMD_RPTATTR_ACK	(0x18)
 // 1.get all attr:     opcode(1B) + company id(2B) + 0x22(1B) + seq(1B)
 // 2.get all attr ack: opcode(1B) + company id(2B) + 0x20(1B) + seq(1B)
@@ -93,7 +93,7 @@ BEGIN_DECLS
 #endif
 
 
-extern mesh_model_info_t datatrans_server;  
+extern mesh_model_info_t VendorModel_Server;  
 
 /**
  * @defgroup Datatrans_Server_Exported_Functions Datatrans Server Exported Functions
@@ -101,9 +101,9 @@ extern mesh_model_info_t datatrans_server;
  * @{
  */
 /**
- * @brief initialize data transmission server model
+ * @brief initialize vendor server model
  */
-void datatrans_server_model_init(void *rx_cb);
+void Vendor_Model_Init(void *rx_cb);
 /** @} */
 /** @} */
 

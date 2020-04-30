@@ -9,9 +9,8 @@
 *.lnp
 *.out
 *.Administrator
-*.Lenovo
 #*.bak
-#*.txt
+*.txt
 *.apk
 *.tmp
 *.omf
@@ -24,5 +23,8 @@
 *.bin
 *.log
 *.map
-!bk3435_ble_bim.bin
-!bk3435_ble_stack.bin
+*.scvd
+*.disasm
+*.trace
+*.lst
+*.bat

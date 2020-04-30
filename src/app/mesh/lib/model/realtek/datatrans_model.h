@@ -46,7 +46,7 @@ BEGIN_DECLS
 
 // #define MESH_VENDOR_MODELID_SERVER                   0x0004005D 
 #define MESH_VENDOR_MODELID_SERVER                    ((BLEMESH_SKYWORTH_MODEL_ID<<16)|BLEMESH_VENDOR_COMPANY_ID)
-#define MESH_MODEL_DATATRANS_CLIENT                     0x0005005D
+
 /** @} */
 
 /**
@@ -67,24 +67,6 @@ typedef struct
     uint8_t data[0];
 } _PACKED_ datatrans_write_t;
 
-typedef struct
-{
-    uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_DATATRANS_STATUS)];
-    datatrans_stat_t status;
-    uint16_t written_len;
-} _PACKED_ datatrans_status_t;
-
-typedef struct
-{
-    uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_DATATRANS_READ)];
-    uint16_t read_len;
-} _PACKED_ datatrans_read_t;
-
-typedef struct
-{
-    uint8_t opcode[ACCESS_OPCODE_SIZE(MESH_MSG_DATATRANS_DATA)];
-    uint8_t data[0];
-} _PACKED_ datatrans_data_t;
 
 /** @} */
 
@@ -97,7 +79,8 @@ typedef struct
 #define DATATRANS_SERVER_READ                             1 //!< @ref datatrans_server_read_t
 
 typedef struct
-{
+{	
+    uint32_t opcode_3B;
     uint16_t data_len;
     uint8_t *data;
     /**
@@ -105,8 +88,7 @@ typedef struct
      * the default value is DATATRANS_SUCCESS and data_len
      */
     datatrans_stat_t status;
-    uint16_t written_len;
-} datatrans_server_write_t;;
+} Receive_meshdata_t;
 
 typedef struct
 {

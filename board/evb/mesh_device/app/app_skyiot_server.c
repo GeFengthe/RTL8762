@@ -23,6 +23,7 @@ MESH_PROVISION_STATE_e mesh_provison_state = MESH_PROVISION_STATE_UNPROV;
  ****************************************************************************************
  */
 #if MESH_TEST_PRESSURE == 1
+uint8_t test_flag = 0;
 uint16_t testperid = 0; //10s
 uint32_t makepackcnt = 0;
 uint32_t sendpackcnt = 0;
@@ -226,8 +227,7 @@ static bool g_needsaveattr = false;  // 定时保存标志，给主进程写
 
 static unsigned int SkyBleMesh_GetProductType(void);
 static int SkyBleMesh_WriteConfig(void);
-
-
+static int SkyBleMesh_ReadConfig(void);
 
 /*
  * FUNCTIONS
@@ -661,7 +661,7 @@ static void BleMesh_Vendor_Send_Packet(void)
 				#endif
 				
 				// MESH_MSG_SEND_CAUSE_SUCCESS = 0
-				datatrans_publish(&datatrans_server, MeshTxAttrStruct[i].len,  MeshTxAttrStruct[i].buf);
+				datatrans_publish(&VendorModel_Server, MeshTxAttrStruct[i].len,  MeshTxAttrStruct[i].buf);
 
 				MeshTxAttrStruct[i].txcnt--;
 				MeshTxAttrStruct[i].txtick = tick;
@@ -1077,6 +1077,7 @@ static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 				plt_timer_delete(skybleprosuccess_timer, 0);
 				skybleprosuccess_timer = NULL;
 			}
+			skybleprovsucesscnt = 0;
 		}
 	}
 
@@ -1135,7 +1136,7 @@ static bool SkyBleMesh_IsProvision_Sate(void)
 */
 extern void SkyBleMesh_UnPro_Adv_timeout_cb(void)
 {
-	APP_DBG_PRINTF0("SkyBleMesh_handle_vendor_rx_cb\n");	
+	APP_DBG_PRINTF0("SkyBleMesh_UnPro_Adv_timeout_cb\n");	
 }
 
 
@@ -1218,7 +1219,11 @@ static bool SkyBleMesh_Check_Quick_onoff(void)
 
 static void SkyBleMesh_Reset_Timeout_cb(void *timer)
 {
-	if( ++g_skybleresetcnt > SKYBLERESET_MAXCNT ){
+	if( ++g_skybleresetcnt > SKYBLERESET_MAXCNT ){		
+		if(skyblereset_timer){
+			plt_timer_delete(skyblereset_timer, 0);
+			skyblereset_timer = NULL;
+		}
 		HAL_ResetBleDevice(); 
 	} else {
 		if( g_skybleresetcnt&0x01 ){
@@ -1229,10 +1234,6 @@ static void SkyBleMesh_Reset_Timeout_cb(void *timer)
 			#if USE_LIGHT_FOR_SKYIOT
 			HAL_Lighting_OFF();
 			#endif
-		}
-		if(skyblereset_timer){
-			plt_timer_delete(skyblereset_timer, 0);
-			skyblereset_timer = NULL;
 		}
 	}
 }
@@ -1314,7 +1315,10 @@ static int SkyBleMesh_WriteConfig(void)
 	utils_md5_init(&context);									   /* init context for 1st pass */
 	utils_md5_starts(&context); 								   /* setup context for 1st pass */
 
-
+	memcpy(buffer + offset, mIotManager.mac_address, MAC_ADDRESS_LEN);
+	offset += MAC_ADDRESS_LEN;
+	utils_md5_update(&context, (unsigned char*)mIotManager.mac_address, MAC_ADDRESS_LEN);
+	
 	memcpy(buffer + offset, mIotManager.device_uuid, BT_MESH_UUID_SIZE);
 	offset += BT_MESH_UUID_SIZE;
 	utils_md5_update(&context, (unsigned char*)mIotManager.device_uuid, BT_MESH_UUID_SIZE);
@@ -1389,6 +1393,10 @@ static int SkyBleMesh_ReadConfig(void)
 		return -1;
 	}
 	
+	//
+	memcpy(mIotManager.mac_address, buffer + offset, MAC_ADDRESS_LEN);	
+	offset += MAC_ADDRESS_LEN;
+	utils_md5_update(&context, (unsigned char*)mIotManager.mac_address, MAC_ADDRESS_LEN);
 	//
 	memcpy(mIotManager.device_uuid, buffer + offset, BT_MESH_UUID_SIZE);	
 	offset += BT_MESH_UUID_SIZE;
@@ -1790,38 +1798,38 @@ static void Main_Upload_State(void)
 static plt_timer_t skymesh_test_timer = NULL;
 static void SkyBleMesh_Test_Timeout_cb(void *timer)
 {	
-//	static uint8_t testcnt=0,reconflag=0;
+	static uint8_t testcnt=0,reconflag=0;
 //	 APP_DBG_PRINTF2("%s prostate %d \n",__func__, SkyBleMesh_IsProvision_Sate() );
 
-uint32_t time = os_sys_time_get();
-uint32_t tick = os_sys_tick_get();
-	APP_PRINT_TRACE2("SkyBleMesh_Test_Timeout_cb1 = %ld %ld\n", time, tick);
-	APP_PRINT_INFO2("SkyBleMesh_Test_Timeout_cb2 = %ld %ld\n", time, tick);
-	APP_PRINT_WARN2("SkyBleMesh_Test_Timeout_cb3 = %ld %ld\n", time, tick);
-	APP_PRINT_ERROR2("SkyBleMesh_Test_Timeout_cb4 = %ld %ld\n", time, tick);
+//uint32_t time = os_sys_time_get();
+//uint32_t tick = os_sys_tick_get();
+//	APP_PRINT_TRACE2("SkyBleMesh_Test_Timeout_cb1 = %ld %ld\n", time, tick);
+//	APP_PRINT_INFO2("SkyBleMesh_Test_Timeout_cb2 = %ld %ld\n", time, tick);
+//	APP_PRINT_WARN2("SkyBleMesh_Test_Timeout_cb3 = %ld %ld\n", time, tick);
+//	APP_PRINT_ERROR2("SkyBleMesh_Test_Timeout_cb4 = %ld %ld\n", time, tick);
 
-//	if(testperid){
-//		if (mIotManager.alive_status == 1){
-//			if(++testcnt >= testperid){
-//				if(reconflag==0){
-//					test_update_attr();
-//				}else{
-//					reconflag = 0;
-//				}
-//				testcnt = 0;
-//			}			
-//		}else{
-//			testcnt = 0;
-//			reconflag = 1;
-//		}
-//	}else{
-//		testcnt = 0;
-//	}
+	if(testperid){
+		if (mIotManager.alive_status == 1){
+			if(++testcnt >= testperid){
+				if(reconflag==0){
+					test_update_attr();
+				}else{
+					reconflag = 0;
+				}
+				testcnt = 0;
+			}			
+		}else{
+			testcnt = 0;
+			reconflag = 1;
+		}
+	}else{
+		testcnt = 0;
+	}
 }
 static void SkyBleMesh_Test_timer(void)
 {	
 	if(skymesh_test_timer == NULL){		
-		skymesh_test_timer = plt_timer_create("test", 10000, true, 0, SkyBleMesh_Test_Timeout_cb);
+		skymesh_test_timer = plt_timer_create("test", 1000, true, 0, SkyBleMesh_Test_Timeout_cb);
 		if (skymesh_test_timer != NULL){
 			plt_timer_start(skymesh_test_timer, 0);
 		}
@@ -1832,8 +1840,6 @@ static void SkyBleMesh_Test_timer(void)
 #if MESH_TEST_PRESSURE == 1
 extern void test_update_attr(void)
 {
-	uint8_t i=0;
-		
 	#if USE_LIGHT_FOR_SKYIOT
 		#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
 		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
@@ -1903,7 +1909,9 @@ static void SkyBleMesh_MainLoop_timer(void)
 
 extern void SkyBleMesh_App_Init(void)
 {
-    uint32_t ret;
+    uint32_t retcfg;
+	bool retgetmac=false;
+	uint8_t macaddr[MAC_ADDRESS_LEN]={0,0,0,0,0,0};
     
     APP_DBG_PRINTF0("SkyBleMesh_App_Init\n");	
 		
@@ -1923,17 +1931,23 @@ extern void SkyBleMesh_App_Init(void)
 		SkyBleMesh_Reset_timer();
 		
 		return; // do factory reset  
-	}
-
-    ret = SkyBleMesh_ReadConfig();
-    if(ret != 0){ 		
-        APP_DBG_PRINTF0("SkyBleMesh_ReadConfig read failed\n");
+	}	
 		
-		uint8_t macaddr[6];		  
- 		if( Hal_Get_Ble_MacAddr(macaddr) ) {       			
-			/*创维设备mesh UUID:     MAC地址(6Byte) + PRODUCT_TYPE(4Byte) + 随机数(6Byte) */
-			memcpy(mIotManager.mac_address, macaddr, 6); 
+    retcfg = SkyBleMesh_ReadConfig();		  
+ 	if( Hal_Get_Ble_MacAddr(macaddr) ){
+		if( memcmp(macaddr, mIotManager.mac_address, MAC_ADDRESS_LEN) == 0){
+			retgetmac = true;
+		} else { 
+			memcpy(mIotManager.mac_address, macaddr, MAC_ADDRESS_LEN); 
 		}
+	}
+    if(retcfg!=0 || retgetmac==false){ 		
+        APP_DBG_PRINTF2("SkyBleMesh_ReadConfig read failed %d %d\n",retcfg, retgetmac);
+		
+		// 本地烧录不会擦除flash。所以通过MACaddr判断擦除flash。并清配网
+		mesh_node_clear(); // 恢复重配网
+		
+		/*创维设备mesh UUID:     MAC地址(6Byte) + PRODUCT_TYPE(4Byte) + 随机数(6Byte) */
 		Regain_Random_UUID(mIotManager.device_uuid, MESH_DEV_UUID_LEN);	
 		memcpy(mIotManager.device_uuid, mIotManager.mac_address, MAC_ADDRESS_LEN);	
 		mIotManager.device_uuid[MAC_ADDRESS_LEN]   = PRODUCT_TYPE & 0xFF;
@@ -1954,8 +1968,6 @@ extern void SkyBleMesh_App_Init(void)
 				
     } else {
         APP_DBG_PRINTF0("SkyBleMesh_ReadConfig read succ\n");
-		
-		memcpy(mIotManager.mac_address, mIotManager.device_uuid, MAC_ADDRESS_LEN);
 		// 按保存的参数，恢复对设备的控制
     }	
 	
@@ -2014,7 +2026,7 @@ extern void SkyBleMesh_App_Init(void)
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx)
 {
 	// qlj 考虑从 datatrans_server_model_init 移植过来
-	datatrans_server_model_init(SkyBleMesh_handle_vendor_rx_cb);
+	Vendor_Model_Init(SkyBleMesh_handle_vendor_rx_cb);
 }
 
 

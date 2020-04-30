@@ -147,7 +147,15 @@ void app_main_task(void *p_param)
         }
 		
 		
-		// SkyIotSaveAttr();
+		SkyIotSaveAttr();  // save attr
+		
+		
+		#if MESH_TEST_PRESSURE == 1
+		if(test_flag==1){
+			test_update_attr();
+			test_flag = 0;
+		}
+		#endif
     }
 }
 
