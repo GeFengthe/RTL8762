@@ -1224,6 +1224,7 @@ static void SkyBleMesh_Reset_Timeout_cb(void *timer)
 			plt_timer_delete(skyblereset_timer, 0);
 			skyblereset_timer = NULL;
 		}
+//		SkyBleMesh_unBind_complete();      // 进入重配网模式
 		HAL_ResetBleDevice(); 
 	} else {
 		if( g_skybleresetcnt&0x01 ){
@@ -1907,7 +1908,7 @@ static void SkyBleMesh_MainLoop_timer(void)
 	}
 }
 
-extern void SkyBleMesh_App_Init(void)
+extern uint8_t SkyBleMesh_App_Init(void)
 {
     uint32_t retcfg;
 	bool retgetmac=false;
@@ -1930,7 +1931,7 @@ extern void SkyBleMesh_App_Init(void)
 		g_skybleresetcnt = 0; 
 		SkyBleMesh_Reset_timer();
 		
-		return; // do factory reset  
+		return 1; // do factory reset  
 	}	
 		
     retcfg = SkyBleMesh_ReadConfig();		  
@@ -2017,6 +2018,8 @@ extern void SkyBleMesh_App_Init(void)
 #endif
 	
 	SkyBleMesh_MainLoop_timer();
+	
+	return 0; 
 }
 
 

@@ -29,7 +29,7 @@ static mesh_msg_send_cause_t datatrans_server_send(const mesh_model_info_p pmode
     mesh_msg.app_key_index = app_key_index;
     // mesh_msg.delay_time = 10;
 	
-//	mesh_msg.ttl = 3;   // 指定下ttl 否则会是30次
+	mesh_msg.ttl = 3;   // 指定下ttl 否则会是30次
 //	data_uart_debug("datatrans_server_send %d \r\n", mesh_msg.ttl);
 	
     return access_send(&mesh_msg);

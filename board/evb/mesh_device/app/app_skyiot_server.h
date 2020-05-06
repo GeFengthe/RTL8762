@@ -101,7 +101,7 @@ extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate);
 
 extern void SkyBleMesh_unBind_complete(void);
 extern void SkyBleMesh_MainLoop_timer(void );
-extern void SkyBleMesh_App_Init(void);
+extern uint8_t SkyBleMesh_App_Init(void);
 
 
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx);
