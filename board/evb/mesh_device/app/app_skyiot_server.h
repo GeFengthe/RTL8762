@@ -53,12 +53,12 @@
 
 
 /* APP CONFIG DATA */
-// max size, 32bit alignment
-#define FTLMAP_APPCFGDATA_OFFSET   2000
+// max size, 32bit alignment . start from 0x0c00
+#define FTLMAP_APPCFGDATA_OFFSET   3072
 #define FTLMAP_APPCFGDATA_SIZE     100  
 
 /* quick onoff */
-#define FTLMAP_QUICK_ONOFF_OFFSET   2200
+#define FTLMAP_QUICK_ONOFF_OFFSET   3200
 #define FTLMAP_QUICK_ONOFF_SIZE     8  
 
 typedef enum

@@ -149,8 +149,8 @@ void mesh_stack_init(void)
     mesh_node.pb_adv_retrans_count = 6;
     mesh_node.pb_adv_retrans_steps = 1;
 	
-    mesh_node.net_trans_count = 5;
-    mesh_node.relay_retrans_count = 5;
+    mesh_node.net_trans_count = 6;
+    mesh_node.relay_retrans_count = 4;
     mesh_node.trans_retrans_count = 7;
 
     /** create elements and register models */
