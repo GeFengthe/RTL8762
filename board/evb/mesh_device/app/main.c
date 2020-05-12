@@ -68,13 +68,13 @@ void mesh_stack_init(void)
     /** set ble stack log level, disable nonsignificant log */
     log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_TRACE, 0);
     log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_INFO, 0);
-    log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_WARN, 0);
-    log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_ERROR, 0);
+//    log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_WARN, 0);
+//    log_module_bitmap_trace_set(0xFFFFFFFFFFFFFFFF, LEVEL_ERROR, 0);
     log_module_trace_set(MODULE_LOWERSTACK, LEVEL_ERROR, 0);
     log_module_trace_set(MODULE_SNOOP, LEVEL_ERROR, 0);
 	
 	
-    log_module_trace_set(MODULE_APP, LEVEL_WARN, 1);
+//    log_module_trace_set(MODULE_APP, LEVEL_WARN, 1);
 	
     /** set mesh stack log level, default all on, disable the log of level LEVEL_TRACE */
     uint32_t module_bitmap[MESH_LOG_LEVEL_SIZE] = {0};

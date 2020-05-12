@@ -114,6 +114,7 @@ void uart_init(void)
  */
 void app_main_task(void *p_param)
 {
+	uint16_t tmpi=0,tmpcnt=0;
     uint8_t event;
 
     os_msg_queue_create(&io_queue_handle, MAX_NUMBER_OF_IO_MESSAGE, sizeof(T_IO_MSG));
@@ -148,7 +149,10 @@ void app_main_task(void *p_param)
 		
 		
 		SkyIotSaveAttr();  // save attr
-		
+		if(++tmpi >= 10000){
+			data_uart_debug("app_main_task %d \r\n", tmpcnt++);
+			tmpi = 0;
+		}
 		
 		#if MESH_TEST_PRESSURE == 1
 		if(test_flag==1){

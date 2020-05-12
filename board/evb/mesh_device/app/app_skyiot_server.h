@@ -53,12 +53,13 @@
 
 
 /* APP CONFIG DATA */
-// max size, 32bit alignment . start from 0x0c00
-#define FTLMAP_APPCFGDATA_OFFSET   3072
+// max size, 32bit alignment  .
+// ftl_save 考虑到ble保存的偏移（0xC00）. app层0~2000被mesh占用。故自定义数据从2000往后使用
+#define FTLMAP_APPCFGDATA_OFFSET   2000
 #define FTLMAP_APPCFGDATA_SIZE     100  
 
 /* quick onoff */
-#define FTLMAP_QUICK_ONOFF_OFFSET   3200
+#define FTLMAP_QUICK_ONOFF_OFFSET   2200
 #define FTLMAP_QUICK_ONOFF_SIZE     8  
 
 typedef enum
@@ -100,7 +101,6 @@ extern void SkyBleMesh_UnPro_Adv_timeout_cb(void);
 extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate);
 
 extern void SkyBleMesh_unBind_complete(void);
-extern void SkyBleMesh_MainLoop_timer(void );
 extern uint8_t SkyBleMesh_App_Init(void);
 
 

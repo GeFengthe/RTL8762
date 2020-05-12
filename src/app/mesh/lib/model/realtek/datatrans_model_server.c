@@ -80,6 +80,7 @@ static bool datatrans_server_receive(mesh_msg_p pmesh_msg)
 	
 	uint16_t tmp_cpyid = (BLEMESH_VENDOR_COMPANY_ID<<8) | (BLEMESH_VENDOR_COMPANY_ID>>8);	
 		
+	data_uart_debug("datatrans_server_receive cpyid %X \n", tmp_cpyid);
 	if( (pmesh_msg->access_opcode&0xFFFF) == tmp_cpyid ){
 		
         datatrans_write_t *pmsg = (datatrans_write_t *)pbuffer;

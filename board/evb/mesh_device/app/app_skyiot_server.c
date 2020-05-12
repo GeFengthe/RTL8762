@@ -552,6 +552,10 @@ static void BleMesh_Packet_Clear(void)
 }
 static void BleMesh_Packet_Init(void)
 {	
+	if(MeshTxAttrStruct){
+		return;
+	}
+
 	MeshTxAttrStruct = os_mem_zalloc(RAM_TYPE_DATA_ON, sizeof(MESH_TX_ATTR_STRUCT)*MAX_TX_BUF_DEEP);
 	if(MeshTxAttrStruct==NULL){
 		return;
@@ -629,7 +633,7 @@ static void BleMesh_Vendor_Send_Packet(void)
 	}
 	
 
-	if(++delaycnt < 16){
+	if(++delaycnt < 4){
 		return;
 	}else{
 		delaycnt=0;
@@ -1268,6 +1272,7 @@ static void SkyIotSaveAttr_Timeout_cb(void *timer)
 		save_oldsat = mIotManager.mLightManager.sat;
 
 		g_needsaveattr = true;
+		data_uart_debug("SkyIotSaveAttr %d %d %d %d \r\n", save_oldbri,save_oldctp,save_oldhue,save_oldsat);
 	}
 	
 	#endif
