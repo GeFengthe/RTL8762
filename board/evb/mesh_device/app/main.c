@@ -75,6 +75,7 @@ void mesh_stack_init(void)
 	
 	
 //    log_module_trace_set(MODULE_APP, LEVEL_WARN, 1);
+    log_module_trace_set(MODULE_DFU, LEVEL_TRACE, 1);
 	
     /** set mesh stack log level, default all on, disable the log of level LEVEL_TRACE */
     uint32_t module_bitmap[MESH_LOG_LEVEL_SIZE] = {0};
@@ -231,7 +232,7 @@ void app_le_profile_init(void)
     /* Add Server Module */
     ota_server_add(NULL);
     dfu_server_add(app_profile_callback);
-    datatrans_server_add(app_profile_callback);
+    datatrans_server_add(app_profile_callback);  // qlj ≥¢ ‘∏…µÙ
 
     /* Register Server Callback */
     server_register_app_cb(app_profile_callback);

@@ -207,7 +207,6 @@ static uint32_t g_quick_onoff_Cnt = 0;
 static bool IsSkyAppInited = false;
 static uint8_t g_skybleresetcnt=0;     // 重配网延时服务，延时次数，即重配网闪灯次数
 static uint8_t skybleprovsucesscnt=0;     
-static bool g_needsaveattr = false;  // 定时保存标志，给主进程写
 
 #if USE_LIGHT_FOR_SKYIOT
 // 需要定时保存的属性
@@ -226,7 +225,6 @@ static bool g_needsaveattr = false;  // 定时保存标志，给主进程写
 
 
 static unsigned int SkyBleMesh_GetProductType(void);
-static int SkyBleMesh_WriteConfig(void);
 static int SkyBleMesh_ReadConfig(void);
 
 /*
@@ -622,21 +620,22 @@ static void BleMesh_Vendor_Make_Packet(uint8_t *buf, uint8_t len, bool needack )
 	}
 }
 // pull
+#define SEND_MESH_PACKET_PERIOD  (800)   // ms
 static void BleMesh_Vendor_Send_Packet(void)
 {
-	static uint16_t delaycnt=0;
 	uint8_t  i=0;
-	uint32_t sub_timeout_ms=0, tick=HAL_GetTickCount();
+	uint32_t sub_timeout_ms=0, tick=HAL_GetTickCount();	
+	static uint32_t oldtick=0;
 	
 	if(MeshTxAttrStruct==NULL){
-			return;
+		return;
 	}
 	
 
-	if(++delaycnt < 4){
+	if(HAL_CalculateTickDiff(oldtick, tick) < SEND_MESH_PACKET_PERIOD){
 		return;
 	}else{
-		delaycnt=0;
+		oldtick = tick;
 	}
 	
 	for(i=0; i<MAX_TX_BUF_DEEP; i++){
@@ -789,7 +788,7 @@ static void SkyIotGetProductModelAckPacket(void)
 	
 	BleMesh_Vendor_Make_Packet(payload, 4+BT_PRODUCT_MODEL_LEN, false);
 }
-
+#if 0
 //opcode(1B) + company id(2B) + 0x19(1B) + seq(1B)
 static void SkyIotUpdPropertyAckPacekt(uint8_t seqence_num)
 {
@@ -804,6 +803,7 @@ static void SkyIotUpdPropertyAckPacekt(uint8_t seqence_num)
 	
 	BleMesh_Vendor_Make_Packet(payload, 5, false);
 }
+#endif
 
 static void SkyIotGetProductMacAckPacket(void)
 {
@@ -1070,8 +1070,8 @@ static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 			HAL_Lighting_ON();
 			#endif
 
-			// 闪灯结束后延时10s，触发配网成功事件。  
-			// qlj 如果需要，另起单次定时器延时 
+			// 闪灯结束后延时10s，触发配网成功事件。 
+			plt_timer_change_period(skybleprosuccess_timer, SKYBLEPROVSUCCESS_TIMEOUT, 10000);
 			
 		}else{		
 			event.event_id = EVENT_TYPE_PROVISIONED;
@@ -1166,13 +1166,21 @@ extern void SkyBleMesh_unBind_complete(void)
 /*
 ** Check Quick onoff
 */
-static void SkyBleMesh_PowerOn_Timeout_cb(void *timer)
+extern void SkyBleMesh_PowerOn_Save(void)
 {
     if(g_quick_onoff_Cnt != 0){
 		
 		g_quick_onoff_Cnt = 0;
 		Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
     }
+
+}
+extern void *skyonoff_sem_handle;
+static void SkyBleMesh_PowerOn_Timeout_cb(void *timer)
+{
+    if(skyonoff_sem_handle){
+		os_sem_give(skyonoff_sem_handle);
+	}
 	
 	if(quick_onoff_timer){
 		quick_onoff_timer = NULL;
@@ -1228,7 +1236,6 @@ static void SkyBleMesh_Reset_Timeout_cb(void *timer)
 			plt_timer_delete(skyblereset_timer, 0);
 			skyblereset_timer = NULL;
 		}
-//		SkyBleMesh_unBind_complete();      // 进入重配网模式
 		HAL_ResetBleDevice(); 
 	} else {
 		if( g_skybleresetcnt&0x01 ){
@@ -1252,6 +1259,7 @@ static void SkyBleMesh_Reset_timer(void)
 	}
 }
 
+extern void *skysave_sem_handle;
 static void SkyIotSaveAttr_Timeout_cb(void *timer)
 {
 #if USE_LIGHT_FOR_SKYIOT
@@ -1260,7 +1268,9 @@ static void SkyIotSaveAttr_Timeout_cb(void *timer)
 		save_oldbri = mIotManager.mLightManager.bri;
 		save_oldctp = mIotManager.mLightManager.ctp;
 
-		g_needsaveattr = true;
+		if(skysave_sem_handle){
+			os_sem_give(skysave_sem_handle);
+		}
 	}
 	
 	#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
@@ -1271,7 +1281,9 @@ static void SkyIotSaveAttr_Timeout_cb(void *timer)
 		save_oldhue = mIotManager.mLightManager.hue;
 		save_oldsat = mIotManager.mLightManager.sat;
 
-		g_needsaveattr = true;
+		if(skysave_sem_handle){
+			os_sem_give(skysave_sem_handle);
+		}
 		data_uart_debug("SkyIotSaveAttr %d %d %d %d \r\n", save_oldbri,save_oldctp,save_oldhue,save_oldsat);
 	}
 	
@@ -1288,14 +1300,6 @@ static void SkyIotSaveAttr_timer(void)
 	}
 }
 
-extern void SkyIotSaveAttr(void)
-{
-	if(g_needsaveattr ){
-		SkyBleMesh_WriteConfig();
-		
-		g_needsaveattr = false;
-	}
-}
 
 #endif
 
@@ -1305,7 +1309,7 @@ extern void SkyIotSaveAttr(void)
 /*
 ** resotre/store param config
 */
-static int SkyBleMesh_WriteConfig(void)
+extern int SkyBleMesh_WriteConfig(void)
 {	
 	uint8_t offset=0;
 	bool flashret=false;
@@ -1870,8 +1874,9 @@ extern void test_update_attr(void)
 }
 #endif
 
-extern void SkyBleMesh_MainLoop_Timeout_cb(void *time)
+extern void SkyBleMesh_MainLoop(void)
 {	
+
 					
 	if(IsSkyAppInited==false){
 		return;
@@ -1903,7 +1908,15 @@ extern void SkyBleMesh_MainLoop_Timeout_cb(void *time)
 	
 }
 
-static void SkyBleMesh_MainLoop_timer(void)
+extern void *skymain_sem_handle;   //!< skyiot main sem handle
+static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
+{	
+	if(skymain_sem_handle){
+		os_sem_give(skymain_sem_handle);
+	}
+}
+
+extern void SkyBleMesh_MainLoop_timer(void)
 {	
 	if(skyblemainloop_timer == NULL){		
 		skyblemainloop_timer = plt_timer_create("main", 50, true, 0, SkyBleMesh_MainLoop_Timeout_cb);
@@ -2016,13 +2029,13 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	save_oldbri = mIotManager.mLightManager.bri;
 	save_oldctp = mIotManager.mLightManager.ctp;
 	#endif
+	
 	SkyIotSaveAttr_timer();
+	// SkyBleMesh_MainLoop_timer();
 	
 #ifdef MY_TEST_TIMER
 	SkyBleMesh_Test_timer();
 #endif
-	
-	SkyBleMesh_MainLoop_timer();
 	
 	return 0; 
 }

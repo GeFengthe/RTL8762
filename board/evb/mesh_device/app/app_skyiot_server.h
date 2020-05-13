@@ -87,20 +87,19 @@ typedef enum
 extern MESH_PROVISION_STATE_e mesh_provison_state;
 
 extern bool Hal_Get_Ble_MacAddr(uint8_t* mac);
-
-
 extern void SkyBleMesh_Get_DeviceName(char *name, uint8_t *len);
-
 extern void SkyBleMesh_Get_UUID(uint8_t *uuid, uint8_t len);
 extern void SkyBleMesh_Regain_UUID(uint8_t *uuid, uint8_t len);
-extern void SkyIotSaveAttr(void);
 
 
 extern void SkyBleMesh_UnPro_Adv_timeout_cb(void);
-
 extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate);
-
 extern void SkyBleMesh_unBind_complete(void);
+
+extern void SkyBleMesh_PowerOn_Save(void);
+extern int SkyBleMesh_WriteConfig(void);
+extern void SkyBleMesh_MainLoop_timer(void);
+extern void SkyBleMesh_MainLoop(void);
 extern uint8_t SkyBleMesh_App_Init(void);
 
 

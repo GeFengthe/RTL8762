@@ -11,7 +11,7 @@
 
 
 #define APP_DBG_PRINTF(fmt, ...)   
-#define GREEN_BOARD 0
+#define GREEN_BOARD 1
 
 #if 1
 

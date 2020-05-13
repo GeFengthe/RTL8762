@@ -55,6 +55,12 @@ void *app_task_handle;   //!< APP Task handle
 void *evt_queue_handle;  //!< Event queue handle
 void *io_queue_handle;   //!< IO queue handle
 
+
+void *skyonoff_sem_handle=NULL;   //!< skyiot onoff cnt sem handle
+void *skysave_sem_handle=NULL;   //!< skyiot save attr sem handle
+void *skymain_sem_handle=NULL;    //!< skyiot main sem handle
+
+
 /*============================================================================*
  *                              Functions
  *============================================================================*/
@@ -125,6 +131,11 @@ void app_main_task(void *p_param)
     uart_init();
     user_cmd_init("MeshDevice");
 
+	os_sem_create(&skyonoff_sem_handle, 0, 1);
+	os_sem_create(&skysave_sem_handle, 0, 1);
+	os_sem_create(&skymain_sem_handle, 0, 10);
+
+	SkyBleMesh_MainLoop_timer();
     while (true)
     {
         if (os_msg_recv(evt_queue_handle, &event, 0xFFFFFFFF) == true)
@@ -146,9 +157,20 @@ void app_main_task(void *p_param)
                 gap_handle_msg(event);
             }
         }
+
+		if (os_sem_take(skymain_sem_handle, 0) == true){			
+			SkyBleMesh_MainLoop();
+		}
 		
+		if (os_sem_take(skyonoff_sem_handle, 0) == true){			
+			SkyBleMesh_PowerOn_Save();
+		}
 		
-		SkyIotSaveAttr();  // save attr
+		if (os_sem_take(skysave_sem_handle, 0) == true){			
+			SkyBleMesh_WriteConfig();
+		}
+
+		
 		if(++tmpi >= 10000){
 			data_uart_debug("app_main_task %d \r\n", tmpcnt++);
 			tmpi = 0;
