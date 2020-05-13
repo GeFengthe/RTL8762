@@ -1213,6 +1213,7 @@ static bool SkyBleMesh_Check_Quick_onoff(void)
 			APP_DBG_PRINTF1("+++quick_onoff_cnt %d,do factory reset\n", g_quick_onoff_Cnt);
 			
 			// when reset clear cnt
+			g_quick_onoff_Cnt = 0;
 			Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
 
 			ifreset = true;
@@ -1314,7 +1315,12 @@ extern int SkyBleMesh_WriteConfig(void)
 	uint8_t offset=0;
 	bool flashret=false;
 	uint8_t *buffer=NULL; // skyconfig_buffer;
-	iot_md5_context context;
+	iot_md5_context *context=NULL;
+
+	context = os_mem_zalloc(RAM_TYPE_DATA_ON, sizeof(iot_md5_context));
+	if(context ==NULL){
+		return -1;
+	}
 
 	buffer = os_mem_zalloc(RAM_TYPE_DATA_ON, FLASH_USERDATA_SAVE_LEN);
 	if(buffer ==NULL){
@@ -1322,49 +1328,50 @@ extern int SkyBleMesh_WriteConfig(void)
 	}
 	memset(buffer , 0 , FLASH_USERDATA_SAVE_LEN);
 		
-	utils_md5_init(&context);									   /* init context for 1st pass */
-	utils_md5_starts(&context); 								   /* setup context for 1st pass */
+	utils_md5_init(context);									   /* init context for 1st pass */
+	utils_md5_starts(context); 								   /* setup context for 1st pass */
 
 	memcpy(buffer + offset, mIotManager.mac_address, MAC_ADDRESS_LEN);
 	offset += MAC_ADDRESS_LEN;
-	utils_md5_update(&context, (unsigned char*)mIotManager.mac_address, MAC_ADDRESS_LEN);
+	utils_md5_update(context, (unsigned char*)mIotManager.mac_address, MAC_ADDRESS_LEN);
 	
 	memcpy(buffer + offset, mIotManager.device_uuid, BT_MESH_UUID_SIZE);
 	offset += BT_MESH_UUID_SIZE;
-	utils_md5_update(&context, (unsigned char*)mIotManager.device_uuid, BT_MESH_UUID_SIZE);
+	utils_md5_update(context, (unsigned char*)mIotManager.device_uuid, BT_MESH_UUID_SIZE);
 
 #if USE_LIGHT_FOR_SKYIOT
 	#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
 	memcpy(buffer + offset, &mIotManager.mLightManager.bri, 4);
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.bri, 4);
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.bri, 4);
 
 	memcpy(buffer + offset, &mIotManager.mLightManager.ctp, 4);
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);
 	
 	#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
 	memcpy(buffer + offset, &mIotManager.mLightManager.bri, 4);
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.bri, 4);
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.bri, 4);
 
 	memcpy(buffer + offset, &mIotManager.mLightManager.ctp, 4);
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);
 
 	memcpy(buffer + offset, &mIotManager.mLightManager.hue, 4);
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.hue, 4);
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.hue, 4);
 	
 	memcpy(buffer + offset, &mIotManager.mLightManager.sat, 4);
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.sat, 4);
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.sat, 4);
 	
 	#endif
 
 #endif
 	
-	utils_md5_finish(&context, mIotManager.critical_md5);		
+	utils_md5_finish(context, mIotManager.critical_md5);	
+	os_mem_free(context);
 	memcpy(buffer + offset, mIotManager.critical_md5, MD5_LEN);
 
 	flashret = Hal_FlashWrite(FLASH_PARAM_TYPE_APP_CFGDATA, FLASH_USERDATA_SAVE_LEN, buffer );
@@ -1384,8 +1391,12 @@ static int SkyBleMesh_ReadConfig(void)
 	bool flashret=false;
 	unsigned char md5[MD5_LEN];
 	uint8_t *buffer=NULL; // skyconfig_buffer;
-	iot_md5_context context;
+	iot_md5_context *context=NULL;
 
+	context = os_mem_zalloc(RAM_TYPE_DATA_ON, sizeof(iot_md5_context));
+	if(context ==NULL){
+		return -1;
+	}
 
 	buffer = os_mem_zalloc(RAM_TYPE_DATA_ON, FLASH_USERDATA_SAVE_LEN);
 	if(buffer ==NULL){
@@ -1393,8 +1404,8 @@ static int SkyBleMesh_ReadConfig(void)
 	}
 	memset(buffer , 0 , FLASH_USERDATA_SAVE_LEN);
 	
-	utils_md5_init(&context);									   // init context for 1st pass 
-	utils_md5_starts(&context); 								   // setup context for 1st pass 
+	utils_md5_init(context);									   // init context for 1st pass 
+	utils_md5_starts(context); 								   // setup context for 1st pass 
 
 	flashret = Hal_FlashRead(FLASH_PARAM_TYPE_APP_CFGDATA, FLASH_USERDATA_SAVE_LEN, buffer );
 	if (flashret == false) {
@@ -1406,11 +1417,11 @@ static int SkyBleMesh_ReadConfig(void)
 	//
 	memcpy(mIotManager.mac_address, buffer + offset, MAC_ADDRESS_LEN);	
 	offset += MAC_ADDRESS_LEN;
-	utils_md5_update(&context, (unsigned char*)mIotManager.mac_address, MAC_ADDRESS_LEN);
+	utils_md5_update(context, (unsigned char*)mIotManager.mac_address, MAC_ADDRESS_LEN);
 	//
 	memcpy(mIotManager.device_uuid, buffer + offset, BT_MESH_UUID_SIZE);	
 	offset += BT_MESH_UUID_SIZE;
-	utils_md5_update(&context, (unsigned char*)mIotManager.device_uuid, BT_MESH_UUID_SIZE);
+	utils_md5_update(context, (unsigned char*)mIotManager.device_uuid, BT_MESH_UUID_SIZE);
 
 	// ...	
 		
@@ -1418,34 +1429,35 @@ static int SkyBleMesh_ReadConfig(void)
 	#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
 	memcpy(&mIotManager.mLightManager.bri, buffer + offset, 4); 
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.bri, 4);	
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.bri, 4);	
 
 	memcpy(&mIotManager.mLightManager.ctp, buffer + offset, 4); 
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);	
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);	
 		
 	#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
 	memcpy(&mIotManager.mLightManager.bri, buffer + offset, 4); 
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.bri, 4);	
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.bri, 4);	
 
 	memcpy(&mIotManager.mLightManager.ctp, buffer + offset, 4); 
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);	
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);	
 	
 	memcpy(&mIotManager.mLightManager.hue, buffer + offset, 4); 
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.hue, 4);	
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.hue, 4);	
 
 	memcpy(&mIotManager.mLightManager.sat, buffer + offset, 4); 
 	offset += 4;
-	utils_md5_update(&context, (unsigned char*)&mIotManager.mLightManager.sat, 4);	
+	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.sat, 4);	
 		
 	#endif
 	
 #endif
 
-	utils_md5_finish(&context, md5);  
+	utils_md5_finish(context, md5);  
+	os_mem_free(context);
 	//copy critical md5 to nvram
 	memcpy(mIotManager.critical_md5, buffer + offset, MD5_LEN);			
 	if (memcmp(mIotManager.critical_md5, md5, MD5_LEN) != 0) { 
@@ -1944,7 +1956,6 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	if( SkyBleMesh_Check_Quick_onoff() ){   
 				
 		SkyBleMesh_unBind_complete();      // 进入重配网模式
- 		SkyBleMesh_PowerOn_Timeout_cb(0);  // 清快速开关计次
 
 		g_skybleresetcnt = 0; 
 		SkyBleMesh_Reset_timer();
