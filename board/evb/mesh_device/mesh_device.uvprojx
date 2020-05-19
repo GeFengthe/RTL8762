@@ -639,6 +639,11 @@
               <FileType>1</FileType>
               <FilePath>.\app\soft_wdt.c</FilePath>
             </File>
+            <File>
+              <FileName>app_hwtmr.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\app_hwtmr.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
