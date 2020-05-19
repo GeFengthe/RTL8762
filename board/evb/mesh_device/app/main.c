@@ -53,6 +53,8 @@
 #include "rtl876x_io_dlps.h"
 #include "io_management.h"
 
+#include "app_hwtmr.h"
+#include "soft_wdt.h"
 #include "app_skyiot_server.h"
 
 mesh_model_info_t health_server_model;
@@ -232,7 +234,7 @@ void app_le_profile_init(void)
     /* Add Server Module */
     ota_server_add(NULL);
     dfu_server_add(app_profile_callback);
-    datatrans_server_add(app_profile_callback);  // qlj ≥¢ ‘∏…µÙ
+    // datatrans_server_add(app_profile_callback);  // qlj ≥¢ ‘∏…µÙ
 
     /* Register Server Callback */
     server_register_app_cb(app_profile_callback);
@@ -268,7 +270,10 @@ void board_init(void)
  */
 void driver_init(void)
 {
-
+	Hal_Timer_init();
+	#if USE_SOFT_WATCHDOG
+	OS_WDTInit();
+	#endif
 }
 
 #if ENABLE_DLPS

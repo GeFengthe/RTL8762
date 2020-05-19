@@ -6,7 +6,7 @@
 #include "datatrans_model.h"
 #include "utils_md5.h"
 #include "platform_utils.h"
-// #include "soft_wdt.h"
+#include "soft_wdt.h"
 
 
 // #define APP_DBG_PRINTF(fmt, ...)   data_uart_debug(fmt, ##__VA_ARGS__)
@@ -1922,7 +1922,11 @@ extern void SkyBleMesh_MainLoop(void)
 
 extern void *skymain_sem_handle;   //!< skyiot main sem handle
 static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
-{	
+{		
+	#if USE_SOFT_WATCHDOG
+	SoftWdtFed(SKYMESH_THREAD_SWDT_ID); 
+	#endif
+	
 	if(skymain_sem_handle){
 		os_sem_give(skymain_sem_handle);
 	}
@@ -1934,6 +1938,10 @@ extern void SkyBleMesh_MainLoop_timer(void)
 		skyblemainloop_timer = plt_timer_create("main", 50, true, 0, SkyBleMesh_MainLoop_Timeout_cb);
 		if (skyblemainloop_timer != NULL){
 			plt_timer_start(skyblemainloop_timer, 0);
+						
+			#if USE_SOFT_WATCHDOG
+			SoftWdtInit(SKYMESH_THREAD_SWDT_ID, 1000);    // config softwdt as 1000ms 
+			#endif
 		}
 	}
 }

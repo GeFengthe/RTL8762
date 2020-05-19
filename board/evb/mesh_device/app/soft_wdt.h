@@ -12,9 +12,8 @@
  在这里添加的每个ID都必须初始化并使用.如若不用，在此删处ID.
  */
 typedef enum{
-	RWAPP_THREAD_SWDT_ID = 0,     // rw_app_enter -->while(1)
+	APPTASK_THREAD_SWDT_ID = 0,     // apptask -->while(1)
 	SKYMESH_THREAD_SWDT_ID,       // SkyBleMesh_MainLoop_timer
-	HALSWITCH_THREAD_SWDT_ID,     // HAL_Switch_HandleTimer
 	MAX_SWDT_ID		//-决定了最大软件看门狗数量
 }SWDT_ID;
 

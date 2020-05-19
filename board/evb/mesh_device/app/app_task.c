@@ -37,6 +37,7 @@
 #include "device_cmd.h"
 
 #include "app_skyiot_server.h"
+#include "soft_wdt.h"
 
 /*============================================================================*
  *                              Macros
@@ -123,6 +124,10 @@ void app_main_task(void *p_param)
 	uint16_t tmpi=0,tmpcnt=0;
     uint8_t event;
 
+	#if USE_SOFT_WATCHDOG
+	SoftWdtInit(APPTASK_THREAD_SWDT_ID, 3000);    // config softwdt as 3000ms 
+	#endif
+	
     os_msg_queue_create(&io_queue_handle, MAX_NUMBER_OF_IO_MESSAGE, sizeof(T_IO_MSG));
     os_msg_queue_create(&evt_queue_handle, MAX_NUMBER_OF_EVENT_MESSAGE, sizeof(uint8_t));
     gap_start_bt_stack(evt_queue_handle, io_queue_handle, MAX_NUMBER_OF_GAP_MESSAGE);
@@ -138,6 +143,10 @@ void app_main_task(void *p_param)
 	SkyBleMesh_MainLoop_timer();
     while (true)
     {
+		#if USE_SOFT_WATCHDOG
+		SoftWdtFed(APPTASK_THREAD_SWDT_ID); 
+		#endif
+		
         if (os_msg_recv(evt_queue_handle, &event, 0xFFFFFFFF) == true)
         {
             if (event == EVENT_IO_TO_APP)

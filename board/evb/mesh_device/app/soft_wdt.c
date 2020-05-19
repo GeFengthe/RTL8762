@@ -2,10 +2,11 @@
 #include <string.h>
 #include "rtl876x_wdg.h"
 #include "soft_wdt.h"
+#include "data_uart.h"
 
-#define SOFTWDT_PRINTF(fmt, ...)
+#define SOFTWDT_PRINTF  data_uart_debug
 
-#define SOFTWDT_FEED_INTERVAL   (2)       // ms
+#define SOFTWDT_FEED_INTERVAL   (50)       // ms
 #define SOFTWDT_START_DELAY     (20000 / SOFTWDT_FEED_INTERVAL)   // 20000ms
 
 
