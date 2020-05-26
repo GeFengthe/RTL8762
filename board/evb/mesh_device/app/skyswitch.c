@@ -17,15 +17,15 @@
 #define LED_BLINK  LEDBLINK  
 
 
-#define SWITCH1_GPIO             P0_1
+#define SWITCH1_GPIO             P2_4
 #define SWITCH1_GPIO_PIN         GPIO_GetPin(SWITCH1_GPIO)
-#define SWITCH2_GPIO             P0_2
+#define SWITCH2_GPIO             P1_2
 #define SWITCH2_GPIO_PIN         GPIO_GetPin(SWITCH2_GPIO)
-#define SWITCH1_LED_GPIO         P0_3
+#define SWITCH1_LED_GPIO         P4_3
 #define SWITCH1_LED_GPIO_PIN     GPIO_GetPin(SWITCH1_LED_GPIO)
-#define SWITCH2_LED_GPIO         P0_4
+#define SWITCH2_LED_GPIO         P4_2
 #define SWITCH2_LED_GPIO_PIN     GPIO_GetPin(SWITCH2_LED_GPIO)
-#define PROVISION_LED_GPIO       P0_5
+#define PROVISION_LED_GPIO       P4_1
 #define PROVISION_LED_GPIO_PIN   GPIO_GetPin(PROVISION_LED_GPIO)
 
 #define MAXPRESSTIME_5S   (250)  // 20ms定时器调用
@@ -161,11 +161,11 @@ static uint8_t ReadKeyStatu(void)
 {
 	uint8_t keyval=0 ;
 	
-	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC1_ENUM]))==0){
+	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC1_ENUM]))==1){
 		keyval |= (1<<0);
 	} 
 	
-	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC2_ENUM]))==0){
+	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC2_ENUM]))==1){
 		keyval |= (1<<1);
 	} 
 	

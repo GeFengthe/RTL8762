@@ -1124,6 +1124,7 @@ extern void SkyBleMesh_PowerOn_Save(void)
     }
 
 }
+#if 0
 extern void *skyonoff_sem_handle;
 static void SkyBleMesh_PowerOn_Timeout_cb(void *timer)
 {
@@ -1145,7 +1146,6 @@ static void SkyBleMesh_Check_Quick_onoff_timer(void)
 		}
 	}
 }
-#if 0
 static bool SkyBleMesh_Check_Quick_onoff(void)
 {
 	bool ifreset=false, flashret=false;
@@ -1593,13 +1593,13 @@ static void Main_Upload_State(void)
 }
 
 
-
-// #define MY_TEST_TIMER
+#define MY_TEST_TIMER
 #ifdef MY_TEST_TIMER
 static plt_timer_t skymesh_test_timer = NULL;
 static void SkyBleMesh_Test_Timeout_cb(void *timer)
 {	
 	static uint8_t testcnt=0,reconflag=0;
+	HAL_Switch_HandleTimer(NULL);
 //	 APP_DBG_PRINTF2("%s prostate %d \n",__func__, SkyBleMesh_IsProvision_Sate() );
 
 //uint32_t time = os_sys_time_get();
@@ -1609,28 +1609,28 @@ static void SkyBleMesh_Test_Timeout_cb(void *timer)
 //	APP_PRINT_WARN2("SkyBleMesh_Test_Timeout_cb3 = %ld %ld\n", time, tick);
 //	APP_PRINT_ERROR2("SkyBleMesh_Test_Timeout_cb4 = %ld %ld\n", time, tick);
 
-	if(testperid){
-		if (mIotManager.alive_status == 1){
-			if(++testcnt >= testperid){
-				if(reconflag==0){
-					test_update_attr();
-				}else{
-					reconflag = 0;
-				}
-				testcnt = 0;
-			}			
-		}else{
-			testcnt = 0;
-			reconflag = 1;
-		}
-	}else{
-		testcnt = 0;
-	}
+//	if(testperid){
+//		if (mIotManager.alive_status == 1){
+//			if(++testcnt >= testperid){
+//				if(reconflag==0){
+//					test_update_attr();
+//				}else{
+//					reconflag = 0;
+//				}
+//				testcnt = 0;
+//			}			
+//		}else{
+//			testcnt = 0;
+//			reconflag = 1;
+//		}
+//	}else{
+//		testcnt = 0;
+//	}
 }
 static void SkyBleMesh_Test_timer(void)
 {	
 	if(skymesh_test_timer == NULL){		
-		skymesh_test_timer = plt_timer_create("test", 1000, true, 0, SkyBleMesh_Test_Timeout_cb);
+		skymesh_test_timer = plt_timer_create("test", 20, true, 0, SkyBleMesh_Test_Timeout_cb);
 		if (skymesh_test_timer != NULL){
 			plt_timer_start(skymesh_test_timer, 0);
 		}
