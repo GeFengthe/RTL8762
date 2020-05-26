@@ -650,9 +650,9 @@
           <GroupName>control</GroupName>
           <Files>
             <File>
-              <FileName>skylight.c</FileName>
+              <FileName>skyswitch.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\app\skylight.c</FilePath>
+              <FilePath>.\app\skyswitch.c</FilePath>
             </File>
           </Files>
         </Group>

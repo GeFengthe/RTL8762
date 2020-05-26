@@ -58,7 +58,6 @@ void *io_queue_handle;   //!< IO queue handle
 
 
 void *skyonoff_sem_handle=NULL;   //!< skyiot onoff cnt sem handle
-void *skysave_sem_handle=NULL;   //!< skyiot save attr sem handle
 void *skymain_sem_handle=NULL;    //!< skyiot main sem handle
 
 
@@ -138,7 +137,6 @@ void app_main_task(void *p_param)
     user_cmd_init("MeshDevice");
 
 	os_sem_create(&skyonoff_sem_handle, 0, 1);
-	os_sem_create(&skysave_sem_handle, 0, 1);
 	os_sem_create(&skymain_sem_handle, 0, 10);
 
 	SkyBleMesh_MainLoop_timer();
@@ -176,9 +174,6 @@ void app_main_task(void *p_param)
 			SkyBleMesh_PowerOn_Save();
 		}
 		
-		if (os_sem_take(skysave_sem_handle, 0) == true){			
-			SkyBleMesh_WriteConfig();
-		}
 
 		
 		if(++tmpi >= 10000){
@@ -200,12 +195,11 @@ void test_dlps_function(bool enter)
 	DBG_DIRECT("test_dlps_function %d \n",enter);	
 	
 	if(enter){	
-		Delet_OsTmrs_BeforeDLPS();
 
-uint16_t scan_interval = 0x320; //!< 500ms
-uint16_t scan_window = 0x30; //!< 30ms
-gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+		uint16_t scan_interval = 0x320; //!< 500ms
+		uint16_t scan_window = 0x30; //!< 30ms
+		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
 		
 //		beacon_stop();  // 
 //		gap_sched_scan(false);   // gap²ãÍ£Ö¹É¨Ãè

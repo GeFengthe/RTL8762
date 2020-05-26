@@ -38,12 +38,11 @@ uint8_t  ackattrsval=0;
 #define PROV_FLASH_LIGHT_INTERVAL  (500)     // ms
 
 #define SKYBLERESET_MAXCNT         (10)    // 重配网延时服务，延时次数，即重配网闪灯次数
-#define SKYBLERESET_TIMEOUT        (150)
+#define SKYBLERESET_TIMEOUT        (150)   // 对开关，仅仅延时而已，给闪灯时间
 
 #define SKYBLEPROVSUCCESS_MAXCNT   (10)    // 配网成功闪
 #define SKYBLEPROVSUCCESS_TIMEOUT  (500)
 
-#define SKYIOTSAVEATTR_INTERVAL    (5000)  // 定时保存attr的参数
 
 
 // FIFO
@@ -161,20 +160,10 @@ typedef struct {
 	uint8_t  reppack_len;
 	
 	//设备字段
-	#if USE_LIGHT_FOR_SKYIOT
-		SkyLightManager mLightManager;
-	
-		#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-		uint8_t status_seqnum; /* 上报属性的序列号 */
-		uint8_t bri_seqnum;	 
-		uint8_t ctp_seqnum;	
-		#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-		uint8_t status_seqnum;  
-		uint8_t bri_seqnum;	 
-		uint8_t ctp_seqnum;	 
-		uint8_t hue_seqnum;	 		
-		uint8_t sat_seqnum;	
-		#endif
+	#if USE_SWITCH_FOR_SKYIOT
+		SkySwitchManager mSwitchManager;
+		uint8_t swt1_seqnum;
+		uint8_t swt2_seqnum;
 	#endif
 
 	
@@ -191,7 +180,6 @@ typedef struct {
 // timer
 static plt_timer_t quick_onoff_timer = NULL;
 static plt_timer_t skyblereset_timer = NULL;
-static plt_timer_t skyiot_SaveAttr_timer = NULL;
 static plt_timer_t skybleprosuccess_timer = NULL;
 static plt_timer_t skyblemainloop_timer = NULL;
 
@@ -207,25 +195,9 @@ static uint32_t g_quick_onoff_Cnt = 0;
 static bool IsSkyAppInited = false;
 static uint8_t g_skybleresetcnt=0;     // 重配网延时服务，延时次数，即重配网闪灯次数
 static uint8_t skybleprovsucesscnt=0;     
-
-#if USE_LIGHT_FOR_SKYIOT
-// 需要定时保存的属性
-	#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-	static int32_t save_oldbri;	/* 日光模式亮度 */		
-	static int32_t save_oldctp;	/* 日光模式色温 */
-
-	#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-	static int32_t save_oldbri;	/* 亮度 */		
-	static int32_t save_oldctp;	/* 日光模式色温 */
-	static int32_t save_oldhue;	/* 色度 */		
-	static int32_t save_oldsat;	/* 饱和度 */
-
-	#endif
-#endif
-
-
 static unsigned int SkyBleMesh_GetProductType(void);
 static int SkyBleMesh_ReadConfig(void);
+
 
 /*
  * FUNCTIONS
@@ -388,7 +360,7 @@ static bool Pop_Msg_From_FIFO(req_event_t *event)
 	if(event) {
 		if(MainMsg_fifo.head != MainMsg_fifo.tail){
 				
-//		APP_DBG_PRINTF2("Pop_Msg_From_FIFO %d %d \n", MainMsg_fifo.head , MainMsg_fifo.tail );
+//		APP_DBG_PRINTF2("Pop_Msg_From_FIFO %d %d \r\n", MainMsg_fifo.head , MainMsg_fifo.tail );
 		
 			memcpy(event, &(MainMsg_fifo.even_t[MainMsg_fifo.tail]), sizeof(req_event_t));
 
@@ -988,24 +960,12 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 				}
 				#if MESH_TEST_PRESSURE==1
 				switch(prop_ID){
-					case ATTR_CLUSTER_ID_SWT:{
-						ackattrsval &= ~BLEMESH_REPORT_FLAG_SWT;
+					case ATTR_CLUSTER_ID_SW1:{
+						ackattrsval &= ~BLEMESH_REPORT_FLAG_SWT1;
 						break;
 					}
-					case ATTR_CLUSTER_ID_BRI:{
-						ackattrsval &= ~BLEMESH_REPORT_FLAG_BRI;
-						break;
-					}
-					case ATTR_CLUSTER_ID_CTP:{
-						ackattrsval &= ~BLEMESH_REPORT_FLAG_CTP;
-						break;
-					}
-					case ATTR_CLUSTER_ID_HUE:{
-						ackattrsval &= ~BLEMESH_REPORT_FLAG_HUE;
-						break;
-					}
-					case ATTR_CLUSTER_ID_SAT:{
-						ackattrsval &= ~BLEMESH_REPORT_FLAG_SAT;
+					case ATTR_CLUSTER_ID_SW2:{
+						ackattrsval &= ~BLEMESH_REPORT_FLAG_SWT2;
 						break;
 					}
 					
@@ -1055,20 +1015,20 @@ static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 	
 	skybleprovsucesscnt++;
 	if(skybleprovsucesscnt <= SKYBLEPROVSUCCESS_MAXCNT){
-		#if USE_LIGHT_FOR_SKYIOT
-		if( skybleprovsucesscnt&0x01 ){			
-			HAL_Lighting_ON();
-		}else{
-			HAL_Lighting_OFF();
-		}
+		#if USE_SWITCH_FOR_SKYIOT
+		HAL_BlinkProLed_Enable();
+		HAL_ProvisionLed_Control(LEDBLINK);
 		#endif
 
 	}else{
 		if(skybleprovsucesscnt == (SKYBLEPROVSUCCESS_MAXCNT+1)){			
-			#if USE_LIGHT_FOR_SKYIOT
-			mIotManager.mLightManager.status = 1;  // 不保存，默认开
-			HAL_Lighting_ON();
-			#endif
+			#if USE_SWITCH_FOR_SKYIOT
+			HAL_BlinkProLed_Disable();
+			mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
+			mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = 1;
+			HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+			HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+			#endif	
 
 			// 闪灯结束后延时10s，触发配网成功事件。 
 			plt_timer_change_period(skybleprosuccess_timer, SKYBLEPROVSUCCESS_TIMEOUT, 10000);
@@ -1147,20 +1107,9 @@ extern void SkyBleMesh_UnPro_Adv_timeout_cb(void)
 // 进入重配网模式
 extern void SkyBleMesh_unBind_complete(void)
 {	
-    APP_DBG_PRINTF0("**********************************************************************\n");
-    APP_DBG_PRINTF0("******************* SkyMesh_unBind_complete **************************\n");    
-    APP_DBG_PRINTF0("**********************************************************************\n");
-	
-	#if USE_LIGHT_FOR_SKYIOT
-	SkyBleMesh_ReadConfig();
-	mIotManager.mLightManager.ctp = DEFAULT_SUNLIGHT_CTP_VALUE;
-	mIotManager.mLightManager.bri = DEFAULT_LIGHT_BRI_VALUE;
-	HAL_Lighting_Sunlight( mIotManager.mLightManager.ctp, mIotManager.mLightManager.bri );
-	SkyBleMesh_WriteConfig();
-	#endif
-	
-	mesh_node_clear(); // 恢复重配网
+    APP_DBG_PRINTF0("******************* SkyMesh_unBind_complete **************************\r\n");    
 
+	mesh_node_clear(); // 恢复重配网
 }
 
 /*
@@ -1196,7 +1145,7 @@ static void SkyBleMesh_Check_Quick_onoff_timer(void)
 		}
 	}
 }
-
+#if 0
 static bool SkyBleMesh_Check_Quick_onoff(void)
 {
 	bool ifreset=false, flashret=false;
@@ -1229,25 +1178,23 @@ static bool SkyBleMesh_Check_Quick_onoff(void)
 
 	return ifreset;
 }
-
+#endif
 static void SkyBleMesh_Reset_Timeout_cb(void *timer)
 {
 	if( ++g_skybleresetcnt > SKYBLERESET_MAXCNT ){		
 		if(skyblereset_timer){
 			plt_timer_delete(skyblereset_timer, 0);
 			skyblereset_timer = NULL;
-		}
+		}		
+		#if USE_SWITCH_FOR_SKYIOT
+		HAL_BlinkProLed_Disable();
+		#endif
 		HAL_ResetBleDevice(); 
 	} else {
-		if( g_skybleresetcnt&0x01 ){
-			#if USE_LIGHT_FOR_SKYIOT
-			HAL_Lighting_ON();
-			#endif
-		}else{
-			#if USE_LIGHT_FOR_SKYIOT
-			HAL_Lighting_OFF();
-			#endif
-		}
+		#if USE_SWITCH_FOR_SKYIOT
+		HAL_BlinkProLed_Enable();
+		HAL_ProvisionLed_Control(LEDBLINK);
+		#endif
 	}
 }
 static void SkyBleMesh_Reset_timer(void)
@@ -1259,48 +1206,6 @@ static void SkyBleMesh_Reset_timer(void)
 		}
 	}
 }
-
-extern void *skysave_sem_handle;
-static void SkyIotSaveAttr_Timeout_cb(void *timer)
-{
-#if USE_LIGHT_FOR_SKYIOT
-	#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-	if(save_oldbri!=mIotManager.mLightManager.bri || save_oldctp!=mIotManager.mLightManager.ctp ){
-		save_oldbri = mIotManager.mLightManager.bri;
-		save_oldctp = mIotManager.mLightManager.ctp;
-
-		if(skysave_sem_handle){
-			os_sem_give(skysave_sem_handle);
-		}
-	}
-	
-	#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-	if(save_oldbri!=mIotManager.mLightManager.bri || save_oldctp!=mIotManager.mLightManager.ctp 
-		||save_oldhue!=mIotManager.mLightManager.hue || save_oldsat!=mIotManager.mLightManager.sat ){
-		save_oldbri = mIotManager.mLightManager.bri;
-		save_oldctp = mIotManager.mLightManager.ctp;
-		save_oldhue = mIotManager.mLightManager.hue;
-		save_oldsat = mIotManager.mLightManager.sat;
-
-		if(skysave_sem_handle){
-			os_sem_give(skysave_sem_handle);
-		}
-		data_uart_debug("SkyIotSaveAttr %d %d %d %d \r\n", save_oldbri,save_oldctp,save_oldhue,save_oldsat);
-	}
-	
-	#endif
-#endif
-}
-static void SkyIotSaveAttr_timer(void)
-{
-	if(skyiot_SaveAttr_timer == NULL){		
-		skyiot_SaveAttr_timer = plt_timer_create("save", SKYIOTSAVEATTR_INTERVAL, true, 0, SkyIotSaveAttr_Timeout_cb);
-		if (skyiot_SaveAttr_timer != NULL){
-			plt_timer_start(skyiot_SaveAttr_timer, SKYIOTSAVEATTR_INTERVAL);
-		}
-	}
-}
-
 
 #endif
 
@@ -1338,37 +1243,6 @@ extern int SkyBleMesh_WriteConfig(void)
 	memcpy(buffer + offset, mIotManager.device_uuid, BT_MESH_UUID_SIZE);
 	offset += BT_MESH_UUID_SIZE;
 	utils_md5_update(context, (unsigned char*)mIotManager.device_uuid, BT_MESH_UUID_SIZE);
-
-#if USE_LIGHT_FOR_SKYIOT
-	#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-	memcpy(buffer + offset, &mIotManager.mLightManager.bri, 4);
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.bri, 4);
-
-	memcpy(buffer + offset, &mIotManager.mLightManager.ctp, 4);
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);
-	
-	#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-	memcpy(buffer + offset, &mIotManager.mLightManager.bri, 4);
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.bri, 4);
-
-	memcpy(buffer + offset, &mIotManager.mLightManager.ctp, 4);
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);
-
-	memcpy(buffer + offset, &mIotManager.mLightManager.hue, 4);
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.hue, 4);
-	
-	memcpy(buffer + offset, &mIotManager.mLightManager.sat, 4);
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.sat, 4);
-	
-	#endif
-
-#endif
 	
 	utils_md5_finish(context, mIotManager.critical_md5);	
 	os_mem_free(context);
@@ -1404,8 +1278,8 @@ static int SkyBleMesh_ReadConfig(void)
 	}
 	memset(buffer , 0 , FLASH_USERDATA_SAVE_LEN);
 	
-	utils_md5_init(context);									   // init context for 1st pass 
-	utils_md5_starts(context); 								   // setup context for 1st pass 
+	utils_md5_init(context);     // init context for 1st pass 
+	utils_md5_starts(context);   // setup context for 1st pass 
 
 	flashret = Hal_FlashRead(FLASH_PARAM_TYPE_APP_CFGDATA, FLASH_USERDATA_SAVE_LEN, buffer );
 	if (flashret == false) {
@@ -1425,37 +1299,6 @@ static int SkyBleMesh_ReadConfig(void)
 
 	// ...	
 		
-#if USE_LIGHT_FOR_SKYIOT
-	#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-	memcpy(&mIotManager.mLightManager.bri, buffer + offset, 4); 
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.bri, 4);	
-
-	memcpy(&mIotManager.mLightManager.ctp, buffer + offset, 4); 
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);	
-		
-	#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-	memcpy(&mIotManager.mLightManager.bri, buffer + offset, 4); 
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.bri, 4);	
-
-	memcpy(&mIotManager.mLightManager.ctp, buffer + offset, 4); 
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.ctp, 4);	
-	
-	memcpy(&mIotManager.mLightManager.hue, buffer + offset, 4); 
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.hue, 4);	
-
-	memcpy(&mIotManager.mLightManager.sat, buffer + offset, 4); 
-	offset += 4;
-	utils_md5_update(context, (unsigned char*)&mIotManager.mLightManager.sat, 4);	
-		
-	#endif
-	
-#endif
-
 	utils_md5_finish(context, md5);  
 	os_mem_free(context);
 	//copy critical md5 to nvram
@@ -1475,22 +1318,6 @@ static int SkyBleMesh_ReadConfig(void)
 */
 static void SkyiotManager_Default_Config(void)
 {
-#if USE_LIGHT_FOR_SKYIOT
-	#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-	mIotManager.mLightManager.status = 1;
-	mIotManager.mLightManager.bri = DEFAULT_LIGHT_BRI_VALUE;
-	mIotManager.mLightManager.ctp = DEFAULT_SUNLIGHT_CTP_VALUE;
-
-	#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-	mIotManager.mLightManager.status = 1;
-	mIotManager.mLightManager.bri = DEFAULT_LIGHT_BRI_VALUE;
-	mIotManager.mLightManager.ctp = DEFAULT_SUNLIGHT_CTP_VALUE;
-	mIotManager.mLightManager.hue = DEFAULT_LIGHT_HUE_VALUE;
-	mIotManager.mLightManager.sat = DEFAULT_LIGHT_SAT_VALUE;
-
-	#endif
-#endif
-
 }
 
 /*
@@ -1501,30 +1328,12 @@ static void Reset_iotmanager_para(void)
 	mIotManager.alive_status        = 1;//set device to online status
 	mIotManager.recv_alive_tick     = HAL_GetTickCount();
 
-#if USE_LIGHT_FOR_SKYIOT
-	#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BRI;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;
-	mIotManager.status_seqnum = 0; 
-	mIotManager.bri_seqnum = 0; 
-	mIotManager.ctp_seqnum = 0; 	
-
-	#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BRI;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_HUE;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SAT;
-	mIotManager.status_seqnum = 0; 
-	mIotManager.bri_seqnum = 0; 
-	mIotManager.ctp_seqnum = 0; 
-	mIotManager.hue_seqnum = 0; 
-	mIotManager.sat_seqnum = 0; 	
-
+	#if USE_SWITCH_FOR_SKYIOT
+	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
+	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
+	mIotManager.swt1_seqnum = 0; 
+	mIotManager.swt2_seqnum = 0; 
 	#endif
-#endif
-
 }
 static void Main_Event_Handle(void)
 {
@@ -1532,20 +1341,11 @@ static void Main_Event_Handle(void)
 	req_event_t event;
 	
 	if(delayreport){
-		if(--delayreport == 0){			
-		#if USE_LIGHT_FOR_SKYIOT
-			#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
-				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BRI;
-				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;			
-			#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
-				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BRI;
-				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;
-				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_HUE;
-				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SAT;			
+		if(--delayreport == 0){		
+			#if USE_SWITCH_FOR_SKYIOT
+			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
+			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
 			#endif
-		#endif
 		}
 	}
 			
@@ -1581,70 +1381,30 @@ static void Main_Event_Handle(void)
 				}
 				if (mIotManager.alive_status == 1){
 						// 根据参数，对设备控制  
-					#if USE_LIGHT_FOR_SKYIOT
-						#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-						if ( event.prop_ID == ATTR_CLUSTER_ID_SWT ){
-							mIotManager.mLightManager.status = event.prop_value;							
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
-							mIotManager.status_seqnum = event.seqence_num;
-						}else if ( event.prop_ID == ATTR_CLUSTER_ID_BRI){
-							mIotManager.mLightManager.bri = event.prop_value;
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BRI;
-							mIotManager.bri_seqnum = event.seqence_num;
-						}else if ( event.prop_ID == ATTR_CLUSTER_ID_CTP){
-							mIotManager.mLightManager.ctp = event.prop_value;
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;	
-							mIotManager.ctp_seqnum = event.seqence_num;
+#if USE_SWITCH_FOR_SKYIOT
+						if (event.prop_ID == ATTR_CLUSTER_ID_SW1){
+							mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = event.prop_value;							
+							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
+							mIotManager.swt1_seqnum = event.seqence_num;
 						}
-						#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-						if ( event.prop_ID == ATTR_CLUSTER_ID_SWT){
-							mIotManager.mLightManager.status = event.prop_value;							
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
-							mIotManager.status_seqnum = event.seqence_num;
-						}else if ( event.prop_ID == ATTR_CLUSTER_ID_BRI){
-							mIotManager.mLightManager.bri = event.prop_value;
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BRI;
-							mIotManager.bri_seqnum = event.seqence_num;
-						}else if ( event.prop_ID == ATTR_CLUSTER_ID_CTP){
-							mIotManager.mLightManager.ctp = event.prop_value;
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;	
-							mIotManager.ctp_seqnum = event.seqence_num;
-						}else if ( event.prop_ID == ATTR_CLUSTER_ID_HUE){							
-							mIotManager.mLightManager.ctp = 0;
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;	
-							mIotManager.mLightManager.hue = event.prop_value;
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_HUE;
-							mIotManager.hue_seqnum = event.seqence_num;
-						}else if ( event.prop_ID == ATTR_CLUSTER_ID_SAT){				
-							mIotManager.mLightManager.ctp = 0;
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;	
-							mIotManager.mLightManager.sat = event.prop_value;
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SAT;	
-							mIotManager.sat_seqnum = event.seqence_num;
+						if (event.prop_ID == ATTR_CLUSTER_ID_SW2){
+							mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = event.prop_value;							
+							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
+							mIotManager.swt2_seqnum = event.seqence_num;
 						}
-						#endif
-						
-						if (mIotManager.mLightManager.status == 0){
-							HAL_Lighting_OFF();
-							
+
+						//
+						if (mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] == 0){
+							HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNOFF);
 						}else {
-							// APP_DBG_PRINTF2("ctp: %d, bri: %d \n", mIotManager.mLightManager.ctp, mIotManager.mLightManager.bri);
-														
-						#if USE_LIGHT_FOR_SKYIOT
-							#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-							HAL_Lighting_Sunlight(mIotManager.mLightManager.ctp, mIotManager.mLightManager.bri);
-
-							#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-							if(mIotManager.mLightManager.ctp){
-								HAL_Lighting_Sunlight(mIotManager.mLightManager.ctp, mIotManager.mLightManager.bri);
-							}else{
-								HAL_Lighting_Color( mIotManager.mLightManager.hue, mIotManager.mLightManager.sat, mIotManager.mLightManager.bri );	
-							}
-
-							#endif
-						#endif
+							HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
 						}
-					#endif
+						if (mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] == 0){
+							HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNOFF);
+						}else {
+							HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+						}
+#endif
 
 						
 						// SkyBleMesh_WriteConfig();
@@ -1655,20 +1415,11 @@ static void Main_Event_Handle(void)
 				if(mIotManager.alive_status == 0){
 					Reset_iotmanager_para();
 				}
-				if(mIotManager.alive_status == 1){			
-				#if USE_LIGHT_FOR_SKYIOT
-					#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
-						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BRI;
-						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;			
-					#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
-						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BRI;
-						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;
-						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_HUE;
-						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SAT;			
+				if(mIotManager.alive_status == 1){		
+					#if USE_SWITCH_FOR_SKYIOT
+					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
+					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
 					#endif
-				#endif
 				}
 					
 			break;
@@ -1681,11 +1432,84 @@ static void Main_Event_Handle(void)
 		
 	}
 	
+#if USE_SWITCH_FOR_SKYIOT
+	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
+
+		if(mIotManager.mSwitchManager.keymode == KEY_SHORTPRESS_MODE){
+			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT1)){
+				mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC1_ENUM];							
+				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
+			}
+			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT2)){
+				mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC2_ENUM];							
+				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
+			}
+			
+			//
+			if (mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] == 0){
+				HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNOFF);
+			}else {
+				HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+			}
+			if (mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] == 0){
+				HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNOFF);
+			}else {
+				HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+			}
+			
+		}else if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE){
+
+			SkyBleMesh_unBind_complete();	   // 进入重配网模式
+			SkyBleMesh_Reset_timer();
+
+		}
+		
+		mIotManager.mSwitchManager.keymode = 0;
+		mIotManager.mSwitchManager.keyval = 0;
+	}
+	
+#endif
+	
 }
 
 static void Main_WithoutNet_Handle(void)
 {	
 	
+#if USE_SWITCH_FOR_SKYIOT
+	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
+
+		if(mIotManager.mSwitchManager.keymode == KEY_SHORTPRESS_MODE){
+			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT1)){
+				mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC1_ENUM]; 						
+			}
+			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT2)){
+				mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC2_ENUM]; 		
+			}
+			
+			//
+			if (mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] == 0){
+				HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNOFF);
+			}else {
+				HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+			}
+			if (mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] == 0){
+				HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNOFF);
+			}else {
+				HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+			}
+			
+		}else if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE){
+
+			SkyBleMesh_unBind_complete();	   // 进入重配网模式
+			SkyBleMesh_Reset_timer();
+
+		}
+
+		mIotManager.mSwitchManager.keymode = 0;
+		mIotManager.mSwitchManager.keyval = 0;
+	}		
+#endif
+
 }
 
 static bool Main_Check_Online(void)
@@ -1732,18 +1556,9 @@ static bool Main_Check_Online(void)
 				memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
 				mIotManager.reppack_len = 0;
 				
-				#if USE_LIGHT_FOR_SKYIOT
-					#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-					mIotManager.status_seqnum = 0; 
-					mIotManager.bri_seqnum = 0; 
-					mIotManager.ctp_seqnum = 0; 	
-					#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-					mIotManager.status_seqnum = 0; 
-					mIotManager.bri_seqnum = 0; 
-					mIotManager.ctp_seqnum = 0; 
-					mIotManager.hue_seqnum = 0; 
-					mIotManager.sat_seqnum = 0; 	
-					#endif
+				#if USE_SWITCH_FOR_SKYIOT
+					mIotManager.swt1_seqnum = 0; 
+					mIotManager.swt2_seqnum = 0; 
 				#endif
 			}
 		}
@@ -1759,54 +1574,18 @@ static void Main_Upload_State(void)
 {
 	if (mIotManager.alive_status == 1) {	
 		
-	#if USE_LIGHT_FOR_SKYIOT
-		#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-		if (mIotManager.report_flag & BLEMESH_REPORT_FLAG_SWT){
-			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_SWT;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SWT, mIotManager.mLightManager.status, mIotManager.status_seqnum);
-			mIotManager.status_seqnum = 0;
-
-		}else if (mIotManager.report_flag & BLEMESH_REPORT_FLAG_BRI){	
-			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_BRI;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_BRI, mIotManager.mLightManager.bri, mIotManager.bri_seqnum);
-			mIotManager.bri_seqnum = 0;
+#if USE_SWITCH_FOR_SKYIOT
+		if ( (mIotManager.report_flag & BLEMESH_REPORT_FLAG_SWT1) ){
+			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_SWT1;
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW1, mIotManager.mSwitchManager.status[SKYSWITC1_ENUM],mIotManager.swt1_seqnum);						
+			mIotManager.swt1_seqnum = 0; 
 			
-		}else if (mIotManager.report_flag & BLEMESH_REPORT_FLAG_CTP){
-			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_CTP;			
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_CTP, mIotManager.mLightManager.ctp, mIotManager.ctp_seqnum);
-			mIotManager.ctp_seqnum = 0;
-			
+		}else if ((mIotManager.report_flag & BLEMESH_REPORT_FLAG_SWT2)){
+			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_SWT2;
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, mIotManager.mSwitchManager.status[SKYSWITC2_ENUM],mIotManager.swt2_seqnum);						
+			mIotManager.swt2_seqnum = 0; 
 		}
-		
-		#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-		if (mIotManager.report_flag & BLEMESH_REPORT_FLAG_SWT){
-			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_SWT;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SWT, mIotManager.mLightManager.status, mIotManager.status_seqnum);
-			mIotManager.status_seqnum = 0;
 
-		}else if (mIotManager.report_flag & BLEMESH_REPORT_FLAG_BRI){	
-			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_BRI;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_BRI, mIotManager.mLightManager.bri, mIotManager.bri_seqnum);
-			mIotManager.bri_seqnum = 0;
-			
-		}else if (mIotManager.report_flag & BLEMESH_REPORT_FLAG_CTP){
-			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_CTP;			
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_CTP, mIotManager.mLightManager.ctp, mIotManager.ctp_seqnum);
-			mIotManager.ctp_seqnum = 0;
-			
-		}else if (mIotManager.report_flag & BLEMESH_REPORT_FLAG_HUE){		
-			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_HUE;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_HUE, mIotManager.mLightManager.hue, mIotManager.hue_seqnum);
-			mIotManager.hue_seqnum = 0;
-						
-		}else if (mIotManager.report_flag & BLEMESH_REPORT_FLAG_SAT){
-			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_SAT;			
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SAT, mIotManager.mLightManager.sat, mIotManager.sat_seqnum);
-			mIotManager.sat_seqnum = 0;
-			
-		}
-		
-		#endif
 	#endif
 
 	}
@@ -1862,20 +1641,11 @@ static void SkyBleMesh_Test_timer(void)
 #if MESH_TEST_PRESSURE == 1
 extern void test_update_attr(void)
 {
-	#if USE_LIGHT_FOR_SKYIOT
-		#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BRI;
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;
+		
+	#if USE_SWITCH_FOR_SKYIOT
+		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;		
+		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
 
-		#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT;
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BRI;
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_CTP;
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_HUE;
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SAT;
-
-		#endif
 	#endif
 
 	if(ackattrsval){
@@ -1887,15 +1657,12 @@ extern void test_update_attr(void)
 #endif
 
 extern void SkyBleMesh_MainLoop(void)
-{	
-
-					
+{					
 	if(IsSkyAppInited==false){
 		return;
 	}
 	
 	bool isprov = SkyBleMesh_IsProvision_Sate();
-
 	if(isprov){
 		
 		//recv message	
@@ -1915,7 +1682,17 @@ extern void SkyBleMesh_MainLoop(void)
 	}else{
 		// 没有配网也要执行控制，不给上报标志
 		Main_WithoutNet_Handle();
-
+	}
+	if(HAL_BlinkProLed_Statu() == false){
+		if(isprov){
+			if(mIotManager.alive_status==1){  	// 配网成功后指示 联网状态	
+				HAL_ProvisionLed_Control(LED_PRO_ON);
+			}else{
+				HAL_ProvisionLed_Control(LED_PRO_OFF);
+			}
+		}else{
+			HAL_ProvisionLed_Control(LED_PRO_OFF);
+		}
 	}
 	
 }
@@ -1945,7 +1722,6 @@ extern void SkyBleMesh_MainLoop_timer(void)
 		}
 	}
 }
-
 extern uint8_t SkyBleMesh_App_Init(void)
 {
     uint32_t retcfg;
@@ -1957,19 +1733,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	SkyBleMesh_SetProductType(PRODUCT_TYPE);
 	SkyBleMesh_SetProductBrand(PRODUCT_BRAND);
 	SkyBleMesh_SetProductModel(PRODUCT_MODEL);
-	
-#if USE_LIGHT_FOR_SKYIOT
-	HAL_Lighting_Init(&mIotManager.mLightManager);
-#endif
-	if( SkyBleMesh_Check_Quick_onoff() ){   
-				
-		SkyBleMesh_unBind_complete();      // 进入重配网模式
-
-		g_skybleresetcnt = 0; 
-		SkyBleMesh_Reset_timer();
 		
-		return 1; // do factory reset  
-	}	
 		
     retcfg = SkyBleMesh_ReadConfig();		  
  	if( Hal_Get_Ble_MacAddr(macaddr) ){
@@ -2009,56 +1773,44 @@ extern uint8_t SkyBleMesh_App_Init(void)
 		// 按保存的参数，恢复对设备的控制
     }	
 	
-	
-#if USE_LIGHT_FOR_SKYIOT
-	mIotManager.mLightManager.status = 1;  // 不保存，默认开
-	HAL_Lighting_ON();
-#endif
+			
+	#if USE_SWITCH_FOR_SKYIOT
+	mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
+	mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = 1;
+	HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+	HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+	#endif	
 	
     for(int i =0 ;i < 16;i++){
         APP_DBG_PRINTF2("mIotManager.device_uuid[%d] = 0x%02x\n",i,mIotManager.device_uuid[i]);
     }
-	
-	mIotManager.alive_wakeup_cnt    = 0;
+
+	mIotManager.alive_wakeup_cnt = 0;
 	mIotManager.alive_status        = 0;		
 	mIotManager.report_flag         = 0;
 	mIotManager.send_alive_tick     = 0;
 	mIotManager.recv_alive_tick     = 0;
 	memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
 	mIotManager.reppack_len = 0;
-	
-	#if USE_LIGHT_FOR_SKYIOT
-		#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-		mIotManager.status_seqnum = 0; 
-		mIotManager.bri_seqnum = 0; 
-		mIotManager.ctp_seqnum = 0; 	
-		#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-		mIotManager.status_seqnum = 0; 
-		mIotManager.bri_seqnum = 0; 
-		mIotManager.ctp_seqnum = 0; 
-		mIotManager.hue_seqnum = 0; 
-		mIotManager.sat_seqnum = 0; 	
-		#endif
+		
+	#if USE_SWITCH_FOR_SKYIOT
+		mIotManager.swt1_seqnum = 0; 
+		mIotManager.swt2_seqnum = 0; 
 	#endif
 	BleMesh_Packet_Init();
 	
 	IsSkyAppInited = true;
-	 
-	#if USE_LIGHT_FOR_SKYIOT
-	save_oldbri = mIotManager.mLightManager.bri;
-	save_oldctp = mIotManager.mLightManager.ctp;
-	#endif
-	
-	SkyIotSaveAttr_timer();
-	// SkyBleMesh_MainLoop_timer();
-	
+#if USE_SWITCH_FOR_SKYIOT
+	HAL_Switch_Init(&mIotManager.mSwitchManager);
+#endif
+
+	SkyBleMesh_MainLoop_timer();
 #ifdef MY_TEST_TIMER
 	SkyBleMesh_Test_timer();
 #endif
 	
 	return 0; 
 }
-
 
 /*
 ** Creat vendors model

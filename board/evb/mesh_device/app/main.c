@@ -324,7 +324,6 @@ void app_exit_dlps_config(void)
 	
 	// stopadv = 0;
 	
-	Resume_OsTmrs_WakeupDLPS();
 }
 
 /**
