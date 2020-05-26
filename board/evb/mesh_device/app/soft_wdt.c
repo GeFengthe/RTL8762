@@ -3,8 +3,10 @@
 #include "rtl876x_wdg.h"
 #include "soft_wdt.h"
 #include "data_uart.h"
+#include "trace.h"
 
-#define SOFTWDT_PRINTF  data_uart_debug
+// (char *fmt, ...)   DBG_DIRECT
+#define SOFTWDT_PRINTF  DBG_DIRECT
 
 #define SOFTWDT_FEED_INTERVAL   (50)       // ms
 #define SOFTWDT_START_DELAY     (20000 / SOFTWDT_FEED_INTERVAL)   // 20000ms

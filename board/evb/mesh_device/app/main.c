@@ -51,6 +51,7 @@
 #include "dlps.h"
 #include "rtl876x_pinmux.h"
 #include "rtl876x_io_dlps.h"
+#include "rtl876x_gpio.h"
 #include "io_management.h"
 
 #include "app_hwtmr.h"
@@ -124,10 +125,10 @@ void mesh_stack_init(void)
     {
         .role = MESH_ROLE_DEVICE,
         .relay = 1,
-        .proxy = 1,
+        .proxy = 0,
         .fn = 0,
         .lpn = 0,
-        .prov = 1,
+        .prov = 0,
         .udb = 1,
         .snb = 1,
         .bg_scan = 1,
@@ -144,9 +145,10 @@ void mesh_stack_init(void)
         .sub_addr_num = 10,
         .proxy_num = 1,
 		
-			  .udb_interval = 10,//
-			  .prov_interval =1,//
-			  .proxy_interval =5,//
+			  .udb_interval = 10,//  default MESH_UDB_PERIOD
+			  .snb_interval = 100,//  default MESH_SNB_PERIOD
+//			  .prov_interval =1,// mesh GATT service
+//			  .proxy_interval =5,// mesh GATT service
     };
     mesh_node_cfg(features, &node_cfg);
     mesh_node.pb_adv_retrans_count = 6;
@@ -270,13 +272,17 @@ void board_init(void)
  */
 void driver_init(void)
 {
-	Hal_Timer_init();
+	gpio_driver_init();
+	
+	// Hal_Timer_init();
 	#if USE_SOFT_WATCHDOG
 	OS_WDTInit();
 	#endif
 }
 
 #if ENABLE_DLPS
+
+extern uint8_t stopadv;
 /**
  * @brief this function will be called before enter DLPS
  *
@@ -288,23 +294,12 @@ void driver_init(void)
 */
 void app_enter_dlps_config(void)
 {
-#if defined(MESH_DONGLE)
-    Pad_Config(LPN_BUTTON, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(LED_R, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-    Pad_Config(LED_G, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(LED_B, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(LED_W, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
+	DBG_DIRECT("En DLPS \r\n");
+	uart_deinit();	
     Pad_Config(DATA_UART_TX_PIN, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
     Pad_Config(DATA_UART_RX_PIN, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-#elif defined(MESH_EVB)
-    Pad_Config(LPN_BUTTON, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_DOWN, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(LED_R, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_DOWN, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-    Pad_Config(LED_G, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_DOWN, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(LED_B, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_DOWN, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(LED_W, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_DOWN, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(DATA_UART_TX_PIN, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(DATA_UART_RX_PIN, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-#endif
+	
+	System_WakeUpPinEnable(LPN_BUTTON, PAD_WAKEUP_POL_HIGH, 0);
 }
 
 /**
@@ -318,29 +313,18 @@ void app_enter_dlps_config(void)
 */
 void app_exit_dlps_config(void)
 {
-#if defined(MESH_DONGLE)
-    Pad_Config(LPN_BUTTON, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE,
-               PAD_OUT_LOW);
-    Pad_Config(LED_R, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-    Pad_Config(LED_G, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(LED_B, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(LED_W, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(DATA_UART_TX_PIN, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE,
-               PAD_OUT_LOW);
-    Pad_Config(DATA_UART_RX_PIN, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE,
-               PAD_OUT_LOW);
-#elif defined(MESH_EVB)
-    Pad_Config(LPN_BUTTON, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_DOWN, PAD_OUT_DISABLE,
-               PAD_OUT_LOW);
-    Pad_Config(LED_R, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_DOWN, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-    Pad_Config(LED_G, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_DOWN, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(LED_B, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_DOWN, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(LED_W, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_DOWN, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(DATA_UART_TX_PIN, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE,
-               PAD_OUT_LOW);
-    Pad_Config(DATA_UART_RX_PIN, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE,
-               PAD_OUT_LOW);
-#endif
+	DBG_DIRECT("Exit DLPS \r\n");	
+	System_WakeUpPinDisable(LPN_BUTTON);
+	
+	uart_re_init();	
+
+	
+//	beacon_start(); 	
+//	gap_sched_scan(true);   // gap≤„Õ£÷π…®√Ë
+	
+	// stopadv = 0;
+	
+	Resume_OsTmrs_WakeupDLPS();
 }
 
 /**
@@ -348,8 +332,25 @@ void app_exit_dlps_config(void)
 */
 bool app_dlps_check_cb(void)
 {
+	if(stopadv!=1){
+		return false;
+	}
     return true;
 }
+#if 0
+void System_Handler(void)
+{
+	DBG_DIRECT("Exit System_Handler1 \r\n");
+    if (System_WakeUpInterruptValue(P2_4) == SET)
+    {
+		DBG_DIRECT("Exit System_Handler2 \r\n");
+        Pad_ClearWakeupINTPendingBit(P2_4);
+        System_WakeUpPinDisable(P2_4);
+        // stopadv = 0;
+    }
+}
+#endif
+
 #endif
 /**
  * @brief    Contains the power mode settings

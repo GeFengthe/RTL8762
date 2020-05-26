@@ -16,5 +16,6 @@
  * @brief button configuration
  */
 void lpn_board_init(void);
+void gpio_driver_init(void);
 void uart_deinit(void);
 void uart_re_init(void);

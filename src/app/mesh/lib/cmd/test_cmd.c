@@ -15,6 +15,7 @@
 #include "test_cmd.h"
 #include "mesh_api.h"
 
+#include "app_task.h"
 #include "app_skyiot_server.h"
 
 user_cmd_parse_result_t user_cmd_node_state_set(user_cmd_parse_value_t *pparse_value)
@@ -299,10 +300,27 @@ user_cmd_parse_result_t user_cmd_skytest(user_cmd_parse_value_t *pparse_value)
 		sendpackcnt = 0;
 		revackpackcnt = 0;
 		acktimoutcnt = 0;
-		data_uart_debug("TESTRESULT make:%d send:%d ack:%d timout:%d\n",makepackcnt ,sendpackcnt,revackpackcnt,acktimoutcnt);
-		
+		data_uart_debug("TESTRESULT make:%d send:%d ack:%d timout:%d\n",makepackcnt ,sendpackcnt,revackpackcnt,acktimoutcnt);		
     }
+    else if (test_case == 5)
+    {
+		if(pparse_value->dw_parameter[1] == 0){
+			test_dlps_function(false);
+		}else if(pparse_value->dw_parameter[1] == 1){
+			test_dlps_function(true);
+		}
+	}
 	
 	#endif
+	
+    uint8_t test_case = pparse_value->dw_parameter[0]; 
+	if (test_case == 5)
+    {
+		if(pparse_value->dw_parameter[1] == 0){
+			test_dlps_function(false);
+		}else if(pparse_value->dw_parameter[1] == 1){
+			test_dlps_function(true);
+		}
+	}
     return USER_CMD_RESULT_OK;
 }

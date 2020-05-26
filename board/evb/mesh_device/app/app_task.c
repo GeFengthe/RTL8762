@@ -119,9 +119,10 @@ void uart_init(void)
  * @param[in]    p_param    Parameters sending to the task
  * @return       void
  */
+uint8_t stopadv=0;
 void app_main_task(void *p_param)
 {
-	uint16_t tmpi=0,tmpcnt=0;
+	uint32_t tmpi=0;
     uint8_t event;
 
 	#if USE_SOFT_WATCHDOG
@@ -181,7 +182,7 @@ void app_main_task(void *p_param)
 
 		
 		if(++tmpi >= 10000){
-			data_uart_debug("app_main_task %d \r\n", tmpcnt++);
+		//	data_uart_debug("app_main_task %d \r\n", tmpcnt++);
 			tmpi = 0;
 		}
 		
@@ -192,5 +193,27 @@ void app_main_task(void *p_param)
 		}
 		#endif
     }
+}
+
+void test_dlps_function(bool enter)
+{ 
+	DBG_DIRECT("test_dlps_function %d \n",enter);	
+	
+	if(enter){	
+		Delet_OsTmrs_BeforeDLPS();
+
+uint16_t scan_interval = 0x320; //!< 500ms
+uint16_t scan_window = 0x30; //!< 30ms
+gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+		
+//		beacon_stop();  // 
+//		gap_sched_scan(false);   // gap²ãÍ£Ö¹É¨Ãè
+		// uart_deinit();
+		
+		stopadv = 1;
+	}else{	
+		
+	}
 }
 

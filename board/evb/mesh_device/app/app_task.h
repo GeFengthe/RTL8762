@@ -17,5 +17,6 @@
 void app_task_init(void);
 bool app_send_msg_to_apptask(T_IO_MSG *p_msg);
 void uart_init(void);
+extern void test_dlps_function(bool enter);
 #endif
 

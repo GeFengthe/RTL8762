@@ -1815,7 +1815,7 @@ static void Main_Upload_State(void)
 
 
 
-#define MY_TEST_TIMER
+// #define MY_TEST_TIMER
 #ifdef MY_TEST_TIMER
 static plt_timer_t skymesh_test_timer = NULL;
 static void SkyBleMesh_Test_Timeout_cb(void *timer)

@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#define ENABLE_DLPS  0
+#define ENABLE_DLPS  1
 
 #if ENABLE_DLPS
 /** @note Board type MESH_DONGLE/MESH_EVB
@@ -30,21 +30,8 @@ extern "C" {
 #define DATA_UART_TX_PIN    P3_0
 #define DATA_UART_RX_PIN    P3_1
 
-#if defined(MESH_DONGLE)
 #define LPN_BUTTON          P2_4
 
-#define LED_R               P4_1
-#define LED_G               P4_2
-#define LED_B               P4_0
-#define LED_W               P4_3
-#elif defined(MESH_EVB)
-#define LPN_BUTTON          P2_4
-
-#define LED_R               P0_1
-#define LED_G               P0_2
-#define LED_B               P1_3
-#define LED_W               P1_4
-#endif
 #endif
 /** @defgroup IO Driver Config
   * @note user must config it firstly!! Do not change macro names!!
