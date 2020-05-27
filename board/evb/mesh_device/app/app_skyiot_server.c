@@ -1815,17 +1815,18 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 void SkyBleMesh_EnterDlps_cfg(void)
 {	
 	// switch1
-	// System_WakeUpDebounceTime(0x08); // qlj 消抖 System_WakeUpInterruptValue取不到值
-    Pad_Config(LPN_BUTTON, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+	Pad_Config(LPN_BUTTON, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
 	System_WakeUpPinEnable(LPN_BUTTON, PAD_WAKEUP_POL_HIGH, 0);
-	// light
+	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
 	Pad_Config(P4_3, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+	Pad_Config(P4_2, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+	Pad_Config(P4_1, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
 	
 	// ble 暂定休眠不广播
 	beacon_stop();  	
-	//if(0){ // unprov
+	if(0){ // unprov
 		gap_sched_scan(false);   // gap layer scam
-	//}
+	}
 	
 }
 
@@ -1843,7 +1844,7 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	Pad_Config(P4_3, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
 	
 	// ble
-	// beacon_start(); 
+	beacon_start(); 
 	if(0){ // unprov
 		gap_sched_scan(true);   // gap layer scam
 	}	
