@@ -85,7 +85,7 @@ void app_handle_io_msg(T_IO_MSG io_msg)
         break;
     case IO_MSG_TYPE_TIMER:
         {
-            SkyBleMesh_MainLoop(); // 
+            switch_handle_sw_timer_msg(&io_msg); // 
         }
         break;
     case DFU_SERVER_TIMEOUT_MSG:
@@ -813,6 +813,9 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
         break;
     case PROV_CB_TYPE_COMPLETE:
         {
+			SkyBleMesh_Unprov_timer_delet();
+			SkyBleMesh_ChangeScan_timer();
+			
             prov_data_p pprov_data = cb_data.pprov_data;
             data_uart_debug("been prov-ed with addr 0x%04x!\r\n", pprov_data->unicast_address);
 			SkyBleMesh_Provision_State(MESH_PROVISION_STATE_SUCCEED);

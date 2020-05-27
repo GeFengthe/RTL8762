@@ -127,5 +127,25 @@ extern void SkyBleMesh_EnterDlps_cfg(void);
 extern void SkyBleMesh_ExitDlps_cfg(void);
 
 
+
+
+#define UNPROV_TIME_OUT                     (2*60*1000)  // 10min
+#define CHANGE_SCAN_PARAM_TIME_OUT          (10*1000)    // 10s
+
+#include "app_msg.h"
+typedef enum
+{
+    MAINLOOP_TIMEOUT,
+    UNPROV_TIMEOUT,
+    PROV_SUCCESS_TIMEOUT
+} SW_TIMER_MSG_TYPE;
+
+
+extern void SkyBleMesh_Unprov_timer(void);	
+extern void SkyBleMesh_Unprov_timer_delet(void);
+extern void SkyBleMesh_ChangeScan_timer(void);
+extern void switch_handle_sw_timer_msg(T_IO_MSG *io_msg);
+
+
 #endif // 
 

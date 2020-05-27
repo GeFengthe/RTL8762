@@ -273,6 +273,15 @@ void driver_init(void)
 	#if USE_SOFT_WATCHDOG
 	OS_WDTInit();
 	#endif
+	
+	
+    mesh_node_state_t node_state = mesh_node_state_restore();
+    if (node_state == UNPROV_DEVICE){
+        SkyBleMesh_Unprov_timer();
+    }else{
+        SkyBleMesh_ChangeScan_timer();
+    }
+	
 }
 
 #if ENABLE_DLPS

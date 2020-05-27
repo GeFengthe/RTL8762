@@ -1675,7 +1675,7 @@ static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
 	// 给APPtask发消息,subtype区分哪个tmr
     T_IO_MSG msg;
     msg.type = IO_MSG_TYPE_TIMER;
-    msg.subtype = NULL;
+    msg.subtype = MAINLOOP_TIMEOUT;
     app_send_msg_to_apptask(&msg);
 }
 
@@ -1829,7 +1829,6 @@ void test_dlps_func(uint8_t code)
 
 static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 {
-	
 	if(skybleenterdlps_timer){
 		plt_timer_delete(skybleenterdlps_timer, 0);
 		skybleenterdlps_timer = NULL;
@@ -1837,8 +1836,8 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 	
 	SkyBleMesh_ReadyEnterDlps_cfg();
 	
-		switch_io_ctrl_dlps(true);
-		test_cmd_ctrl_dlps(true);
+	switch_io_ctrl_dlps(true);
+	test_cmd_ctrl_dlps(true);
 }
 static void SkyBleMesh_EnterDlps_timer(void)
 {	
@@ -1943,3 +1942,94 @@ void test_cmd_ctrl_dlps(bool allowenter)
         DlpsCtrlStatu_t.bit.cmd = 1;
     }
 }
+
+
+
+///////////////////////////////////////////////////////////////////////
+
+static plt_timer_t skyble_unprov_timer = NULL;
+static plt_timer_t skyble_changescan_timer = NULL;
+
+static void SkyBleMesh_Unprov_Timeout_cb(void *ptimer)
+{
+	if(skyble_unprov_timer){
+		skyble_unprov_timer = NULL;
+	}
+	
+    T_IO_MSG unprov_timeout_msg;
+    unprov_timeout_msg.type     = IO_MSG_TYPE_TIMER;
+    unprov_timeout_msg.subtype  = UNPROV_TIMEOUT;
+    app_send_msg_to_apptask(&unprov_timeout_msg);
+}
+
+void SkyBleMesh_Unprov_timer(void)
+{	
+	if(skyble_unprov_timer == NULL){ 	
+		skyble_unprov_timer = plt_timer_create("unprov calc", UNPROV_TIME_OUT, false, 0, SkyBleMesh_Unprov_Timeout_cb);
+		if (skyble_unprov_timer != NULL){
+			plt_timer_start(skyble_unprov_timer, 0);
+		}
+	}
+}
+
+void SkyBleMesh_Unprov_timer_delet(void)
+{
+    if (skyble_unprov_timer) {
+        plt_timer_delete(skyble_unprov_timer, 0);
+        // switch_unprov_ctrl_dlps(true);
+    } else {
+        APP_PRINT_INFO0("switch_swtimer->unprov_timer_stop failure!");
+    }
+}
+
+static void SkyBleMesh_ChangeScan_Timeout_cb(void *ptimer)
+{
+	if(skyble_changescan_timer){
+		skyble_changescan_timer = NULL;
+	}
+	
+    T_IO_MSG unprov_timeout_msg;
+    unprov_timeout_msg.type     = IO_MSG_TYPE_TIMER;
+    unprov_timeout_msg.subtype  = PROV_SUCCESS_TIMEOUT;
+    app_send_msg_to_apptask(&unprov_timeout_msg);
+}
+
+void SkyBleMesh_ChangeScan_timer(void)
+{
+	if(skyble_changescan_timer == NULL){ 	
+		skyble_changescan_timer = plt_timer_create("change scan", CHANGE_SCAN_PARAM_TIME_OUT, false, 0, SkyBleMesh_ChangeScan_Timeout_cb);
+		if (skyble_changescan_timer != NULL){
+			plt_timer_start(skyble_changescan_timer, 0);
+		}
+	}
+}
+
+void switch_handle_sw_timer_msg(T_IO_MSG *io_msg)
+{
+    switch (io_msg->subtype)
+    {
+		case MAINLOOP_TIMEOUT:{
+             SkyBleMesh_MainLoop();
+            break;
+        }
+		case UNPROV_TIMEOUT:{
+            beacon_stop();
+            // switch_unprov_ctrl_dlps(true);
+            break;
+        }
+		case PROV_SUCCESS_TIMEOUT:{
+            uint16_t scan_interval = 0x640; // 0x320; //!< 500ms
+            uint16_t scan_window = 0x30; //!< 30ms
+            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+            break;
+        }
+		default:
+            break;
+    }
+}
+
+
+
+
+
