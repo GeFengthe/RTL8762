@@ -162,10 +162,10 @@ void app_main_task(void *p_param)
 		
 //		test_dlps_func();
 		
-//		if(++tmpi >= 10000){
-//			data_uart_debug("app_main_task %d \r\n", tmpcnt++);
-//			tmpi = 0;
-//		}
+		if(++tmpi >= 5000){
+			DBG_DIRECT("app_main_task %d \r\n", mesh_node_state_restore());
+			tmpi = 0;
+		}
 		
 		#if MESH_TEST_PRESSURE == 1
 		if(test_flag==1){
@@ -188,8 +188,6 @@ void test_dlps_function(bool enter)
 		
 		switch_io_ctrl_dlps(true);
 	}else{	
-		switch_io_ctrl_dlps(true);
-		test_cmd_ctrl_dlps(true);
 	}
 }
 

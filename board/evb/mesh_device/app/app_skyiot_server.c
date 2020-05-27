@@ -179,6 +179,7 @@ static plt_timer_t skyblereset_timer = NULL;
 static plt_timer_t skybleprosuccess_timer = NULL;
 static plt_timer_t skyblemainloop_timer = NULL;
 static plt_timer_t skyblescanswitch_timer = NULL;
+static plt_timer_t skybleenterdlps_timer = NULL;
 
 // FIFO
 static main_msg_fifo_t MainMsg_fifo={
@@ -1809,6 +1810,9 @@ extern uint8_t SkyBleMesh_App_Init(void)
 #include "rtl876x_gpio.h"
 
 DLPS_CTRL_STATU_T DlpsCtrlStatu_t={0x0002};
+void SkyBleMesh_ReadyEnterDlps_cfg(void);
+void test_cmd_ctrl_dlps(bool allowenter);
+
 void test_dlps_func(uint8_t code)
 {
 //	static uint32_t oldtick=0;
@@ -1823,23 +1827,45 @@ void test_dlps_func(uint8_t code)
 	
 }
 
+static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
+{
+	
+	if(skybleenterdlps_timer){
+		plt_timer_delete(skybleenterdlps_timer, 0);
+		skybleenterdlps_timer = NULL;
+	}
+	
+	SkyBleMesh_ReadyEnterDlps_cfg();
+	
+		switch_io_ctrl_dlps(true);
+		test_cmd_ctrl_dlps(true);
+}
+static void SkyBleMesh_EnterDlps_timer(void)
+{	
+	if(skybleenterdlps_timer == NULL){ 	
+		skybleenterdlps_timer = plt_timer_create("dlps", 50, false, 0, SkyBleMesh_EnterDlps_Timeout_cb);
+		if (skybleenterdlps_timer != NULL){
+			plt_timer_start(skybleenterdlps_timer, 0);
+		}
+	}
+}
 
 void SkyBleMesh_ReadyEnterDlps_cfg(void)
-{
-	// ble 可在上电配网或未配网时 执行一次
-	uint16_t scan_interval = 0x640; //!< 500ms
-	uint16_t scan_window = 0x30;    //!< 30ms
-	gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-	gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
-	
+{	
 	// qlj 暂时不处理uart。后面在研究下
 	// uart_deinit();
 
 	// 以下不宜在enter中调用
 	// ble 暂定休眠不广播
 	beacon_stop();  	
-	if(1){ // unprov  未配网休眠不SCAN
+	if(SkyBleMesh_IsProvision_Sate() == false){ // unprov  未配网休眠不SCAN
 		gap_sched_scan(false);   // gap layer scam
+	}else{	
+		// ble 可在上电配网或未配网时 执行一次
+		uint16_t scan_interval = 0x640; //!< 500ms
+		uint16_t scan_window = 0x30;    //!< 30ms
+		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
 	}
 		
 	// sw timer
@@ -1878,9 +1904,8 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	Pad_Config(P4_3, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
 	
 	// ble
-	if(0){ // provisioned
+	if(SkyBleMesh_IsProvision_Sate()){ // provisioned
 		beacon_start(); // 配网才会打开，这个要验证下。 未配网不广播。
-		// gap_sched_scan(true);   // 配网不需要，未配没必要
 	}	
 	
 	// sw timer
@@ -1891,7 +1916,8 @@ void SkyBleMesh_ExitDlps_cfg(void)
 		plt_timer_start(skyblescanswitch_timer, 0);
 	}
 	
-	// test_cmd_ctrl_dlps(false);
+	SkyBleMesh_EnterDlps_timer();
+	test_cmd_ctrl_dlps(false);
 }
 bool switch_check_dlps_statu(void)
 {
