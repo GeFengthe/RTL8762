@@ -83,6 +83,11 @@ void app_handle_io_msg(T_IO_MSG io_msg)
             user_cmd_collect(&data, sizeof(data), device_cmd_table);
         }
         break;
+    case IO_MSG_TYPE_TIMER:
+        {
+            SkyBleMesh_MainLoop(); // 
+        }
+        break;
     case DFU_SERVER_TIMEOUT_MSG:
         dfu_server_adv_send();
         break;

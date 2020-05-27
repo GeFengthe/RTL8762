@@ -178,6 +178,7 @@ typedef struct {
 static plt_timer_t skyblereset_timer = NULL;
 static plt_timer_t skybleprosuccess_timer = NULL;
 static plt_timer_t skyblemainloop_timer = NULL;
+static plt_timer_t skyblescanswitch_timer = NULL;
 
 // FIFO
 static main_msg_fifo_t MainMsg_fifo={
@@ -853,7 +854,6 @@ static void SkyIotReportPropertyPacket(uint16_t attrID, int value, uint8_t seq_n
 
 #endif
 
-
 static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t *data)
 {
 	uint8_t *p_data = data;
@@ -999,8 +999,14 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 
 }
 
-
-
+/*
+** Creat vendors model
+*/
+extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx)
+{
+	// qlj 考虑从 datatrans_server_model_init 移植过来
+	Vendor_Model_Init(SkyBleMesh_handle_vendor_rx_cb);
+}
 
 
 #if 1  // 联网配置
@@ -1279,11 +1285,16 @@ static void Reset_iotmanager_para(void)
 }
 static void Main_Event_Handle(void)
 {
-	static uint8_t delayreport=0; // 恢复心跳后，延时上报。延时期间可能有seq不为0，故只置上报标志
+	// 恢复心跳后，延时上报。延时期间可能有seq不为0，故只置上报标志
+	static uint32_t oldtick=0, delayreport=0; 
+	uint32_t tick=0;
 	req_event_t event;
 	
 	if(delayreport){
-		if(--delayreport == 0){		
+
+		tick = HAL_GetTickCount();
+		if(delayreport <= HAL_CalculateTickDiff(oldtick, tick)){
+			delayreport = 0;
 			#if USE_SWITCH_FOR_SKYIOT
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
@@ -1308,7 +1319,8 @@ static void Main_Event_Handle(void)
 					
 					// used in delay report
 					mIotManager.report_flag = 0;
-					delayreport = (uint8_t)(rand()%80) + 1; // 50~4000ms
+					delayreport = (uint32_t)(rand()%80)*50 + 50; // 50~4000ms
+					oldtick = HAL_GetTickCount();	
 					
 					APP_DBG_PRINTF0("Main_Event_Handle device online!\n");
 				}else {
@@ -1456,15 +1468,25 @@ static void Main_WithoutNet_Handle(void)
 
 static bool Main_Check_Online(void)
 {	
-	if (++g_aliveTimerCnt >= 30){  // 30*50ms
-		uint32_t tick = HAL_GetTickCount();	
+	static bool  firstgettick=true;
+	static uint32_t alivetick=0;
+	uint32_t alivetimecnt=0,sub_timeout_ms=0;
+	uint32_t tick = HAL_GetTickCount();	
+
+	if(firstgettick && alivetick==0){
+		firstgettick = false;
+		alivetick = HAL_GetTickCount();	
+		return true; 
+	}
+
+	alivetimecnt = HAL_CalculateTickDiff(alivetick, tick);
+	if (alivetimecnt >= 150){  // 30*50ms
 		if (mIotManager.alive_wakeup_cnt < DEFAULT_WAKEUP_ALIVE_CNT){
 			if (mIotManager.alive_status == 0){
 				APP_DBG_PRINTF1("Main_Check_Online wakeupcnt %d\n", mIotManager.alive_wakeup_cnt);
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
 			}else{
-				int sub_timeout_ms;
 				sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);
 				// APP_DBG_PRINTF2("Main_Check_Online wakeupcnt %d %d\n", mIotManager.alive_wakeup_cnt, sub_timeout_ms);
 				if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
@@ -1474,7 +1496,6 @@ static bool Main_Check_Online(void)
 			}
 			mIotManager.alive_wakeup_cnt++;
 		}else {
-			int sub_timeout_ms;
 			sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.send_alive_tick, tick);
 			if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
 				APP_DBG_PRINTF1("Main_Check_Online sub_timeout_ms %d\n", sub_timeout_ms);
@@ -1504,9 +1525,8 @@ static bool Main_Check_Online(void)
 				#endif
 			}
 		}
-		g_aliveTimerCnt = 0;
-		
-	//	return false;   
+		alivetick = HAL_GetTickCount();
+		  
 	}
 
 	return true;   
@@ -1516,7 +1536,7 @@ static void Main_Upload_State(void)
 {
 	if (mIotManager.alive_status == 1) {	
 		
-#if USE_SWITCH_FOR_SKYIOT
+		#if USE_SWITCH_FOR_SKYIOT
 		if ( (mIotManager.report_flag & BLEMESH_REPORT_FLAG_SWT1) ){
 			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_SWT1;
 			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW1, mIotManager.mSwitchManager.status[SKYSWITC1_ENUM],mIotManager.swt1_seqnum);						
@@ -1527,15 +1547,14 @@ static void Main_Upload_State(void)
 			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, mIotManager.mSwitchManager.status[SKYSWITC2_ENUM],mIotManager.swt2_seqnum);						
 			mIotManager.swt2_seqnum = 0; 
 		}
-
-	#endif
+		#endif
 
 	}
 	
 }
 
 
-#define MY_TEST_TIMER
+// #define MY_TEST_TIMER
 #ifdef MY_TEST_TIMER
 
 #include "rtl876x_gpio.h"
@@ -1543,7 +1562,7 @@ static plt_timer_t skymesh_test_timer = NULL;
 static void SkyBleMesh_Test_Timeout_cb(void *timer)
 {	
 	static uint8_t testcnt=0,reconflag=0;
-	HAL_Switch_HandleTimer(NULL);
+	
 if(++testcnt >= 200)	{
 testcnt=0;
 	APP_DBG_PRINTF2("SkyBleMesh_Test_Timeout_cb prostate %d %d \n", SkyBleMesh_IsProvision_Sate(),GPIO_ReadInputDataBit(GPIO_GetPin(P2_4)) );
@@ -1621,7 +1640,7 @@ extern void SkyBleMesh_MainLoop(void)
 		}
 
 		//状态上报 
-		 Main_Upload_State();
+		Main_Upload_State();
 		
 		// 轮询发送缓存
 		BleMesh_Vendor_Send_Packet();
@@ -1644,16 +1663,19 @@ extern void SkyBleMesh_MainLoop(void)
 	
 }
 
-extern void *skymain_sem_handle;   //!< skyiot main sem handle
+#include "app_msg.h"
+extern bool app_send_msg_to_apptask(T_IO_MSG *p_msg);
 static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
 {		
 	#if USE_SOFT_WATCHDOG
 	SoftWdtFed(SKYMESH_THREAD_SWDT_ID); 
 	#endif
 	
-	if(skymain_sem_handle){
-		os_sem_give(skymain_sem_handle);
-	}
+	// 给APPtask发消息,subtype区分哪个tmr
+    T_IO_MSG msg;
+    msg.type = IO_MSG_TYPE_TIMER;
+    msg.subtype = NULL;
+    app_send_msg_to_apptask(&msg);
 }
 
 extern void SkyBleMesh_MainLoop_timer(void)
@@ -1669,6 +1691,21 @@ extern void SkyBleMesh_MainLoop_timer(void)
 		}
 	}
 }
+
+static void SkyBleMesh_ScanSwitch_Timeout_cb(void *timer)
+{
+	HAL_Switch_HandleTimer(NULL);
+}
+static void SkyBleMesh_ScanSwitch_timer(void)
+{	
+	if(skyblescanswitch_timer == NULL){ 	
+		skyblescanswitch_timer = plt_timer_create("switch", 20, true, 0, SkyBleMesh_ScanSwitch_Timeout_cb);
+		if (skyblescanswitch_timer != NULL){
+			plt_timer_start(skyblescanswitch_timer, 0);
+		}
+	}
+}
+
 extern uint8_t SkyBleMesh_App_Init(void)
 {
     uint32_t retcfg;
@@ -1732,7 +1769,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
         APP_DBG_PRINTF2("mIotManager.device_uuid[%d] = 0x%02x\n",i,mIotManager.device_uuid[i]);
     }
 
-	mIotManager.alive_wakeup_cnt = 0;
+	mIotManager.alive_wakeup_cnt    = 0;
 	mIotManager.alive_status        = 0;		
 	mIotManager.report_flag         = 0;
 	mIotManager.send_alive_tick     = 0;
@@ -1749,6 +1786,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	IsSkyAppInited = true;
 #if USE_SWITCH_FOR_SKYIOT
 	HAL_Switch_Init(&mIotManager.mSwitchManager);
+	SkyBleMesh_ScanSwitch_timer();
 #endif
 
 	// SkyBleMesh_MainLoop_timer(); // called in app_task
@@ -1761,14 +1799,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 
 
 
-/*
-** Creat vendors model
-*/
-extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx)
-{
-	// qlj 考虑从 datatrans_server_model_init 移植过来
-	Vendor_Model_Init(SkyBleMesh_handle_vendor_rx_cb);
-}
+
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -1790,12 +1821,6 @@ void test_dlps_func(uint8_t code)
 //		oldtick = tick;
 //	}
 	
-	
-	if(code==1){
-		plt_timer_start(skymesh_test_timer, 0);
-	}else if(code==0){
-		plt_timer_stop(skymesh_test_timer, 0);	
-	}
 }
 
 
@@ -1809,6 +1834,21 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 	
 	// qlj 暂时不处理uart。后面在研究下
 	// uart_deinit();
+
+	// 以下不宜在enter中调用
+	// ble 暂定休眠不广播
+	beacon_stop();  	
+	if(1){ // unprov  未配网休眠不SCAN
+		gap_sched_scan(false);   // gap layer scam
+	}
+		
+	// sw timer
+	if(skyblemainloop_timer){
+		plt_timer_stop(skyblemainloop_timer, 0);
+	}
+	if(skyblescanswitch_timer){
+		plt_timer_stop(skyblescanswitch_timer, 0);
+	}
 	
 }
 
@@ -1822,12 +1862,6 @@ void SkyBleMesh_EnterDlps_cfg(void)
 	Pad_Config(P4_2, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
 	Pad_Config(P4_1, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
 	
-	// ble 暂定休眠不广播
-	beacon_stop();  	
-	if(0){ // unprov
-		gap_sched_scan(false);   // gap layer scam
-	}
-	
 }
 
 void SkyBleMesh_ExitDlps_cfg(void)
@@ -1838,17 +1872,26 @@ void SkyBleMesh_ExitDlps_cfg(void)
         Pad_ClearWakeupINTPendingBit(P2_4);
 		System_WakeUpPinDisable(LPN_BUTTON);
 		switch_io_ctrl_dlps(false);
-		test_dlps_func(1);
+		
 	}
 	// light
 	Pad_Config(P4_3, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
 	
 	// ble
-	beacon_start(); 
-	if(0){ // unprov
-		gap_sched_scan(true);   // gap layer scam
+	if(0){ // provisioned
+		beacon_start(); // 配网才会打开，这个要验证下。 未配网不广播。
+		// gap_sched_scan(true);   // 配网不需要，未配没必要
 	}	
 	
+	// sw timer
+	if(skyblemainloop_timer){
+		plt_timer_start(skyblemainloop_timer, 0);
+	}
+	if(skyblescanswitch_timer){
+		plt_timer_start(skyblescanswitch_timer, 0);
+	}
+	
+	// test_cmd_ctrl_dlps(false);
 }
 bool switch_check_dlps_statu(void)
 {

@@ -57,9 +57,6 @@ void *evt_queue_handle;  //!< Event queue handle
 void *io_queue_handle;   //!< IO queue handle
 
 
-void *skymain_sem_handle=NULL;    //!< skyiot main sem handle
-
-
 /*============================================================================*
  *                              Functions
  *============================================================================*/
@@ -134,9 +131,8 @@ void app_main_task(void *p_param)
     uart_init();
     user_cmd_init("MeshDevice");
 
-	os_sem_create(&skymain_sem_handle, 0, 10);
-
-//	SkyBleMesh_MainLoop_timer();
+	
+	SkyBleMesh_MainLoop_timer();
     while (true)
     {
 		#if USE_SOFT_WATCHDOG
@@ -162,10 +158,6 @@ void app_main_task(void *p_param)
                 gap_handle_msg(event);
             }
         }
-
-		if (os_sem_take(skymain_sem_handle, 0) == true){			
-			SkyBleMesh_MainLoop();
-		}
 		
 		
 //		test_dlps_func();
@@ -194,10 +186,8 @@ void test_dlps_function(bool enter)
 		
 		test_cmd_ctrl_dlps(true);
 		
-		test_dlps_func(0);
 		switch_io_ctrl_dlps(true);
 	}else{	
-		test_dlps_func(0);
 		switch_io_ctrl_dlps(true);
 		test_cmd_ctrl_dlps(true);
 	}
