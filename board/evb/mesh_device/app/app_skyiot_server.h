@@ -97,5 +97,35 @@ extern uint32_t revackpackcnt ;
 extern uint32_t acktimoutcnt  ;
 #endif
 
+
+
+
+
+
+typedef union
+{
+    uint32_t dword;
+    struct
+    {
+        uint32_t io: 1; // switch
+        uint32_t cmd: 1; // test cmd
+        uint32_t rsvd: 30;
+    } bit;
+} DLPS_CTRL_STATU_T;
+
+extern DLPS_CTRL_STATU_T DlpsCtrlStatu_t;
+
+
+extern void test_dlps_func(uint8_t code);
+extern bool switch_check_dlps_statu(void);
+extern void switch_io_ctrl_dlps(bool allowenter);
+extern void test_cmd_ctrl_dlps(bool allowenter);
+
+
+extern void SkyBleMesh_ReadyEnterDlps_cfg(void);
+extern void SkyBleMesh_EnterDlps_cfg(void);
+extern void SkyBleMesh_ExitDlps_cfg(void);
+
+
 #endif // 
 

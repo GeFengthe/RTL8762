@@ -7,10 +7,11 @@
 #include "rtl876x_pinmux.h"
 #include "rtl876x_rcc.h"
 #include "skyswitch.h"
+#include "trace.h"
 
 
-#define APP_DBG_PRINTF(fmt, ...)
-
+// #define APP_DBG_PRINTF(fmt, ...)
+#define APP_DBG_PRINTF   DBG_DIRECT
 
 #define LED_RED    LEDTURNOFF 
 #define LED_BLUE   LEDTURNON  

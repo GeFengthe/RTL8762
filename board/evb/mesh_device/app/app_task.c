@@ -117,7 +117,6 @@ void uart_init(void)
  * @param[in]    p_param    Parameters sending to the task
  * @return       void
  */
-uint8_t stopadv=0;
 void app_main_task(void *p_param)
 {
 	uint32_t tmpi=0;
@@ -137,7 +136,7 @@ void app_main_task(void *p_param)
 
 	os_sem_create(&skymain_sem_handle, 0, 10);
 
-	SkyBleMesh_MainLoop_timer();
+//	SkyBleMesh_MainLoop_timer();
     while (true)
     {
 		#if USE_SOFT_WATCHDOG
@@ -169,12 +168,12 @@ void app_main_task(void *p_param)
 		}
 		
 		
-
+//		test_dlps_func();
 		
-		if(++tmpi >= 10000){
-		//	data_uart_debug("app_main_task %d \r\n", tmpcnt++);
-			tmpi = 0;
-		}
+//		if(++tmpi >= 10000){
+//			data_uart_debug("app_main_task %d \r\n", tmpcnt++);
+//			tmpi = 0;
+//		}
 		
 		#if MESH_TEST_PRESSURE == 1
 		if(test_flag==1){
@@ -190,19 +189,17 @@ void test_dlps_function(bool enter)
 	DBG_DIRECT("test_dlps_function %d \n",enter);	
 	
 	if(enter){	
-
-		uint16_t scan_interval = 0x320; //!< 500ms
-		uint16_t scan_window = 0x30; //!< 30ms
-		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+		SkyBleMesh_ReadyEnterDlps_cfg();
 		
-//		beacon_stop();  // 
-//		gap_sched_scan(false);   // gap²ãÍ£Ö¹É¨Ãè
-		// uart_deinit();
 		
-		stopadv = 1;
+		test_cmd_ctrl_dlps(true);
+		
+		test_dlps_func(0);
+		switch_io_ctrl_dlps(true);
 	}else{	
-		
+		test_dlps_func(0);
+		switch_io_ctrl_dlps(true);
+		test_cmd_ctrl_dlps(true);
 	}
 }
 

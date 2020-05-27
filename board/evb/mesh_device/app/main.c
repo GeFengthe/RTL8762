@@ -145,7 +145,7 @@ void mesh_stack_init(void)
         .sub_addr_num = 10,
         .proxy_num = 1,
 		
-			  .udb_interval = 10,//  default MESH_UDB_PERIOD
+			  .udb_interval = 50,//  default MESH_UDB_PERIOD
 			  .snb_interval = 100,//  default MESH_SNB_PERIOD
 //			  .prov_interval =1,// mesh GATT service
 //			  .proxy_interval =5,// mesh GATT service
@@ -277,7 +277,6 @@ void driver_init(void)
 
 #if ENABLE_DLPS
 
-extern uint8_t stopadv;
 /**
  * @brief this function will be called before enter DLPS
  *
@@ -290,11 +289,8 @@ extern uint8_t stopadv;
 void app_enter_dlps_config(void)
 {
 	DBG_DIRECT("En DLPS \r\n");
-	
-    Pad_Config(DATA_UART_TX_PIN, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-    Pad_Config(DATA_UART_RX_PIN, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
-	
-	System_WakeUpPinEnable(LPN_BUTTON, PAD_WAKEUP_POL_HIGH, 0);
+		
+	SkyBleMesh_EnterDlps_cfg();
 }
 
 /**
@@ -308,14 +304,9 @@ void app_enter_dlps_config(void)
 */
 void app_exit_dlps_config(void)
 {
-	DBG_DIRECT("Exit DLPS \r\n");	
-	System_WakeUpPinDisable(LPN_BUTTON);
+	DBG_DIRECT("Exit DLPS %d\r\n",System_WakeUpInterruptValue(P2_4));	
 	
-	
-//	beacon_start(); 	
-//	gap_sched_scan(true);   // gap层停止扫描
-	
-	// stopadv = 0;
+	SkyBleMesh_ExitDlps_cfg();
 	
 }
 
@@ -324,21 +315,20 @@ void app_exit_dlps_config(void)
 */
 bool app_dlps_check_cb(void)
 {
-	if(stopadv!=1){
-		return false;
-	}
-    return true;
+    return switch_check_dlps_statu();
 }
 #if 0
 void System_Handler(void)
 {
 	DBG_DIRECT("Exit System_Handler1 \r\n");
+	
+	DBG_DIRECT("System_Handler %d\r\n",GPIO_ReadInputDataBit(GPIO_GetPin(LPN_BUTTON)));	
     if (System_WakeUpInterruptValue(P2_4) == SET)
     {
 		DBG_DIRECT("Exit System_Handler2 \r\n");
         Pad_ClearWakeupINTPendingBit(P2_4);
-        System_WakeUpPinDisable(P2_4);
-        // stopadv = 0;
+        System_WakeUpPinDisable(P2_4);  // exit中加了就不会进中断
+        
     }
 }
 #endif

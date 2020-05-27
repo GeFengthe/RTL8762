@@ -1537,12 +1537,17 @@ static void Main_Upload_State(void)
 
 #define MY_TEST_TIMER
 #ifdef MY_TEST_TIMER
+
+#include "rtl876x_gpio.h"
 static plt_timer_t skymesh_test_timer = NULL;
 static void SkyBleMesh_Test_Timeout_cb(void *timer)
 {	
 	static uint8_t testcnt=0,reconflag=0;
 	HAL_Switch_HandleTimer(NULL);
-//	 APP_DBG_PRINTF2("%s prostate %d \n",__func__, SkyBleMesh_IsProvision_Sate() );
+if(++testcnt >= 200)	{
+testcnt=0;
+	APP_DBG_PRINTF2("SkyBleMesh_Test_Timeout_cb prostate %d %d \n", SkyBleMesh_IsProvision_Sate(),GPIO_ReadInputDataBit(GPIO_GetPin(P2_4)) );
+}
 
 //uint32_t time = os_sys_time_get();
 //uint32_t tick = os_sys_tick_get();
@@ -1746,13 +1751,15 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	HAL_Switch_Init(&mIotManager.mSwitchManager);
 #endif
 
-	SkyBleMesh_MainLoop_timer();
+	// SkyBleMesh_MainLoop_timer(); // called in app_task
 #ifdef MY_TEST_TIMER
 	SkyBleMesh_Test_timer();
 #endif
 	
 	return 0; 
 }
+
+
 
 /*
 ** Creat vendors model
@@ -1764,4 +1771,105 @@ extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx)
 }
 
 
+////////////////////////////////////////////////////////////////////////
 
+#include "rtl876x_pinmux.h"
+#include "rtl876x_io_dlps.h"
+#include "rtl876x_gpio.h"
+
+DLPS_CTRL_STATU_T DlpsCtrlStatu_t={0x0002};
+void test_dlps_func(uint8_t code)
+{
+//	static uint32_t oldtick=0;
+//	uint32_t tick = HAL_GetTickCount();	
+//	int sub_timeout_ms;
+//	sub_timeout_ms = HAL_CalculateTickDiff(oldtick, tick);
+//	
+//	if(sub_timeout_ms >= 50){
+//		DBG_DIRECT("test_dlps_func %d %d \r\n", oldtick, tick);
+//		oldtick = tick;
+//	}
+	
+	
+	if(code==1){
+		plt_timer_start(skymesh_test_timer, 0);
+	}else if(code==0){
+		plt_timer_stop(skymesh_test_timer, 0);	
+	}
+}
+
+
+void SkyBleMesh_ReadyEnterDlps_cfg(void)
+{
+	// ble 可在上电配网或未配网时 执行一次
+	uint16_t scan_interval = 0x640; //!< 500ms
+	uint16_t scan_window = 0x30;    //!< 30ms
+	gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+	gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+	
+	// qlj 暂时不处理uart。后面在研究下
+	// uart_deinit();
+	
+}
+
+void SkyBleMesh_EnterDlps_cfg(void)
+{	
+	// switch1
+	// System_WakeUpDebounceTime(0x08); // qlj 消抖 System_WakeUpInterruptValue取不到值
+    Pad_Config(LPN_BUTTON, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+	System_WakeUpPinEnable(LPN_BUTTON, PAD_WAKEUP_POL_HIGH, 0);
+	// light
+	Pad_Config(P4_3, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+	
+	// ble 暂定休眠不广播
+	beacon_stop();  	
+	//if(0){ // unprov
+		gap_sched_scan(false);   // gap layer scam
+	//}
+	
+}
+
+void SkyBleMesh_ExitDlps_cfg(void)
+{
+	// switch1
+	Pad_Config(LPN_BUTTON, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+	if(System_WakeUpInterruptValue(P2_4) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
+        Pad_ClearWakeupINTPendingBit(P2_4);
+		System_WakeUpPinDisable(LPN_BUTTON);
+		switch_io_ctrl_dlps(false);
+		test_dlps_func(1);
+	}
+	// light
+	Pad_Config(P4_3, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+	
+	// ble
+	// beacon_start(); 
+	if(0){ // unprov
+		gap_sched_scan(true);   // gap layer scam
+	}	
+	
+}
+bool switch_check_dlps_statu(void)
+{
+    if (DlpsCtrlStatu_t.dword == 0){
+        return true;
+    }else{
+		return false;
+	}
+}
+void switch_io_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.io = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.io = 1;
+    }
+}
+void test_cmd_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.cmd = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.cmd = 1;
+    }
+}

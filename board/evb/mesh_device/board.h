@@ -56,7 +56,7 @@ extern "C" {
 #define USE_SPI2W_DLPS       0
 #define USE_KEYSCAN_DLPS     0
 #define USE_DMIC_DLPS        0
-#define USE_GPIO_DLPS        0
+#define USE_GPIO_DLPS        1
 #define USE_PWM0_DLPS        0
 #define USE_PWM1_DLPS        0
 #define USE_PWM2_DLPS        0
