@@ -83,12 +83,6 @@ void app_handle_io_msg(T_IO_MSG io_msg)
             user_cmd_collect(&data, sizeof(data), device_cmd_table);
         }
         break;
-    case PING_TIMEOUT_MSG:
-        ping_handle_timeout();
-        break;
-    case PING_APP_TIMEOUT_MSG:
-        ping_app_handle_timeout();
-        break;
     case DFU_SERVER_TIMEOUT_MSG:
         dfu_server_adv_send();
         break;
@@ -877,13 +871,13 @@ void lpn_cb(uint8_t frnd_index, lpn_cb_type_t type, uint16_t fn_addr)
         {
             gap_sched_scan(false);
             mesh_service_adv_stop();
-            uart_deinit();
+            // uart_deinit();
         }
         break;
     case LPN_CB_TYPE_FRIENDSHIP_LOST:
         {
             mesh_service_adv_start();
-            uart_re_init();
+            // uart_re_init();
             gap_sched_scan(true);
         }
     default:

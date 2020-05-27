@@ -33,9 +33,6 @@ uint8_t  ackattrsval=0;
 #endif
 
 // timer 
-#define MAX_QUICK_ONOFF_CNT        (5)
-#define DEVICE_POWER_ON_TIMEOUT    (3000)    // ms  快速开关进配网，检查间隔3s
-#define PROV_FLASH_LIGHT_INTERVAL  (500)     // ms
 
 #define SKYBLERESET_MAXCNT         (10)    // 重配网延时服务，延时次数，即重配网闪灯次数
 #define SKYBLERESET_TIMEOUT        (150)   // 对开关，仅仅延时而已，给闪灯时间
@@ -178,7 +175,6 @@ typedef struct {
  */
 
 // timer
-static plt_timer_t quick_onoff_timer = NULL;
 static plt_timer_t skyblereset_timer = NULL;
 static plt_timer_t skybleprosuccess_timer = NULL;
 static plt_timer_t skyblemainloop_timer = NULL;
@@ -1124,61 +1120,7 @@ extern void SkyBleMesh_PowerOn_Save(void)
     }
 
 }
-#if 0
-extern void *skyonoff_sem_handle;
-static void SkyBleMesh_PowerOn_Timeout_cb(void *timer)
-{
-    if(skyonoff_sem_handle){
-		os_sem_give(skyonoff_sem_handle);
-	}
-	
-	if(quick_onoff_timer){
-		quick_onoff_timer = NULL;
-	}
-}
 
-static void SkyBleMesh_Check_Quick_onoff_timer(void)
-{
-	if(quick_onoff_timer == NULL){		
-		quick_onoff_timer = plt_timer_create("onff", DEVICE_POWER_ON_TIMEOUT, false, 0, SkyBleMesh_PowerOn_Timeout_cb);
-		if (quick_onoff_timer != NULL){
-			plt_timer_start(quick_onoff_timer, DEVICE_POWER_ON_TIMEOUT);
-		}
-	}
-}
-static bool SkyBleMesh_Check_Quick_onoff(void)
-{
-	bool ifreset=false, flashret=false;
-	
-	flashret = Hal_FlashRead(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
-    if(flashret == true) {
-        g_quick_onoff_Cnt++;
-        if(g_quick_onoff_Cnt < MAX_QUICK_ONOFF_CNT) {
-            APP_DBG_PRINTF1("---quick_onoff_cnt %d\n", g_quick_onoff_Cnt);
-			SkyBleMesh_Check_Quick_onoff_timer();
-            Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
-
-		}  else { 
-			APP_DBG_PRINTF1("+++quick_onoff_cnt %d,do factory reset\n", g_quick_onoff_Cnt);
-			
-			// when reset clear cnt
-			g_quick_onoff_Cnt = 0;
-			Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
-
-			ifreset = true;
-        }
-        
-    } else {
-		APP_DBG_PRINTF0("get quick_onoff_cnt error !!!\n");
-		
-        g_quick_onoff_Cnt = 1;
-        Hal_FlashWrite(FLASH_PARAM_TYPE_QUICK_ONOFF_CNT, sizeof(g_quick_onoff_Cnt), &g_quick_onoff_Cnt );
-        SkyBleMesh_Check_Quick_onoff_timer();
-    }
-
-	return ifreset;
-}
-#endif
 static void SkyBleMesh_Reset_Timeout_cb(void *timer)
 {
 	if( ++g_skybleresetcnt > SKYBLERESET_MAXCNT ){		

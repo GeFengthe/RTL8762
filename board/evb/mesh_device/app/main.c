@@ -260,9 +260,6 @@ void app_le_profile_init(void)
  */
 void board_init(void)
 {
-#if ENABLE_DLPS
-    lpn_board_init();
-#endif
 }
 
 /**
@@ -271,9 +268,7 @@ void board_init(void)
  * @return   void
  */
 void driver_init(void)
-{
-	gpio_driver_init();
-	
+{	
 	// Hal_Timer_init();
 	#if USE_SOFT_WATCHDOG
 	OS_WDTInit();
@@ -295,7 +290,7 @@ extern uint8_t stopadv;
 void app_enter_dlps_config(void)
 {
 	DBG_DIRECT("En DLPS \r\n");
-	uart_deinit();	
+	
     Pad_Config(DATA_UART_TX_PIN, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
     Pad_Config(DATA_UART_RX_PIN, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_LOW);
 	
@@ -316,8 +311,6 @@ void app_exit_dlps_config(void)
 	DBG_DIRECT("Exit DLPS \r\n");	
 	System_WakeUpPinDisable(LPN_BUTTON);
 	
-	uart_re_init();	
-
 	
 //	beacon_start(); 	
 //	gap_sched_scan(true);   // gap≤„Õ£÷π…®√Ë

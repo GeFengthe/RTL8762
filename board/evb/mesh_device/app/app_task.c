@@ -57,7 +57,6 @@ void *evt_queue_handle;  //!< Event queue handle
 void *io_queue_handle;   //!< IO queue handle
 
 
-void *skyonoff_sem_handle=NULL;   //!< skyiot onoff cnt sem handle
 void *skymain_sem_handle=NULL;    //!< skyiot main sem handle
 
 
@@ -136,7 +135,6 @@ void app_main_task(void *p_param)
     uart_init();
     user_cmd_init("MeshDevice");
 
-	os_sem_create(&skyonoff_sem_handle, 0, 1);
 	os_sem_create(&skymain_sem_handle, 0, 10);
 
 	SkyBleMesh_MainLoop_timer();
@@ -170,9 +168,6 @@ void app_main_task(void *p_param)
 			SkyBleMesh_MainLoop();
 		}
 		
-		if (os_sem_take(skyonoff_sem_handle, 0) == true){			
-			SkyBleMesh_PowerOn_Save();
-		}
 		
 
 		
