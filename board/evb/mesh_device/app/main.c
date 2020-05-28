@@ -275,12 +275,6 @@ void driver_init(void)
 	#endif
 	
 	
-    mesh_node_state_t node_state = mesh_node_state_restore();
-    if (node_state == UNPROV_DEVICE){
-        SkyBleMesh_Unprov_timer();
-    }else{
-        SkyBleMesh_ChangeScan_timer();
-    }
 	
 }
 
@@ -386,6 +380,14 @@ int main(void)
     app_le_gap_init();
     app_le_profile_init();
     mesh_stack_init();
+	// 要在 mesh_stack_init后获取，后面整理下
+    mesh_node_state_t node_state = mesh_node_state_restore();
+    if (node_state == UNPROV_DEVICE){
+        SkyBleMesh_Unprov_timer();
+    }else{
+        SkyBleMesh_ChangeScan_timer();
+    }
+	
     pwr_mgr_init();
     task_init();
     os_sched_start();

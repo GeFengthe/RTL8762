@@ -1554,6 +1554,28 @@ static void Main_Upload_State(void)
 	
 }
 
+static bool SkyBleMesh_Is_No_ReportMsg(void)
+{
+	bool ret = false;
+	uint8_t i=0;
+
+	if (mIotManager.alive_status == 1) {	
+		for(i=0; i<MAX_TX_BUF_DEEP; i++){
+			if( MeshTxAttrStruct[i].fullflag==1 ){
+				break;
+			}
+		}		
+		if(i==MAX_TX_BUF_DEEP && mIotManager.report_flag==0){
+			ret = true;
+		}
+
+	} else{
+		ret = true; // qlj 后面考虑下
+	}
+
+	return ret;
+}
+
 
 // #define MY_TEST_TIMER
 #ifdef MY_TEST_TIMER
@@ -1809,9 +1831,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 #include "rtl876x_io_dlps.h"
 #include "rtl876x_gpio.h"
 
-DLPS_CTRL_STATU_T DlpsCtrlStatu_t={0x0002};
-void SkyBleMesh_ReadyEnterDlps_cfg(void);
-void test_cmd_ctrl_dlps(bool allowenter);
+DLPS_CTRL_STATU_T DlpsCtrlStatu_t={0x00000002};
 
 void test_dlps_func(uint8_t code)
 {
@@ -1829,20 +1849,34 @@ void test_dlps_func(uint8_t code)
 
 static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 {
-	if(skybleenterdlps_timer){
-		plt_timer_delete(skybleenterdlps_timer, 0);
-		skybleenterdlps_timer = NULL;
+
+	if(SkyBleMesh_Is_No_ReportMsg() == true){
+		blemesh_report_ctrl_dlps(true);		
+	}else{
+		blemesh_report_ctrl_dlps(false);		
+	}
+	if(HAL_Switch_Is_Relese() == true){		
+		switch_io_ctrl_dlps(true);
+	}else{
+		switch_io_ctrl_dlps(false);
 	}
 	
-	SkyBleMesh_ReadyEnterDlps_cfg();
-	
-	switch_io_ctrl_dlps(true);
-	test_cmd_ctrl_dlps(true);
+	if(DlpsCtrlStatu_t.dword == 0x00000002){
+		SkyBleMesh_ReadyEnterDlps_cfg();
+		
+		if(skybleenterdlps_timer){
+			plt_timer_delete(skybleenterdlps_timer, 0);
+			skybleenterdlps_timer = NULL;
+		}
+		
+		Reenter_tmr_ctrl_dlps(true);
+	}
 }
-static void SkyBleMesh_EnterDlps_timer(void)
+
+void SkyBleMesh_EnterDlps_timer(void)
 {	
 	if(skybleenterdlps_timer == NULL){ 	
-		skybleenterdlps_timer = plt_timer_create("dlps", 50, false, 0, SkyBleMesh_EnterDlps_Timeout_cb);
+		skybleenterdlps_timer = plt_timer_create("dlps", 50, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
 		if (skybleenterdlps_timer != NULL){
 			plt_timer_start(skybleenterdlps_timer, 0);
 		}
@@ -1860,11 +1894,11 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 	if(SkyBleMesh_IsProvision_Sate() == false){ // unprov  未配网休眠不SCAN
 		gap_sched_scan(false);   // gap layer scam
 	}else{	
-		// ble 可在上电配网或未配网时 执行一次
-		uint16_t scan_interval = 0x640; //!< 500ms
-		uint16_t scan_window = 0x30;    //!< 30ms
-		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+//		// ble 可在上电配网或未配网时 执行一次. app 解绑需要考虑执行一次
+//		uint16_t scan_interval = 0x640; //!< 500ms
+//		uint16_t scan_window = 0x30;    //!< 30ms
+//		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+//		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
 	}
 		
 	// sw timer
@@ -1916,7 +1950,7 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	}
 	
 	SkyBleMesh_EnterDlps_timer();
-	test_cmd_ctrl_dlps(false);
+	Reenter_tmr_ctrl_dlps(false);
 }
 bool switch_check_dlps_statu(void)
 {
@@ -1940,6 +1974,30 @@ void test_cmd_ctrl_dlps(bool allowenter)
         DlpsCtrlStatu_t.bit.cmd = 0;
     }else{
         DlpsCtrlStatu_t.bit.cmd = 1;
+    }
+}
+void blemesh_unprov_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.unprov = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.unprov = 1;
+    }
+}
+void blemesh_report_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.report = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.report = 1;
+    }
+}
+void Reenter_tmr_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.dlpstmr = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.dlpstmr = 1;
     }
 }
 
@@ -1968,6 +2026,7 @@ void SkyBleMesh_Unprov_timer(void)
 		skyble_unprov_timer = plt_timer_create("unprov calc", UNPROV_TIME_OUT, false, 0, SkyBleMesh_Unprov_Timeout_cb);
 		if (skyble_unprov_timer != NULL){
 			plt_timer_start(skyble_unprov_timer, 0);
+			blemesh_unprov_ctrl_dlps(false);
 		}
 	}
 }
@@ -1976,7 +2035,7 @@ void SkyBleMesh_Unprov_timer_delet(void)
 {
     if (skyble_unprov_timer) {
         plt_timer_delete(skyble_unprov_timer, 0);
-        // switch_unprov_ctrl_dlps(true);
+        blemesh_unprov_ctrl_dlps(true);
     } else {
         APP_PRINT_INFO0("switch_swtimer->unprov_timer_stop failure!");
     }
@@ -2014,7 +2073,7 @@ void switch_handle_sw_timer_msg(T_IO_MSG *io_msg)
         }
 		case UNPROV_TIMEOUT:{
             beacon_stop();
-            // switch_unprov_ctrl_dlps(true);
+            blemesh_unprov_ctrl_dlps(true);
             break;
         }
 		case PROV_SUCCESS_TIMEOUT:{

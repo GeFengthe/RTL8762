@@ -133,6 +133,9 @@ void app_main_task(void *p_param)
 
 	
 	SkyBleMesh_MainLoop_timer();
+	
+	SkyBleMesh_EnterDlps_timer();
+	Reenter_tmr_ctrl_dlps(false);
     while (true)
     {
 		#if USE_SOFT_WATCHDOG
@@ -163,7 +166,7 @@ void app_main_task(void *p_param)
 //		test_dlps_func();
 		
 		if(++tmpi >= 5000){
-			DBG_DIRECT("app_main_task %d \r\n", mesh_node_state_restore());
+			DBG_DIRECT("app_main_task %d %d\r\n", mesh_node_state_restore(),DlpsCtrlStatu_t.dword);
 			tmpi = 0;
 		}
 		
@@ -181,13 +184,9 @@ void test_dlps_function(bool enter)
 	DBG_DIRECT("test_dlps_function %d \n",enter);	
 	
 	if(enter){	
-		SkyBleMesh_ReadyEnterDlps_cfg();
-		
-		
 		test_cmd_ctrl_dlps(true);
-		
-		switch_io_ctrl_dlps(true);
 	}else{	
+		test_cmd_ctrl_dlps(false);
 	}
 }
 

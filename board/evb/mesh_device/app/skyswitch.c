@@ -263,10 +263,6 @@ void HAL_Switch_HandleTimer(void *timer)
 
 }
 
-
-
-
-
 bool HAL_Switch_Init(SkySwitchManager *manager)
 {
 	if( manager == NULL){
@@ -285,4 +281,16 @@ bool HAL_Switch_Init(SkySwitchManager *manager)
 }
 
 
+
+bool HAL_Switch_Is_Relese(void)
+{
+	uint8_t keypress = ReadKeyStatu();
+	
+	if(IsSwitchInited==true && keystatus==SCAN_KEY_INIT && keypress==0){
+		return true;
+	} else {
+		return false;
+	}
+
+}
 

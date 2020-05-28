@@ -41,17 +41,18 @@ typedef struct {
 }SkySwitchManager;
 
 
-bool HAL_Switch_Init(SkySwitchManager *manager);
+extern bool HAL_Switch_Init(SkySwitchManager *manager);
 
-void HAL_ProvisionLed_Control(uint8_t mode);
-void HAL_BlinkProLed_Enable(void);
-void HAL_BlinkProLed_Disable(void);
-bool HAL_BlinkProLed_Statu(void);
+extern void HAL_ProvisionLed_Control(uint8_t mode);
+extern void HAL_BlinkProLed_Enable(void);
+extern void HAL_BlinkProLed_Disable(void);
+extern bool HAL_BlinkProLed_Statu(void);
 
-void HAL_SwitchLed_Control(uint8_t index, uint8_t mode);
+extern void HAL_SwitchLed_Control(uint8_t index, uint8_t mode);
 
-void HAL_Switch_HandleTimer(void *timer);
+extern void HAL_Switch_HandleTimer(void *timer);
 
+extern bool HAL_Switch_Is_Relese(void);
 
 #endif //
 
