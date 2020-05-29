@@ -145,7 +145,7 @@ void mesh_stack_init(void)
         .sub_addr_num = 10,
         .proxy_num = 1,
 		
-			  .udb_interval = 50,//  default MESH_UDB_PERIOD
+			  .udb_interval = 10,//  default MESH_UDB_PERIOD
 			  .snb_interval = 100,//  default MESH_SNB_PERIOD
 //			  .prov_interval =1,// mesh GATT service
 //			  .proxy_interval =5,// mesh GATT service
