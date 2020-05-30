@@ -37,6 +37,7 @@
 #include "device_cmd.h"
 
 #include "app_skyiot_server.h"
+#include "app_skyiot_dlps.h"
 #include "soft_wdt.h"
 
 /*============================================================================*

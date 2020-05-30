@@ -580,6 +580,11 @@
               <FilePath>..\..\..\src\app\mesh\lib\model\realtek\datatrans_model_server.c</FilePath>
             </File>
             <File>
+              <FileName>datatrans_server_app.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\app\mesh\lib\common\datatrans_server_app.c</FilePath>
+            </File>
+            <File>
               <FileName>mesh_sdk.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\src\app\mesh\lib\common\mesh_sdk.c</FilePath>
@@ -633,11 +638,6 @@
               <FileName>app_hwtmr.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\app_hwtmr.c</FilePath>
-            </File>
-            <File>
-              <FileName>datatrans_server_app.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\src\app\mesh\lib\common\datatrans_server_app.c</FilePath>
             </File>
           </Files>
         </Group>

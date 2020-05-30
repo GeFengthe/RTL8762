@@ -37,6 +37,7 @@
 #include "mem_config.h"
 #include "board.h"
 
+#include "user_cmd_parse.h"
 #include "app_skyiot_server.h"
 
 #if ENABLE_DLPS

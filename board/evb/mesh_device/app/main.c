@@ -44,7 +44,6 @@
 #include "ota_server.h"
 #include "dfu_server.h"
 #include "dfu_client.h"
-#include "datatrans_server.h"
 #include "health.h"
 #include "datatrans_server_app.h"
 
@@ -52,11 +51,11 @@
 #include "rtl876x_pinmux.h"
 #include "rtl876x_io_dlps.h"
 #include "rtl876x_gpio.h"
-#include "io_management.h"
 
 #include "app_hwtmr.h"
 #include "soft_wdt.h"
 #include "app_skyiot_server.h"
+#include "app_skyiot_dlps.h"
 
 mesh_model_info_t health_server_model;
 
@@ -162,11 +161,8 @@ void mesh_stack_init(void)
     mesh_element_create(GATT_NS_DESC_UNKNOWN);
     health_server_reg(0, &health_server_model);
     health_server_set_company_id(&health_server_model, COMPANY_ID);
-//    ping_control_reg(ping_app_ping_cb, pong_receive);
-//    trans_ping_pong_init(ping_app_ping_cb, pong_receive);
-//    tp_control_reg(tp_reveive);
 	
-	 SkyBleMesh_Vendormodel_init(0);
+	SkyBleMesh_Vendormodel_init(0);
 
     compo_data_page0_header_t compo_data_page0_header = {COMPANY_ID, PRODUCT_ID, VERSION_ID};
     compo_data_page0_gen(&compo_data_page0_header);
@@ -236,7 +232,6 @@ void app_le_profile_init(void)
     /* Add Server Module */
     ota_server_add(NULL);
     dfu_server_add(app_profile_callback);
-    // datatrans_server_add(app_profile_callback);  // qlj ≥¢ ‘∏…µÙ
 
     /* Register Server Callback */
     server_register_app_cb(app_profile_callback);
