@@ -1755,17 +1755,17 @@ extern uint8_t SkyBleMesh_App_Init(void)
 		// 本地烧录不会擦除flash。所以通过MACaddr判断擦除flash。并清配网
 		mesh_node_clear(); // 恢复重配网
 		
-		/*创维设备mesh UUID:     MAC地址(6Byte) + PRODUCT_TYPE(4Byte) + 随机数(6Byte) */
-		Regain_Random_UUID(mIotManager.device_uuid, MESH_DEV_UUID_LEN);	
-		memcpy(mIotManager.device_uuid, mIotManager.mac_address, MAC_ADDRESS_LEN);	
-		mIotManager.device_uuid[MAC_ADDRESS_LEN]   = PRODUCT_TYPE & 0xFF;
-		mIotManager.device_uuid[MAC_ADDRESS_LEN+1] = (PRODUCT_TYPE>>8) & 0xFF;
-		mIotManager.device_uuid[MAC_ADDRESS_LEN+2] = (PRODUCT_TYPE>>16) & 0xFF;
-		mIotManager.device_uuid[MAC_ADDRESS_LEN+3] = (PRODUCT_TYPE>>24) & 0xFF;		
+		/*创维设备mesh UUID:     CIP(2BYTE)+ PRODUCT_TYPE(4Byte)+ MAC地址(6Byte)+ 机数(4Byte) */
+		Regain_Random_UUID(mIotManager.device_uuid, MESH_DEV_UUID_LEN);			
+		mIotManager.device_uuid[0] = BLEMESH_VENDOR_COMPANY_ID & 0xFF;
+		mIotManager.device_uuid[1] = (BLEMESH_VENDOR_COMPANY_ID>>8) & 0xFF;
+		mIotManager.device_uuid[2] = PRODUCT_TYPE & 0xFF;
+		mIotManager.device_uuid[3] = (PRODUCT_TYPE>>8) & 0xFF;
+		mIotManager.device_uuid[4] = (PRODUCT_TYPE>>16) & 0xFF;
+		mIotManager.device_uuid[5] = (PRODUCT_TYPE>>24) & 0xFF;			
+		memcpy(&(mIotManager.device_uuid[6]), mIotManager.mac_address, MAC_ADDRESS_LEN);
 		#if MESH_TEST_PRESSURE == 1
-		mIotManager.device_uuid[10]   = PRODUCT_TYPE & 0xFF;	// used in test
-		mIotManager.device_uuid[11]   = PRODUCT_TYPE & 0xFF;	
-		mIotManager.device_uuid[12]   = PRODUCT_TYPE & 0xFF;	
+		mIotManager.device_uuid[12]   = PRODUCT_TYPE & 0xFF;	// used in test
 		mIotManager.device_uuid[13]   = PRODUCT_TYPE & 0xFF;	
 		mIotManager.device_uuid[14]   = PRODUCT_TYPE & 0xFF;	
 		mIotManager.device_uuid[15]   = PRODUCT_TYPE & 0xFF;
@@ -1778,7 +1778,6 @@ extern uint8_t SkyBleMesh_App_Init(void)
         APP_DBG_PRINTF0("SkyBleMesh_ReadConfig read succ\n");
 		// 按保存的参数，恢复对设备的控制
     }	
-	
 			
 	#if USE_SWITCH_FOR_SKYIOT
 	mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
