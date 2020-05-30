@@ -1,11 +1,13 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "app_skyiot_server.h"
+#include "platform_utils.h"
 #include "datatrans_server_app.h"
 #include "datatrans_model.h"
 #include "utils_md5.h"
-#include "platform_utils.h"
+#include "app_task.h"
+#include "app_skyiot_server.h"
+#include "app_skyiot_dlps.h"
 #include "soft_wdt.h"
 
 
@@ -179,7 +181,8 @@ static plt_timer_t skyblereset_timer = NULL;
 static plt_timer_t skybleprosuccess_timer = NULL;
 static plt_timer_t skyblemainloop_timer = NULL;
 static plt_timer_t skyblescanswitch_timer = NULL;
-static plt_timer_t skybleenterdlps_timer = NULL;
+static plt_timer_t skyble_unprov_timer = NULL;
+static plt_timer_t skyble_changescan_timer = NULL;
 
 // FIFO
 static main_msg_fifo_t MainMsg_fifo={
@@ -1086,7 +1089,7 @@ extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate)
 			break;
 	}
 }
-static bool SkyBleMesh_IsProvision_Sate(void)
+extern bool SkyBleMesh_IsProvision_Sate(void)
 {
 	bool ret=false;
 	
@@ -1100,9 +1103,84 @@ static bool SkyBleMesh_IsProvision_Sate(void)
 /*
 ** unprovision advertising timeout, deinit something.
 */
-extern void SkyBleMesh_UnPro_Adv_timeout_cb(void)
+static void SkyBleMesh_Unprov_Timeout_cb(void *ptimer)
 {
-	APP_DBG_PRINTF0("SkyBleMesh_UnPro_Adv_timeout_cb\n");	
+	if(skyble_unprov_timer){
+		skyble_unprov_timer = NULL;
+	}
+	
+    T_IO_MSG unprov_timeout_msg;
+    unprov_timeout_msg.type     = IO_MSG_TYPE_TIMER;
+    unprov_timeout_msg.subtype  = UNPROV_TIMEOUT;
+    app_send_msg_to_apptask(&unprov_timeout_msg);
+}
+
+void SkyBleMesh_Unprov_timer(void)
+{	
+	if(skyble_unprov_timer == NULL){ 	
+		skyble_unprov_timer = plt_timer_create("unprov calc", MESHDEVICE_UNPROV_TIME_OUT, false, 0, SkyBleMesh_Unprov_Timeout_cb);
+		if (skyble_unprov_timer != NULL){
+			plt_timer_start(skyble_unprov_timer, 0);
+			blemesh_unprov_ctrl_dlps(false);
+		}
+	}
+}
+
+void SkyBleMesh_Unprov_timer_delet(void)
+{
+    if (skyble_unprov_timer) {
+        plt_timer_delete(skyble_unprov_timer, 0);
+        blemesh_unprov_ctrl_dlps(true);
+    } else {
+        APP_PRINT_INFO0("switch_swtimer->unprov_timer_stop failure!");
+    }
+}
+
+static void SkyBleMesh_ChangeScan_Timeout_cb(void *ptimer)
+{
+	if(skyble_changescan_timer){
+		skyble_changescan_timer = NULL;
+	}
+	
+    T_IO_MSG unprov_timeout_msg;
+    unprov_timeout_msg.type     = IO_MSG_TYPE_TIMER;
+    unprov_timeout_msg.subtype  = PROV_SUCCESS_TIMEOUT;
+    app_send_msg_to_apptask(&unprov_timeout_msg);
+}
+
+void SkyBleMesh_ChangeScan_timer(void)
+{
+	if(skyble_changescan_timer == NULL){ 	
+		skyble_changescan_timer = plt_timer_create("change scan", CHANGE_SCAN_PARAM_TIME_OUT, false, 0, SkyBleMesh_ChangeScan_Timeout_cb);
+		if (skyble_changescan_timer != NULL){
+			plt_timer_start(skyble_changescan_timer, 0);
+		}
+	}
+}
+
+void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
+{
+    switch (io_msg->subtype)
+    {
+		case MAINLOOP_TIMEOUT:{
+             SkyBleMesh_MainLoop();
+            break;
+        }
+		case UNPROV_TIMEOUT:{
+            beacon_stop();
+            blemesh_unprov_ctrl_dlps(true);
+            break;
+        }
+		case PROV_SUCCESS_TIMEOUT:{
+//            uint16_t scan_interval = 48; //0x320; // 0x320; //!< 500ms
+//            uint16_t scan_window = 0x30; //!< 30ms
+//            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+//            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+            break;
+        }
+		default:
+            break;
+    }
 }
 
 
@@ -1553,7 +1631,7 @@ static void Main_Upload_State(void)
 	
 }
 
-static bool SkyBleMesh_Is_No_ReportMsg(void)
+extern bool SkyBleMesh_Is_No_ReportMsg(void)
 {
 	bool ret = false;
 	uint8_t i=0;
@@ -1685,8 +1763,6 @@ extern void SkyBleMesh_MainLoop(void)
 	
 }
 
-#include "app_msg.h"
-extern bool app_send_msg_to_apptask(T_IO_MSG *p_msg);
 static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
 {		
 	#if USE_SOFT_WATCHDOG
@@ -1713,6 +1789,18 @@ extern void SkyBleMesh_MainLoop_timer(void)
 		}
 	}
 }
+extern void SkyBleMesh_StopMainLoop_tmr(void)
+{	
+	if(skyblemainloop_timer){		
+		plt_timer_stop(skyblemainloop_timer, 0);
+	}
+}
+extern void SkyBleMesh_StartMainLoop_tmr(void)
+{	
+	if(skyblemainloop_timer){		
+		plt_timer_start(skyblemainloop_timer, 0);
+	}
+}
 
 static void SkyBleMesh_ScanSwitch_Timeout_cb(void *timer)
 {
@@ -1725,6 +1813,18 @@ static void SkyBleMesh_ScanSwitch_timer(void)
 		if (skyblescanswitch_timer != NULL){
 			plt_timer_start(skyblescanswitch_timer, 0);
 		}
+	}
+}
+extern void SkyBleMesh_StopScanSwitch_tmr(void)
+{	
+	if(skyblescanswitch_timer){		
+		plt_timer_stop(skyblescanswitch_timer, 0);
+	}
+}
+extern void SkyBleMesh_StartScanSwitch_tmr(void)
+{	
+	if(skyblescanswitch_timer){		
+		plt_timer_start(skyblescanswitch_timer, 0);
 	}
 }
 
@@ -1819,272 +1919,8 @@ extern uint8_t SkyBleMesh_App_Init(void)
 }
 
 
-
-
-
-
-////////////////////////////////////////////////////////////////////////
-
-#include "rtl876x_pinmux.h"
-#include "rtl876x_io_dlps.h"
-#include "rtl876x_gpio.h"
-
-DLPS_CTRL_STATU_T DlpsCtrlStatu_t={0x00000002};
-
-void test_dlps_func(uint8_t code)
-{
-//	static uint32_t oldtick=0;
-//	uint32_t tick = HAL_GetTickCount();	
-//	int sub_timeout_ms;
-//	sub_timeout_ms = HAL_CalculateTickDiff(oldtick, tick);
-//	
-//	if(sub_timeout_ms >= 50){
-//		DBG_DIRECT("test_dlps_func %d %d \r\n", oldtick, tick);
-//		oldtick = tick;
-//	}
-	
-}
-
-static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
-{
-
-	if(SkyBleMesh_Is_No_ReportMsg() == true){
-		blemesh_report_ctrl_dlps(true);		
-	}else{
-		blemesh_report_ctrl_dlps(false);		
-	}
-	if(HAL_Switch_Is_Relese() == true){		
-		switch_io_ctrl_dlps(true);
-	}else{
-		switch_io_ctrl_dlps(false);
-	}
-	
-	if(DlpsCtrlStatu_t.dword == 0x00000002){
-		SkyBleMesh_ReadyEnterDlps_cfg();
-		
-		if(skybleenterdlps_timer){
-			plt_timer_delete(skybleenterdlps_timer, 0);
-			skybleenterdlps_timer = NULL;
-		}
-		
-		Reenter_tmr_ctrl_dlps(true);
-	}
-}
-
-void SkyBleMesh_EnterDlps_timer(void)
-{	
-	if(skybleenterdlps_timer == NULL){ 	
-		skybleenterdlps_timer = plt_timer_create("dlps", 50, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
-		if (skybleenterdlps_timer != NULL){
-			plt_timer_start(skybleenterdlps_timer, 0);
-		}
-	}
-}
-
-void SkyBleMesh_ReadyEnterDlps_cfg(void)
-{	
-	// qlj 暂时不处理uart。后面在研究下
-	// uart_deinit();
-
-	// 以下不宜在enter中调用
-	// ble 暂定休眠不广播
-	beacon_stop();  	
-	if(SkyBleMesh_IsProvision_Sate() == false){ // unprov  未配网休眠不SCAN
-		gap_sched_scan(false);   // gap layer scam
-	}else{	
-//		// ble 可在上电配网或未配网时 执行一次. app 解绑需要考虑执行一次
-//		uint16_t scan_interval = 0x640; //!< 500ms
-//		uint16_t scan_window = 0x30;    //!< 30ms
-//		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-//		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
-	}
-		
-	// sw timer
-	if(skyblemainloop_timer){
-		plt_timer_stop(skyblemainloop_timer, 0);
-	}
-	if(skyblescanswitch_timer){
-		plt_timer_stop(skyblescanswitch_timer, 0);
-	}
-	
-}
-
-void SkyBleMesh_EnterDlps_cfg(void)
-{	
-	// switch1
-	Pad_Config(LPN_BUTTON, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-	System_WakeUpPinEnable(LPN_BUTTON, PAD_WAKEUP_POL_HIGH, 0);
-	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
-	Pad_Config(P4_3, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-	Pad_Config(P4_2, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-	Pad_Config(P4_1, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-	
-}
-
-void SkyBleMesh_ExitDlps_cfg(void)
-{
-	// switch1
-	Pad_Config(LPN_BUTTON, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-	if(System_WakeUpInterruptValue(P2_4) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
-        Pad_ClearWakeupINTPendingBit(P2_4);
-		System_WakeUpPinDisable(LPN_BUTTON);
-		switch_io_ctrl_dlps(false);
-		
-	}
-	// light
-	Pad_Config(P4_3, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-	
-	// ble
-	if(SkyBleMesh_IsProvision_Sate()){ // provisioned
-		beacon_start(); // 配网才会打开，这个要验证下。 未配网不广播。
-	}	
-	
-	// sw timer
-	if(skyblemainloop_timer){
-		plt_timer_start(skyblemainloop_timer, 0);
-	}
-	if(skyblescanswitch_timer){
-		plt_timer_start(skyblescanswitch_timer, 0);
-	}
-	
-	SkyBleMesh_EnterDlps_timer();
-	Reenter_tmr_ctrl_dlps(false);
-}
-bool switch_check_dlps_statu(void)
-{
-    if (DlpsCtrlStatu_t.dword == 0){
-        return true;
-    }else{
-		return false;
-	}
-}
-void switch_io_ctrl_dlps(bool allowenter)
-{
-    if(allowenter){
-        DlpsCtrlStatu_t.bit.io = 0;
-    }else{
-        DlpsCtrlStatu_t.bit.io = 1;
-    }
-}
-void test_cmd_ctrl_dlps(bool allowenter)
-{
-    if(allowenter){
-        DlpsCtrlStatu_t.bit.cmd = 0;
-    }else{
-        DlpsCtrlStatu_t.bit.cmd = 1;
-    }
-}
-void blemesh_unprov_ctrl_dlps(bool allowenter)
-{
-    if(allowenter){
-        DlpsCtrlStatu_t.bit.unprov = 0;
-    }else{
-        DlpsCtrlStatu_t.bit.unprov = 1;
-    }
-}
-void blemesh_report_ctrl_dlps(bool allowenter)
-{
-    if(allowenter){
-        DlpsCtrlStatu_t.bit.report = 0;
-    }else{
-        DlpsCtrlStatu_t.bit.report = 1;
-    }
-}
-void Reenter_tmr_ctrl_dlps(bool allowenter)
-{
-    if(allowenter){
-        DlpsCtrlStatu_t.bit.dlpstmr = 0;
-    }else{
-        DlpsCtrlStatu_t.bit.dlpstmr = 1;
-    }
-}
-
-
-
 ///////////////////////////////////////////////////////////////////////
 
-static plt_timer_t skyble_unprov_timer = NULL;
-static plt_timer_t skyble_changescan_timer = NULL;
-
-static void SkyBleMesh_Unprov_Timeout_cb(void *ptimer)
-{
-	if(skyble_unprov_timer){
-		skyble_unprov_timer = NULL;
-	}
-	
-    T_IO_MSG unprov_timeout_msg;
-    unprov_timeout_msg.type     = IO_MSG_TYPE_TIMER;
-    unprov_timeout_msg.subtype  = UNPROV_TIMEOUT;
-    app_send_msg_to_apptask(&unprov_timeout_msg);
-}
-
-void SkyBleMesh_Unprov_timer(void)
-{	
-	if(skyble_unprov_timer == NULL){ 	
-		skyble_unprov_timer = plt_timer_create("unprov calc", UNPROV_TIME_OUT, false, 0, SkyBleMesh_Unprov_Timeout_cb);
-		if (skyble_unprov_timer != NULL){
-			plt_timer_start(skyble_unprov_timer, 0);
-			blemesh_unprov_ctrl_dlps(false);
-		}
-	}
-}
-
-void SkyBleMesh_Unprov_timer_delet(void)
-{
-    if (skyble_unprov_timer) {
-        plt_timer_delete(skyble_unprov_timer, 0);
-        blemesh_unprov_ctrl_dlps(true);
-    } else {
-        APP_PRINT_INFO0("switch_swtimer->unprov_timer_stop failure!");
-    }
-}
-
-static void SkyBleMesh_ChangeScan_Timeout_cb(void *ptimer)
-{
-	if(skyble_changescan_timer){
-		skyble_changescan_timer = NULL;
-	}
-	
-    T_IO_MSG unprov_timeout_msg;
-    unprov_timeout_msg.type     = IO_MSG_TYPE_TIMER;
-    unprov_timeout_msg.subtype  = PROV_SUCCESS_TIMEOUT;
-    app_send_msg_to_apptask(&unprov_timeout_msg);
-}
-
-void SkyBleMesh_ChangeScan_timer(void)
-{
-	if(skyble_changescan_timer == NULL){ 	
-		skyble_changescan_timer = plt_timer_create("change scan", CHANGE_SCAN_PARAM_TIME_OUT, false, 0, SkyBleMesh_ChangeScan_Timeout_cb);
-		if (skyble_changescan_timer != NULL){
-			plt_timer_start(skyble_changescan_timer, 0);
-		}
-	}
-}
-
-void switch_handle_sw_timer_msg(T_IO_MSG *io_msg)
-{
-    switch (io_msg->subtype)
-    {
-		case MAINLOOP_TIMEOUT:{
-             SkyBleMesh_MainLoop();
-            break;
-        }
-		case UNPROV_TIMEOUT:{
-            beacon_stop();
-            blemesh_unprov_ctrl_dlps(true);
-            break;
-        }
-		case PROV_SUCCESS_TIMEOUT:{
-//            uint16_t scan_interval = 48; //0x320; // 0x320; //!< 500ms
-//            uint16_t scan_window = 0x30; //!< 30ms
-//            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-//            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
-            break;
-        }
-		default:
-            break;
-    }
-}
 
 
 

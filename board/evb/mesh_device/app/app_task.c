@@ -163,11 +163,9 @@ void app_main_task(void *p_param)
             }
         }
 		
-		
-//		test_dlps_func();
-		
+				
 		if(++tmpi >= 5000){
-			DBG_DIRECT("app_main_task %d %d\r\n", mesh_node_state_restore(),DlpsCtrlStatu_t.dword);
+			DBG_DIRECT("app_main_task %d \r\n", mesh_node_state_restore() );
 			tmpi = 0;
 		}
 		

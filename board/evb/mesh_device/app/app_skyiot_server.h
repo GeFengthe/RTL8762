@@ -15,9 +15,10 @@
  ****************************************************************************************
  */
 
-#ifndef _APP_LIGHT_LIGHT_ALI_SERVER_H
-#define _APP_LIGHT_LIGHT_ALI_SERVER_H
+#ifndef _APP_SKYIOT_SERVER_H
+#define _APP_SKYIOT_SERVER_H
 
+#include "app_msg.h"
 #include "skyswitch.h"
 
 #define MESH_TEST_PRESSURE 0
@@ -27,19 +28,17 @@
 #define PRODUCT_BRAND   (1)	      //skyworth
 #define PRODUCT_VERSION ("1.0.05")
 
-#define MESH_ADV_NAME_LEN (30)
+// #define MESH_ADV_NAME_LEN (30)
 
-#define SKYBLEMESH_MAINLOOP_TIMER  (5)      // 50ms
-#define SKYBLEMESH_USR_TIMER       (2)      // 20ms
-
+#define MESHDEVICE_UNPROV_TIME_OUT          (2*60*1000)  // 10min
+#define CHANGE_SCAN_PARAM_TIME_OUT          (10*1000)    // 10s
 
 
 /* APP CONFIG DATA */
 // max size, 32bit alignment  .
 // ftl_save 考虑到ble保存的偏移（0xC00）. app层0~2000被mesh占用。故自定义数据从2000往后使用
-#define FTLMAP_APPCFGDATA_OFFSET   2000
-#define FTLMAP_APPCFGDATA_SIZE     100  
-
+#define FTLMAP_APPCFGDATA_OFFSET    2000
+#define FTLMAP_APPCFGDATA_SIZE      100  
 /* quick onoff */
 #define FTLMAP_QUICK_ONOFF_OFFSET   2200
 #define FTLMAP_QUICK_ONOFF_SIZE     8  
@@ -52,11 +51,16 @@ typedef enum
 
 
 #define FLASH_USERDATA_SAVE_LEN        (64)    // 大于 sizeof(SkyBleMeshIotManager) 
-
-#define MESH_DEV_UUID_LEN  16
-
+#define MESH_DEV_UUID_LEN              (16)
 
 
+
+typedef enum
+{
+    MAINLOOP_TIMEOUT,
+    UNPROV_TIMEOUT,
+    PROV_SUCCESS_TIMEOUT
+} SW_TIMER_MSG_TYPE;
 
 typedef enum
 {
@@ -70,18 +74,25 @@ extern MESH_PROVISION_STATE_e mesh_provison_state;
 
 extern bool Hal_Get_Ble_MacAddr(uint8_t* mac);
 extern void SkyBleMesh_Get_DeviceName(char *name, uint8_t *len);
-
 extern void SkyBleMesh_Get_UUID(uint8_t *uuid, uint8_t len);
 extern void SkyBleMesh_Regain_UUID(uint8_t *uuid, uint8_t len);
 
-
-extern void SkyBleMesh_UnPro_Adv_timeout_cb(void);
 extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate);
+extern bool SkyBleMesh_IsProvision_Sate(void);
+extern void SkyBleMesh_Unprov_timer(void);	
+extern void SkyBleMesh_Unprov_timer_delet(void);
+extern void SkyBleMesh_ChangeScan_timer(void);
+extern void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg);
 extern void SkyBleMesh_unBind_complete(void);
 
 extern void SkyBleMesh_PowerOn_Save(void);
 extern int SkyBleMesh_WriteConfig(void);
+extern bool SkyBleMesh_Is_No_ReportMsg(void);
 extern void SkyBleMesh_MainLoop_timer(void);
+extern void SkyBleMesh_StopMainLoop_tmr(void);
+extern void SkyBleMesh_StartMainLoop_tmr(void);
+extern void SkyBleMesh_StopScanSwitch_tmr(void);
+extern void SkyBleMesh_StartScanSwitch_tmr(void);
 extern void SkyBleMesh_MainLoop(void);
 extern uint8_t SkyBleMesh_App_Init(void);
 
@@ -97,61 +108,6 @@ extern uint32_t revackpackcnt ;
 extern uint32_t acktimoutcnt  ;
 #endif
 
-
-
-
-
-
-typedef union
-{
-    uint32_t dword;
-    struct
-    {
-        uint32_t cmd:     1; // test cmd  // 后面改成系统初始化ok
-        uint32_t dlpstmr: 1; // enter dlps tmr cnt
-        uint32_t io:      1; // switch
-        uint32_t unprov:  1; // unprov or proved
-        uint32_t report:  1; // report attr,FIFO\FLAG
-        uint32_t rsvd: 27;
-    } bit;
-} DLPS_CTRL_STATU_T;
-
-extern DLPS_CTRL_STATU_T DlpsCtrlStatu_t;
-
-extern void SkyBleMesh_EnterDlps_timer(void);
-extern void test_dlps_func(uint8_t code);
-extern bool switch_check_dlps_statu(void);
-
-extern void switch_io_ctrl_dlps(bool allowenter);
-extern void test_cmd_ctrl_dlps(bool allowenter);
-extern void blemesh_unprov_ctrl_dlps(bool allowenter);
-extern void blemesh_report_ctrl_dlps(bool allowenter);
-extern void Reenter_tmr_ctrl_dlps(bool allowenter);
-
-
-extern void SkyBleMesh_ReadyEnterDlps_cfg(void);
-extern void SkyBleMesh_EnterDlps_cfg(void);
-extern void SkyBleMesh_ExitDlps_cfg(void);
-
-
-
-
-#define UNPROV_TIME_OUT                     (2*60*1000)  // 10min
-#define CHANGE_SCAN_PARAM_TIME_OUT          (10*1000)    // 10s
-
-#include "app_msg.h"
-typedef enum
-{
-    MAINLOOP_TIMEOUT,
-    UNPROV_TIMEOUT,
-    PROV_SUCCESS_TIMEOUT
-} SW_TIMER_MSG_TYPE;
-
-
-extern void SkyBleMesh_Unprov_timer(void);	
-extern void SkyBleMesh_Unprov_timer_delet(void);
-extern void SkyBleMesh_ChangeScan_timer(void);
-extern void switch_handle_sw_timer_msg(T_IO_MSG *io_msg);
 
 
 #endif // 

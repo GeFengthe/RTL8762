@@ -615,6 +615,11 @@
               <FilePath>.\app\app_skyiot_server.c</FilePath>
             </File>
             <File>
+              <FileName>app_skyiot_dlps.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\app_skyiot_dlps.c</FilePath>
+            </File>
+            <File>
               <FileName>utils_md5.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\utils_md5.c</FilePath>

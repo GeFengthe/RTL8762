@@ -85,7 +85,7 @@ void app_handle_io_msg(T_IO_MSG io_msg)
         break;
     case IO_MSG_TYPE_TIMER:
         {
-            switch_handle_sw_timer_msg(&io_msg); // 
+            SkyBleMesh_Handle_SwTmr_msg(&io_msg); // 
         }
         break;
     case DFU_SERVER_TIMEOUT_MSG:
