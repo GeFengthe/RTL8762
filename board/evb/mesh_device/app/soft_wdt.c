@@ -153,9 +153,13 @@ void SoftWdtISR(void)
 	uint8_t i = 0;
 	static uint16_t Init_Tim_Count = 0,Init_Is_Over = 0;
 
-	if(DisableWDTFedMake == true)    {            return;        }
-	if(StopWDTFedMake == true)       { 
-		// CPU没有使用看门狗，所以这里是直接重启进程。
+	if(DisableWDTFedMake == true || StopWDTFedMake == true)       { 
+		// 这里是直接重启进程。
+//		WDG_ClockEnable();
+//		WDG_Enable();
+		DBG_DIRECT("[SoftWdtISR] reboot!");
+		WDG_SystemReset(RESET_ALL, RESET_REASON_WDG_TIMEOUT); 
+		
 		return;        
 	}
 	if(Init_Is_Over == 0) {

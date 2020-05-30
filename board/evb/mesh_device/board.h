@@ -45,7 +45,11 @@ extern "C" {
 /* if use any peripherals below, #define it 1 */
 #define USE_I2C0_DLPS        0
 #define USE_I2C1_DLPS        0
+#if USE_SOFT_WATCHDOG
+#define USE_TIM_DLPS         1
+#else
 #define USE_TIM_DLPS         0
+#endif
 #define USE_QDECODER_DLPS    0
 #define USE_IR_DLPS          0
 #define USE_RTC_DLPS         0

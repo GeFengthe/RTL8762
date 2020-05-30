@@ -188,7 +188,6 @@ static main_msg_fifo_t MainMsg_fifo={
 };
 	
 static SkyBleMeshIotManager mIotManager;
-static int8_t   g_aliveTimerCnt = 0;
 static uint32_t g_quick_onoff_Cnt = 0;
 static bool IsSkyAppInited = false;
 static uint8_t g_skybleresetcnt=0;     // 重配网延时服务，延时次数，即重配网闪灯次数

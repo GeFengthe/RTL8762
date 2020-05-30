@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define USE_SOFT_WATCHDOG   0
+#define USE_SOFT_WATCHDOG   1
 #define HARD_WDT_TIMEROUT   (40000)    // 4000*250us = 1s
 /*
  往这里添加软件看门狗ID.

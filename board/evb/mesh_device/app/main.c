@@ -269,11 +269,18 @@ void board_init(void)
  */
 void driver_init(void)
 {	
-	// Hal_Timer_init();
 	#if USE_SOFT_WATCHDOG
+	Hal_Timer_init();
 	OS_WDTInit();
 	#endif
 	
+	// 要在 mesh_stack_init后获取，后面整理下
+    mesh_node_state_t node_state = mesh_node_state_restore();
+    if (node_state == UNPROV_DEVICE){
+        SkyBleMesh_Unprov_timer();
+    }else{
+        SkyBleMesh_ChangeScan_timer();
+    }
 	
 	
 }
@@ -374,19 +381,12 @@ int main(void)
     extern uint32_t random_seed_value;
     srand(random_seed_value);
     board_init();
-    driver_init();
     le_gap_init(APP_MAX_LINKS);
     gap_lib_init();
     app_le_gap_init();
     app_le_profile_init();
     mesh_stack_init();
-	// 要在 mesh_stack_init后获取，后面整理下
-    mesh_node_state_t node_state = mesh_node_state_restore();
-    if (node_state == UNPROV_DEVICE){
-        SkyBleMesh_Unprov_timer();
-    }else{
-        SkyBleMesh_ChangeScan_timer();
-    }
+    driver_init();
 	
     pwr_mgr_init();
     task_init();
