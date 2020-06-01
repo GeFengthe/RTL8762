@@ -30,7 +30,7 @@
 
 // #define MESH_ADV_NAME_LEN (30)
 
-#define MESHDEVICE_UNPROV_TIME_OUT          (2*60*1000)  // 10min
+#define MESHDEVICE_UNPROV_TIME_OUT          (10*60*1000)  // 10min
 #define CHANGE_SCAN_PARAM_TIME_OUT          (10*1000)    // 10s
 
 
@@ -88,6 +88,7 @@ extern void SkyBleMesh_unBind_complete(void);
 extern void SkyBleMesh_PowerOn_Save(void);
 extern int SkyBleMesh_WriteConfig(void);
 extern bool SkyBleMesh_Is_No_ReportMsg(void);
+extern void SkyBleMesh_DlpsLight_Handle(bool isenter);
 extern void SkyBleMesh_MainLoop_timer(void);
 extern void SkyBleMesh_StopMainLoop_tmr(void);
 extern void SkyBleMesh_StartMainLoop_tmr(void);

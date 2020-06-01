@@ -44,6 +44,8 @@ typedef struct {
 extern bool HAL_Switch_Init(SkySwitchManager *manager);
 
 extern void HAL_ProvisionLed_Control(uint8_t mode);
+extern void HAL_ProvLed_Dlps_Control(uint8_t val, bool isenter);
+extern void HAL_SwitchLed_Dlps_Control(uint8_t index, uint8_t val, bool isenter);
 extern void HAL_BlinkProLed_Enable(void);
 extern void HAL_BlinkProLed_Disable(void);
 extern bool HAL_BlinkProLed_Statu(void);

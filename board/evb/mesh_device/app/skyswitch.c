@@ -119,6 +119,23 @@ void HAL_ProvisionLed_Control(uint8_t mode)
 		}
 	}
 }
+void HAL_ProvLed_Dlps_Control(uint8_t val, bool isenter)
+{
+	PAD_OUTPUT_VAL outval;
+	
+	val = GPIO_ReadOutputDataBit(PROVISION_LED_GPIO_PIN);
+	if(val){
+		outval = PAD_OUT_HIGH;
+	}else{
+		outval = PAD_OUT_LOW;
+	}
+	if(isenter){
+		Pad_Config(PROVISION_LED_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
+	}else{
+		Pad_Config(PROVISION_LED_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);	
+	}
+		
+}
 void HAL_BlinkProLed_Enable(void)
 {
 	BlinkProLed = true;
@@ -157,6 +174,24 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 	}	
 }
 
+void HAL_SwitchLed_Dlps_Control(uint8_t index, uint8_t val, bool isenter)
+{
+	PAD_OUTPUT_VAL outval;
+	if(index < SKYSWITC_NUMBERS){
+		val = GPIO_ReadOutputDataBit(GPIO_GetPin(LedIO[index]));
+		if(val){
+			outval = PAD_OUT_HIGH;
+		}else{
+			outval = PAD_OUT_LOW;
+		}
+		if(isenter){
+			Pad_Config(LedIO[index], PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
+		}else{
+			Pad_Config(LedIO[index], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);	
+		}
+		
+	}	
+}
 
 static uint8_t ReadKeyStatu(void)
 {

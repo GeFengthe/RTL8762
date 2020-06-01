@@ -80,10 +80,7 @@ void SkyBleMesh_EnterDlps_cfg(void)
 	Pad_Config(LPN_BUTTON, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
 	System_WakeUpPinEnable(LPN_BUTTON, PAD_WAKEUP_POL_HIGH, 0);	
 	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
-	Pad_Config(P4_3, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-	Pad_Config(P4_2, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-	Pad_Config(P4_1, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-	
+	SkyBleMesh_DlpsLight_Handle(true);
 }
 
 void SkyBleMesh_ExitDlps_cfg(void)
@@ -100,9 +97,7 @@ void SkyBleMesh_ExitDlps_cfg(void)
 		switch_io_ctrl_dlps(false);		
 	}
 	// light
-	Pad_Config(P4_3, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-	Pad_Config(P4_2, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-	Pad_Config(P4_1, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);	
+	SkyBleMesh_DlpsLight_Handle(false);
 	
 	// ble
 	if(SkyBleMesh_IsProvision_Sate()){ // provisioned

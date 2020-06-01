@@ -128,7 +128,6 @@ void uart_init(void)
  * @param[in]    p_param    Parameters sending to the task
  * @return       void
  */
-uint8_t tmptestflag = 0;
 void app_main_task(void *p_param)
 {
 	uint32_t tmpi=0;
@@ -181,25 +180,15 @@ void app_main_task(void *p_param)
 		if (os_sem_take(skyswitch_sem_handle, 0) == true){			
 			HAL_Switch_HandleTimer(NULL);
 		}
-		
 		if (os_sem_take(skydlpstmr_sem_handle, 0) == true){			
 			SkyBleMesh_EnterDlps_TmrCnt_Handle();
 		}
 				
 		if(++tmpi >= 5000){
-			DBG_DIRECT("app_main_task %d \r\n", mesh_node_state_restore() );
+			DBG_DIRECT("app_main_task %d %d \r\n", mesh_node_state_restore(), DlpsCtrlStatu_t.dword);
 			tmpi = 0;
 		}
-		
-		if(tmptestflag){		
-            uint16_t scan_interval = 480; // GAP_SCHED_SCAN_INTERVAL; // 0x320; //!< 500ms
-            uint16_t scan_window = 30; // GAP_SCHED_SCAN_WINDOW; //!< 30ms
-            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
-			
-			tmptestflag = 0;
-		}
-		
+				
 		#if MESH_TEST_PRESSURE == 1
 		if(test_flag==1){
 			test_update_attr();
@@ -214,11 +203,8 @@ void test_dlps_function(bool enter)
 	DBG_DIRECT("test_dlps_function %d \n",enter);	
 	
 	if(enter){	
-		SkyBleMesh_EnterDlps_timer();
-		Reenter_tmr_ctrl_dlps(false);
 		blemesh_sysinit_ctrl_dlps(true);
 	}else{	
-		tmptestflag = 1;
 		blemesh_sysinit_ctrl_dlps(false);
 	}
 }

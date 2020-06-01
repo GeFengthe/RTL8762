@@ -1172,7 +1172,7 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
             break;
         }
 		case PROV_SUCCESS_TIMEOUT:{
-            uint16_t scan_interval = 480;  //!< 300ms
+            uint16_t scan_interval = 320;  //!< 200ms
             uint16_t scan_window   = 0x30; //!< 30ms
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
@@ -1190,6 +1190,9 @@ extern void SkyBleMesh_unBind_complete(void)
     APP_DBG_PRINTF0("******************* SkyMesh_unBind_complete **************************\r\n");    
 
 	mesh_node_clear(); // 恢复重配网
+	
+	beacon_stop();  	
+	gap_sched_scan(false);   
 }
 
 /*
@@ -1631,7 +1634,7 @@ static void Main_Upload_State(void)
 	
 }
 
-extern bool SkyBleMesh_Is_No_ReportMsg(void)
+bool SkyBleMesh_Is_No_ReportMsg(void)
 {
 	bool ret = false;
 	uint8_t i=0;
@@ -1651,6 +1654,26 @@ extern bool SkyBleMesh_Is_No_ReportMsg(void)
 	}
 
 	return ret;
+}
+
+void SkyBleMesh_DlpsLight_Handle(bool isenter)
+{
+	// 读out寄存器来确定休眠电平。如有问题，改用逻辑判断。
+#if USE_SWITCH_FOR_SKYIOT
+	//
+	if (mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] == 0){
+		HAL_SwitchLed_Dlps_Control(SKYSWITC1_ENUM , LEDTURNOFF, isenter);
+	}else {
+		HAL_SwitchLed_Dlps_Control(SKYSWITC1_ENUM , LEDTURNON,  isenter);
+	}
+	if (mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] == 0){
+		HAL_SwitchLed_Dlps_Control(SKYSWITC2_ENUM , LEDTURNOFF,isenter);
+	}else {
+		HAL_SwitchLed_Dlps_Control(SKYSWITC2_ENUM , LEDTURNON,isenter);
+	}			
+#endif
+	
+	HAL_ProvLed_Dlps_Control(0, isenter);	
 }
 
 
