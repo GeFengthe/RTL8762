@@ -1172,10 +1172,10 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
             break;
         }
 		case PROV_SUCCESS_TIMEOUT:{
-//            uint16_t scan_interval = 48; //0x320; // 0x320; //!< 500ms
-//            uint16_t scan_window = 0x30; //!< 30ms
-//            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-//            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+            uint16_t scan_interval = 480;  //!< 300ms
+            uint16_t scan_window   = 0x30; //!< 30ms
+            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
             break;
         }
 		default:
@@ -1804,7 +1804,7 @@ extern void SkyBleMesh_StartMainLoop_tmr(void)
 
 static void SkyBleMesh_ScanSwitch_Timeout_cb(void *timer)
 {
-	HAL_Switch_HandleTimer(NULL);
+   app_send_switch_sem();
 }
 static void SkyBleMesh_ScanSwitch_timer(void)
 {	
@@ -1904,7 +1904,6 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	#endif
 	BleMesh_Packet_Init();
 	
-	IsSkyAppInited = true;
 #if USE_SWITCH_FOR_SKYIOT
 	HAL_Switch_Init(&mIotManager.mSwitchManager);
 	SkyBleMesh_ScanSwitch_timer();
@@ -1914,6 +1913,10 @@ extern uint8_t SkyBleMesh_App_Init(void)
 #ifdef MY_TEST_TIMER
 	SkyBleMesh_Test_timer();
 #endif
+
+	IsSkyAppInited = true;
+	// blemesh_sysinit_ctrl_dlps(true);
+
 	
 	return 0; 
 }

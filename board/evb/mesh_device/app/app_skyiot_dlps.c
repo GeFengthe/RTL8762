@@ -7,16 +7,15 @@
 #include "platform_os.h"
 #include "gap_scheduler.h"
 #include "mesh_beacon.h"
+#include "app_task.h"
 #include "app_skyiot_dlps.h"
 #include "app_skyiot_server.h"
 
 
-// #define DLPS_DBG_PRINTF(fmt, ...)   data_uart_debug(fmt, ##__VA_ARGS__)
-
-DLPS_CTRL_STATU_T DlpsCtrlStatu_t={0x00000002};
+DLPS_CTRL_STATU_T DlpsCtrlStatu_t={(DLPS_JUST_SYSINIT_OK|DLPS_JUST_WAITING_TMR)};
 static plt_timer_t skybleenterdlps_timer=NULL;
 
-static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
+void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 {
 	if(SkyBleMesh_Is_No_ReportMsg() == true){
 		blemesh_report_ctrl_dlps(true);		
@@ -29,7 +28,7 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 		switch_io_ctrl_dlps(false);
 	}
 	
-	if(DlpsCtrlStatu_t.dword == 0x00000002){
+	if(DlpsCtrlStatu_t.dword == DLPS_JUST_WAITING_TMR){
 		SkyBleMesh_ReadyEnterDlps_cfg();
 		
 		if(skybleenterdlps_timer){
@@ -39,6 +38,12 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 		
 		Reenter_tmr_ctrl_dlps(true);
 	}
+	
+}
+
+static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
+{
+    app_send_dlpstmr_sem();
 }
 
 void SkyBleMesh_EnterDlps_timer(void)
@@ -53,10 +58,6 @@ void SkyBleMesh_EnterDlps_timer(void)
 
 void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
-	// qlj 暂时不处理uart。后面在研究下
-	// uart_deinit();
-
-	// 以下不宜在enter中调用
 	// ble 
 	beacon_stop();  	
 	if(SkyBleMesh_IsProvision_Sate() == false){ // unprov  未配网休眠不SCAN
@@ -66,12 +67,15 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 		
 	// sw timer
 	SkyBleMesh_StopMainLoop_tmr();
-	SkyBleMesh_StopScanSwitch_tmr();
-	
+	SkyBleMesh_StopScanSwitch_tmr();	
 }
 
 void SkyBleMesh_EnterDlps_cfg(void)
 {	
+	// debug uart
+    Pad_ControlSelectValue(P3_0, PAD_SW_MODE);
+    Pad_ControlSelectValue(P3_1, PAD_SW_MODE);
+	
 	// switch1
 	Pad_Config(LPN_BUTTON, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
 	System_WakeUpPinEnable(LPN_BUTTON, PAD_WAKEUP_POL_HIGH, 0);	
@@ -84,6 +88,10 @@ void SkyBleMesh_EnterDlps_cfg(void)
 
 void SkyBleMesh_ExitDlps_cfg(void)
 {
+	// debug uart
+    Pad_ControlSelectValue(P3_0, PAD_PINMUX_MODE);
+    Pad_ControlSelectValue(P3_1, PAD_PINMUX_MODE);
+	
 	// switch1
 	Pad_Config(LPN_BUTTON, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
 	if(System_WakeUpInterruptValue(P2_4) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
@@ -93,6 +101,8 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	}
 	// light
 	Pad_Config(P4_3, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+	Pad_Config(P4_2, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+	Pad_Config(P4_1, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);	
 	
 	// ble
 	if(SkyBleMesh_IsProvision_Sate()){ // provisioned
@@ -122,12 +132,12 @@ void switch_io_ctrl_dlps(bool allowenter)
         DlpsCtrlStatu_t.bit.io = 1;
     }
 }
-void test_cmd_ctrl_dlps(bool allowenter)
+void blemesh_sysinit_ctrl_dlps(bool allowenter)
 {
     if(allowenter){
-        DlpsCtrlStatu_t.bit.cmd = 0;
+        DlpsCtrlStatu_t.bit.sysinit = 0;
     }else{
-        DlpsCtrlStatu_t.bit.cmd = 1;
+        DlpsCtrlStatu_t.bit.sysinit = 1;
     }
 }
 void blemesh_unprov_ctrl_dlps(bool allowenter)

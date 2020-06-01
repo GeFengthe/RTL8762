@@ -57,6 +57,8 @@ void *app_task_handle;   //!< APP Task handle
 void *evt_queue_handle;  //!< Event queue handle
 void *io_queue_handle;   //!< IO queue handle
 
+void *skyswitch_sem_handle=NULL;   //!< skyiot scan switch sem handle
+void *skydlpstmr_sem_handle=NULL;    //!< skyiot dlps tmr sem handle
 
 /*============================================================================*
  *                              Functions
@@ -79,7 +81,18 @@ bool app_send_msg_to_apptask(T_IO_MSG *p_msg)
     }
     return true;
 }
-
+void app_send_switch_sem(void)
+{
+	if(skyswitch_sem_handle){
+		os_sem_give(skyswitch_sem_handle);
+	}
+}
+void app_send_dlpstmr_sem(void)
+{
+	if(skydlpstmr_sem_handle){
+		os_sem_give(skydlpstmr_sem_handle);
+	}
+}
 
 void app_send_uart_msg(uint8_t data)
 {
@@ -132,11 +145,12 @@ void app_main_task(void *p_param)
     mesh_start(EVENT_MESH, EVENT_IO_TO_APP, evt_queue_handle, io_queue_handle);
     uart_init();
     user_cmd_init("MeshDevice");
-
 	
-	SkyBleMesh_MainLoop_timer();
+	os_sem_create(&skyswitch_sem_handle, 0, 1);
+	os_sem_create(&skydlpstmr_sem_handle, 0, 1);
 	
-//	SkyBleMesh_EnterDlps_timer();
+	SkyBleMesh_MainLoop_timer();	
+	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);
     while (true)
     {
@@ -164,6 +178,13 @@ void app_main_task(void *p_param)
             }
         }
 		
+		if (os_sem_take(skyswitch_sem_handle, 0) == true){			
+			HAL_Switch_HandleTimer(NULL);
+		}
+		
+		if (os_sem_take(skydlpstmr_sem_handle, 0) == true){			
+			SkyBleMesh_EnterDlps_TmrCnt_Handle();
+		}
 				
 		if(++tmpi >= 5000){
 			DBG_DIRECT("app_main_task %d \r\n", mesh_node_state_restore() );
@@ -171,8 +192,8 @@ void app_main_task(void *p_param)
 		}
 		
 		if(tmptestflag){		
-            uint16_t scan_interval = 800; // GAP_SCHED_SCAN_INTERVAL; // 0x320; //!< 500ms
-            uint16_t scan_window = 50; // GAP_SCHED_SCAN_WINDOW; //!< 30ms
+            uint16_t scan_interval = 480; // GAP_SCHED_SCAN_INTERVAL; // 0x320; //!< 500ms
+            uint16_t scan_window = 30; // GAP_SCHED_SCAN_WINDOW; //!< 30ms
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
 			
@@ -195,10 +216,10 @@ void test_dlps_function(bool enter)
 	if(enter){	
 		SkyBleMesh_EnterDlps_timer();
 		Reenter_tmr_ctrl_dlps(false);
-		test_cmd_ctrl_dlps(true);
+		blemesh_sysinit_ctrl_dlps(true);
 	}else{	
 		tmptestflag = 1;
-		test_cmd_ctrl_dlps(false);
+		blemesh_sysinit_ctrl_dlps(false);
 	}
 }
 

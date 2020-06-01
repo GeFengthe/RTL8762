@@ -4,12 +4,14 @@
 
 #include "skyswitch.h"
 
+#define DLPS_JUST_SYSINIT_OK    (0x00000001)
+#define DLPS_JUST_WAITING_TMR   (0x00000002)
 typedef union
 {
     uint32_t dword;
     struct
     {
-        uint32_t cmd:     1; // test cmd  // 后面改成系统初始化ok
+        uint32_t sysinit: 1; // system init ok  
         uint32_t dlpstmr: 1; // enter dlps tmr cnt
         uint32_t io:      1; // switch
         uint32_t unprov:  1; // unprov or proved
@@ -21,12 +23,12 @@ extern DLPS_CTRL_STATU_T DlpsCtrlStatu_t;
 
 
 
-
+extern void SkyBleMesh_EnterDlps_TmrCnt_Handle(void);
 extern void SkyBleMesh_EnterDlps_timer(void);
 extern bool switch_check_dlps_statu(void);
 
 extern void switch_io_ctrl_dlps(bool allowenter);
-extern void test_cmd_ctrl_dlps(bool allowenter);
+extern void blemesh_sysinit_ctrl_dlps(bool allowenter);
 extern void blemesh_unprov_ctrl_dlps(bool allowenter);
 extern void blemesh_report_ctrl_dlps(bool allowenter);
 extern void Reenter_tmr_ctrl_dlps(bool allowenter);
