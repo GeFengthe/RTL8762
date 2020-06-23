@@ -313,14 +313,5 @@ user_cmd_parse_result_t user_cmd_skytest(user_cmd_parse_value_t *pparse_value)
 	
 	#endif
 	
-    uint8_t test_case = pparse_value->dw_parameter[0]; 
-	if (test_case == 5)
-    {
-		if(pparse_value->dw_parameter[1] == 0){
-			test_dlps_function(false);
-		}else if(pparse_value->dw_parameter[1] == 1){
-			test_dlps_function(true);
-		}
-	}
     return USER_CMD_RESULT_OK;
 }

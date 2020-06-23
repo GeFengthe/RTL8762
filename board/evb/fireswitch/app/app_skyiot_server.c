@@ -1172,7 +1172,7 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
             break;
         }
 		case PROV_SUCCESS_TIMEOUT:{
-            uint16_t scan_interval = 320;  //!< 200ms
+            uint16_t scan_interval = 400;  //!< 250ms
             uint16_t scan_window   = 0x30; //!< 30ms
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
@@ -1677,53 +1677,47 @@ void SkyBleMesh_DlpsLight_Handle(bool isenter)
 }
 
 
-// #define MY_TEST_TIMER
-#ifdef MY_TEST_TIMER
-
-#include "rtl876x_gpio.h"
-static plt_timer_t skymesh_test_timer = NULL;
-static void SkyBleMesh_Test_Timeout_cb(void *timer)
+#define MY_TEST_TIMER 0
+#if (MY_TEST_TIMER || MESH_TEST_PRESSURE)
+void SkyBleMesh_Test_Timeout_cb(void *timer)
 {	
 	static uint8_t testcnt=0,reconflag=0;
 	
-if(++testcnt >= 200)	{
-testcnt=0;
-	APP_DBG_PRINTF2("SkyBleMesh_Test_Timeout_cb prostate %d %d \n", SkyBleMesh_IsProvision_Sate(),GPIO_ReadInputDataBit(GPIO_GetPin(P2_4)) );
-}
-
-//uint32_t time = os_sys_time_get();
-//uint32_t tick = os_sys_tick_get();
-//	APP_PRINT_TRACE2("SkyBleMesh_Test_Timeout_cb1 = %ld %ld\n", time, tick);
-//	APP_PRINT_INFO2("SkyBleMesh_Test_Timeout_cb2 = %ld %ld\n", time, tick);
-//	APP_PRINT_WARN2("SkyBleMesh_Test_Timeout_cb3 = %ld %ld\n", time, tick);
-//	APP_PRINT_ERROR2("SkyBleMesh_Test_Timeout_cb4 = %ld %ld\n", time, tick);
-
-//	if(testperid){
-//		if (mIotManager.alive_status == 1){
-//			if(++testcnt >= testperid){
-//				if(reconflag==0){
-//					test_update_attr();
-//				}else{
-//					reconflag = 0;
-//				}
-//				testcnt = 0;
-//			}			
-//		}else{
-//			testcnt = 0;
-//			reconflag = 1;
-//		}
-//	}else{
-//		testcnt = 0;
-//	}
-}
-static void SkyBleMesh_Test_timer(void)
-{	
-	if(skymesh_test_timer == NULL){		
-		skymesh_test_timer = plt_timer_create("test", 20, true, 0, SkyBleMesh_Test_Timeout_cb);
-		if (skymesh_test_timer != NULL){
-			plt_timer_start(skymesh_test_timer, 0);
+	static uint32_t oldtick=0;
+	uint32_t newtick=0, diff_ms=0;	
+	
+	newtick = HAL_GetTickCount();
+	diff_ms = HAL_CalculateTickDiff(oldtick, newtick);
+	if( diff_ms >= 1000 ){
+		// add test code
+		
+		if(testperid){
+			if (mIotManager.alive_status == 1){
+				if(++testcnt >= testperid){
+					if(reconflag==0){
+						test_update_attr();
+					}else{
+						reconflag = 0;
+					}
+					testcnt = 0;
+				}			
+			}else{
+				testcnt = 0;
+				reconflag = 1;
+			}
+		}else{
+			testcnt = 0;
 		}
+		
+		
+		
+		
+		
+		
+		// test code end
+		oldtick = newtick;
 	}
+
 }
 #endif
 
@@ -1933,9 +1927,6 @@ extern uint8_t SkyBleMesh_App_Init(void)
 #endif
 
 	// SkyBleMesh_MainLoop_timer(); // called in app_task
-#ifdef MY_TEST_TIMER
-	SkyBleMesh_Test_timer();
-#endif
 
 	IsSkyAppInited = true;
 	// blemesh_sysinit_ctrl_dlps(true);

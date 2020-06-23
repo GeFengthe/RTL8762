@@ -814,6 +814,7 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
         break;
     case PROV_CB_TYPE_COMPLETE:
         {
+            // mesh_model_bind_all_key();
 			SkyBleMesh_Unprov_timer_delet();
 			SkyBleMesh_ChangeScan_timer();
 			

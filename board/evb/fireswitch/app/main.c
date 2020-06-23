@@ -172,11 +172,12 @@ void mesh_stack_init(void)
     device_uuid_set(dev_uuid);
 	
     /** init mesh stack */
-    mesh_init();
-
+    mesh_init();	
+	// mesh_model_bind_all_key();
+	
     /** register proxy adv callback */
     device_info_cb_reg(device_info_cb);
-    hb_init(hb_cb);
+    // hb_init(hb_cb);
 }
 
 /**

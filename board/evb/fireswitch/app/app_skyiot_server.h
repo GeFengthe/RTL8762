@@ -21,7 +21,7 @@
 #include "app_msg.h"
 #include "skyswitch.h"
 
-#define MESH_TEST_PRESSURE 0
+#define MESH_TEST_PRESSURE       1
 
 #define PRODUCT_TYPE    (100)	  //switch
 #define PRODUCT_MODEL   ("IPA03") //ipa03	
@@ -101,6 +101,7 @@ extern uint8_t SkyBleMesh_App_Init(void);
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx);
 #if MESH_TEST_PRESSURE == 1
 extern void test_update_attr(void);
+extern void SkyBleMesh_Test_Timeout_cb(void *timer);
 extern uint8_t test_flag;
 extern uint16_t testperid ;
 extern uint32_t makepackcnt ;

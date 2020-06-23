@@ -190,6 +190,8 @@ void app_main_task(void *p_param)
 		}
 				
 		#if MESH_TEST_PRESSURE == 1
+		SkyBleMesh_Test_Timeout_cb(NULL);
+		
 		if(test_flag==1){
 			test_update_attr();
 			test_flag = 0;
@@ -205,6 +207,12 @@ void test_dlps_function(bool enter)
 	if(enter){	
 		blemesh_sysinit_ctrl_dlps(true);
 	}else{	
+	
+		uint16_t scan_interval = 400;  //!< 250ms
+		uint16_t scan_window   = 0x30; //!< 30ms
+		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+		
 		blemesh_sysinit_ctrl_dlps(false);
 	}
 }
