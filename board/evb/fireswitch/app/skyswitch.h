@@ -19,10 +19,12 @@
 
 #define BLEMESH_REPORT_FLAG_SWT1 (0x1)
 #define BLEMESH_REPORT_FLAG_SWT2 (0x2)
+#define BLEMESH_REPORT_FLAG_SWT3 (0x4)
 
 enum SKY_SWITCH_INDEX_ENUM{
     SKYSWITC1_ENUM = 0x00,	
     SKYSWITC2_ENUM ,	
+    SKYSWITC3_ENUM ,	
     SKYSWITC_NUMBERS ,	
 };
 
@@ -55,6 +57,8 @@ extern void HAL_SwitchLed_Control(uint8_t index, uint8_t mode);
 extern void HAL_Switch_HandleTimer(void *timer);
 
 extern bool HAL_Switch_Is_Relese(void);
+
+extern uint8_t Read_ZVD_Statu(void);
 
 #endif //
 

@@ -3,9 +3,11 @@
 #include <stddef.h>    // standard definitions
 #include <stdint.h>    // standard integer definition
 #include <math.h>
+#include "platform_os.h"
+#include "rtl876x_rcc.h"
 #include "rtl876x_gpio.h"
 #include "rtl876x_pinmux.h"
-#include "rtl876x_rcc.h"
+#include "rtl876x_nvic.h"
 #include "skyswitch.h"
 #include "trace.h"
 
@@ -17,16 +19,42 @@
 #define LED_BLUE   LEDTURNON  
 #define LED_BLINK  LEDBLINK  
 
+#define SWITCH1_RELAY_CTL_USED  1
+#if SWITCH1_RELAY_CTL_USED == 1
+// 这里IO统一在tmr里面处理，如有例外加保护，注意重入
+#define SWITCH1_RELAYON_GPIO          P3_3
+#define SWITCH1_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH1_RELAYON_GPIO)
+#define SWITCH1_RELAYOFF_GPIO         P4_1
+#define SWITCH1_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH1_RELAYOFF_GPIO)
+
+#define SWITCH2_RELAYON_GPIO          P3_2
+#define SWITCH2_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH2_RELAYON_GPIO)
+#define SWITCH2_RELAYOFF_GPIO         P4_0
+#define SWITCH2_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH2_RELAYOFF_GPIO)
+
+#define SWITCH3_RELAYON_GPIO          P0_6
+#define SWITCH3_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH3_RELAYON_GPIO)
+#define SWITCH3_RELAYOFF_GPIO         P0_5
+#define SWITCH3_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH3_RELAYOFF_GPIO)
+
+static uint8_t RelayOnIO[SKYSWITC_NUMBERS]  = {SWITCH1_RELAYON_GPIO, SWITCH2_RELAYON_GPIO, SWITCH3_RELAYON_GPIO};
+static uint8_t RelayOffIO[SKYSWITC_NUMBERS] = {SWITCH1_RELAYOFF_GPIO, SWITCH2_RELAYOFF_GPIO, SWITCH3_RELAYOFF_GPIO};
+#endif
+
+// 过零检查,用中断实现
+#define CHECK_ZVD_GPIO               P2_5 
+#define CHECK_ZVD_GPIO_PIN           GPIO_GetPin(CHECK_ZVD_GPIO)
+#define CHECK_ZVD_PIN_INPUT_IRQN     GPIO21_IRQn
+#define CHECK_ZVD_PIN_INPUT_Handler  GPIO21_Handler
 
 #define SWITCH1_GPIO             P2_4
 #define SWITCH1_GPIO_PIN         GPIO_GetPin(SWITCH1_GPIO)
-#define SWITCH2_GPIO             P1_2
+#define SWITCH2_GPIO             P2_3
 #define SWITCH2_GPIO_PIN         GPIO_GetPin(SWITCH2_GPIO)
-#define SWITCH1_LED_GPIO         P4_3
-#define SWITCH1_LED_GPIO_PIN     GPIO_GetPin(SWITCH1_LED_GPIO)
-#define SWITCH2_LED_GPIO         P4_2
-#define SWITCH2_LED_GPIO_PIN     GPIO_GetPin(SWITCH2_LED_GPIO)
-#define PROVISION_LED_GPIO       P4_1
+#define SWITCH3_GPIO             P2_2
+#define SWITCH3_GPIO_PIN         GPIO_GetPin(SWITCH3_GPIO)
+
+#define PROVISION_LED_GPIO       P2_7
 #define PROVISION_LED_GPIO_PIN   GPIO_GetPin(PROVISION_LED_GPIO)
 
 #define MAXPRESSTIME_5S   (250)  // 20ms定时器调用
@@ -38,12 +66,11 @@ typedef enum{
 }SCAN_KEY_STATUS_e;
 
 
-static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO, SWITCH2_GPIO};
-static uint8_t LedIO[SKYSWITC_NUMBERS]={SWITCH1_LED_GPIO, SWITCH2_LED_GPIO};
+static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO, SWITCH2_GPIO, SWITCH3_GPIO};
 
 static int32_t presstime=0;
-static SCAN_KEY_STATUS_e keystatus=SCAN_KEY_INIT;
-static KEY_PRESS_MODE_e  keymode=KEY_MODE_INIT;
+static SCAN_KEY_STATUS_e keystatus = SCAN_KEY_INIT;
+static KEY_PRESS_MODE_e  keymode   = KEY_MODE_INIT;
 
 static SkySwitchManager *mSwitchManager=NULL;
 
@@ -58,11 +85,26 @@ static void HAL_GpioForSwitch_Init(void)
     Pinmux_Config(SwitchIO[SKYSWITC1_ENUM], DWGPIO);
 	Pad_Config(SwitchIO[SKYSWITC2_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
     Pinmux_Config(SwitchIO[SKYSWITC2_ENUM], DWGPIO);
-		
-	Pad_Config(LedIO[SKYSWITC1_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-    Pinmux_Config(LedIO[SKYSWITC1_ENUM], DWGPIO);
-	Pad_Config(LedIO[SKYSWITC2_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-    Pinmux_Config(LedIO[SKYSWITC2_ENUM], DWGPIO);
+	Pad_Config(SwitchIO[SKYSWITC3_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+    Pinmux_Config(SwitchIO[SKYSWITC3_ENUM], DWGPIO);
+	
+	Pad_Config(CHECK_ZVD_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+    Pinmux_Config(CHECK_ZVD_GPIO, DWGPIO);
+	#if SWITCH1_RELAY_CTL_USED == 1	
+	Pad_Config(RelayOnIO[SKYSWITC1_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+    Pinmux_Config(RelayOnIO[SKYSWITC1_ENUM], DWGPIO);
+	Pad_Config(RelayOnIO[SKYSWITC2_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+    Pinmux_Config(RelayOnIO[SKYSWITC2_ENUM], DWGPIO);
+	Pad_Config(RelayOnIO[SKYSWITC3_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+    Pinmux_Config(RelayOnIO[SKYSWITC3_ENUM], DWGPIO);
+	
+	Pad_Config(RelayOffIO[SKYSWITC1_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+    Pinmux_Config(RelayOffIO[SKYSWITC1_ENUM], DWGPIO);
+	Pad_Config(RelayOffIO[SKYSWITC2_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+    Pinmux_Config(RelayOffIO[SKYSWITC2_ENUM], DWGPIO);
+	Pad_Config(RelayOffIO[SKYSWITC3_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+    Pinmux_Config(RelayOffIO[SKYSWITC3_ENUM], DWGPIO);
+	#endif
 	
 	Pad_Config(PROVISION_LED_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
     Pinmux_Config(PROVISION_LED_GPIO, DWGPIO);
@@ -81,21 +123,64 @@ static void HAL_GpioForSwitch_Init(void)
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_IN;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
+    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(SwitchIO[SKYSWITC3_ENUM]);
+    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_IN;
+    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
+    GPIO_Init(&GPIO_InitStruct);
 	
-    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(LedIO[SKYSWITC1_ENUM]);
+	#if SWITCH1_RELAY_CTL_USED == 1	
+    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOnIO[SKYSWITC1_ENUM]);
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
-    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(LedIO[SKYSWITC2_ENUM]);
+    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOnIO[SKYSWITC2_ENUM]);
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
+    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOnIO[SKYSWITC3_ENUM]);
+    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
+    GPIO_Init(&GPIO_InitStruct);
+	
+    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]);
+    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
+    GPIO_Init(&GPIO_InitStruct);
+    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOffIO[SKYSWITC2_ENUM]);
+    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
+    GPIO_Init(&GPIO_InitStruct);
+    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]);
+    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
+    GPIO_Init(&GPIO_InitStruct);
+	#endif
 	
     GPIO_InitStruct.GPIO_Pin    = PROVISION_LED_GPIO_PIN;
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
 	
+	
+    GPIO_InitStruct.GPIO_Pin    = CHECK_ZVD_GPIO_PIN;
+    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_IN;
+	#if 1
+    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
+    GPIO_Init(&GPIO_InitStruct);
+	#else
+    GPIO_InitStruct.GPIO_ITCmd  = ENABLE;
+    GPIO_InitStruct.GPIO_ITTrigger  = GPIO_INT_Trigger_LEVEL;
+    GPIO_InitStruct.GPIO_ITPolarity = GPIO_INT_POLARITY_ACTIVE_HIGH;
+    GPIO_InitStruct.GPIO_ITDebounce = GPIO_INT_DEBOUNCE_DISABLE;
+    GPIO_Init(&GPIO_InitStruct);	
+    NVIC_InitTypeDef NVIC_InitStruct;
+    NVIC_InitStruct.NVIC_IRQChannel = CHECK_ZVD_PIN_INPUT_IRQN;
+    NVIC_InitStruct.NVIC_IRQChannelPriority = 3;
+    NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStruct);
+    GPIO_MaskINTConfig(CHECK_ZVD_GPIO_PIN, DISABLE);
+    GPIO_INTConfig(CHECK_ZVD_GPIO_PIN, ENABLE);
+	#endif
 }
 
 void HAL_ProvisionLed_Control(uint8_t mode)
@@ -149,60 +234,201 @@ bool HAL_BlinkProLed_Statu(void)
 	return BlinkProLed;
 }
 
+
+#if SWITCH1_RELAY_CTL_USED == 1
+static void HAL_Sw1Relay_OnRelese_Timeout_cb(void *timer)
+{
+	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC1_ENUM]), Bit_RESET);
+}
+static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
+{
+	plt_timer_t Sw1OnRelese_timer = NULL;
+	
+	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC1_ENUM]), Bit_SET);
+	
+	Sw1OnRelese_timer = plt_timer_create("sw1onr", 20, false, 0, HAL_Sw1Relay_OnRelese_Timeout_cb);
+	if (Sw1OnRelese_timer != NULL){
+		plt_timer_start(Sw1OnRelese_timer, 0);
+	}
+}
+static void HAL_Sw1Relay_OffRelese_Timeout_cb(void *timer)
+{
+	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]), Bit_RESET);
+}
+static void HAL_Sw1Relay_OffCtl_Timeout_cb(void *timer)
+{
+	plt_timer_t Sw1OffRelese_timer = NULL;
+	
+	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]), Bit_SET);
+	
+	Sw1OffRelese_timer = plt_timer_create("sw1offr", 20, false, 0, HAL_Sw1Relay_OffRelese_Timeout_cb);
+	if (Sw1OffRelese_timer != NULL){
+		plt_timer_start(Sw1OffRelese_timer, 0);
+	}
+}
+
+static void HAL_Sw2Relay_OnRelese_Timeout_cb(void *timer)
+{
+	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC2_ENUM]), Bit_RESET);
+}
+static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
+{
+	plt_timer_t Sw2OnRelese_timer = NULL;
+	
+	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC2_ENUM]), Bit_SET);
+	
+	Sw2OnRelese_timer = plt_timer_create("sw2onr", 20, false, 0, HAL_Sw2Relay_OnRelese_Timeout_cb);
+	if (Sw2OnRelese_timer != NULL){
+		plt_timer_start(Sw2OnRelese_timer, 0);
+	}
+}
+static void HAL_Sw2Relay_OffRelese_Timeout_cb(void *timer)
+{
+	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC2_ENUM]), Bit_RESET);
+}
+static void HAL_Sw2Relay_OffCtl_Timeout_cb(void *timer)
+{
+	plt_timer_t Sw2OffRelese_timer = NULL;
+	
+	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC2_ENUM]), Bit_SET);
+	
+	Sw2OffRelese_timer = plt_timer_create("sw2offr", 20, false, 0, HAL_Sw2Relay_OffRelese_Timeout_cb);
+	if (Sw2OffRelese_timer != NULL){
+		plt_timer_start(Sw2OffRelese_timer, 0);
+	}
+}
+
+static void HAL_Sw3Relay_OnRelese_Timeout_cb(void *timer)
+{
+	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC3_ENUM]), Bit_RESET);
+}
+static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
+{
+	plt_timer_t Sw3OnRelese_timer = NULL;
+	
+	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC3_ENUM]), Bit_SET);
+	
+	Sw3OnRelese_timer = plt_timer_create("sw3onr", 20, false, 0, HAL_Sw3Relay_OnRelese_Timeout_cb);
+	if (Sw3OnRelese_timer != NULL){
+		plt_timer_start(Sw3OnRelese_timer, 0);
+	}
+}
+static void HAL_Sw3Relay_OffRelese_Timeout_cb(void *timer)
+{
+	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]), Bit_RESET);
+}
+static void HAL_Sw3Relay_OffCtl_Timeout_cb(void *timer)
+{
+	plt_timer_t Sw3OffRelese_timer = NULL;
+	
+	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]), Bit_SET);
+	
+	Sw3OffRelese_timer = plt_timer_create("sw3offr", 20, false, 0, HAL_Sw3Relay_OffRelese_Timeout_cb);
+	if (Sw3OffRelese_timer != NULL){
+		plt_timer_start(Sw3OffRelese_timer, 0);
+	}
+}
+#endif
 void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 {
+	#if SWITCH1_RELAY_CTL_USED == 1
 	if(index < SKYSWITC_NUMBERS){
 		switch(mode){
-			case LED_RED:{
-				GPIO_WriteBit(GPIO_GetPin(LedIO[index]), (BitAction)(mode));
+			case LEDTURNON:{
+				if(index == SKYSWITC1_ENUM){
+					plt_timer_t Sw1OnCtrl_timer = NULL;
+					Sw1OnCtrl_timer = plt_timer_create("sw1on", 6, false, 0, HAL_Sw1Relay_OnCtl_Timeout_cb);
+					if (Sw1OnCtrl_timer != NULL){
+						plt_timer_start(Sw1OnCtrl_timer, 0);
+					}
+				} else if(index == SKYSWITC2_ENUM){
+					plt_timer_t Sw2OnCtrl_timer = NULL;
+					Sw2OnCtrl_timer = plt_timer_create("sw2on", 6, false, 0, HAL_Sw2Relay_OnCtl_Timeout_cb);
+					if (Sw2OnCtrl_timer != NULL){
+						plt_timer_start(Sw2OnCtrl_timer, 0);
+					}	
+				} else if(index == SKYSWITC3_ENUM){
+					plt_timer_t Sw3OnCtrl_timer = NULL;
+					Sw3OnCtrl_timer = plt_timer_create("sw3on", 6, false, 0, HAL_Sw3Relay_OnCtl_Timeout_cb);
+					if (Sw3OnCtrl_timer != NULL){
+						plt_timer_start(Sw3OnCtrl_timer, 0);
+					}
+				}
 			break;
 			}
-			case LED_BLUE:{
-				GPIO_WriteBit(GPIO_GetPin(LedIO[index]), (BitAction)(mode));
-			break;
-			}
-			case LED_BLINK:{
-				if(GPIO_ReadOutputDataBit(GPIO_GetPin(LedIO[index]))==1){					
-					GPIO_WriteBit(GPIO_GetPin(LedIO[index]), (BitAction)(0));
-				} else{
-					GPIO_WriteBit(GPIO_GetPin(LedIO[index]), (BitAction)(1));
+			case LEDTURNOFF:{
+				if(index == SKYSWITC1_ENUM){
+					plt_timer_t Sw1OffCtrl_timer = NULL;
+					Sw1OffCtrl_timer = plt_timer_create("sw1off", 6, false, 0, HAL_Sw1Relay_OffCtl_Timeout_cb);
+					if (Sw1OffCtrl_timer != NULL){
+						plt_timer_start(Sw1OffCtrl_timer, 0);
+					}
+				} else if(index == SKYSWITC2_ENUM){
+					plt_timer_t Sw2OffCtrl_timer = NULL;
+					Sw2OffCtrl_timer = plt_timer_create("sw2off", 6, false, 0, HAL_Sw2Relay_OffCtl_Timeout_cb);
+					if (Sw2OffCtrl_timer != NULL){
+						plt_timer_start(Sw2OffCtrl_timer, 0);
+					}	
+				} else if(index == SKYSWITC3_ENUM){
+					plt_timer_t Sw3OffCtrl_timer = NULL;
+					Sw3OffCtrl_timer = plt_timer_create("sw3off", 6, false, 0, HAL_Sw3Relay_OffCtl_Timeout_cb);
+					if (Sw3OffCtrl_timer != NULL){
+						plt_timer_start(Sw3OffCtrl_timer, 0);
+					}
 				}
 			break;
 			}
 		}
-		
 	}	
+	#endif
 }
 
 void HAL_SwitchLed_Dlps_Control(uint8_t index, uint8_t val, bool isenter)
 {
+	#if SWITCH1_RELAY_CTL_USED == 1
+	// 这里先成对处理，可以直接给低
 	PAD_OUTPUT_VAL outval;
 	if(index < SKYSWITC_NUMBERS){
-		val = GPIO_ReadOutputDataBit(GPIO_GetPin(LedIO[index]));
+		val = GPIO_ReadOutputDataBit(GPIO_GetPin(RelayOnIO[index]));
+		if(val){
+			outval = PAD_OUT_HIGH;
+		}else{
+			outval = PAD_OUT_LOW;
+		}		
+		if(isenter){
+			Pad_Config(RelayOnIO[index], PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
+		}else{
+			Pad_Config(RelayOnIO[index], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);	
+		}
+		
+		val = GPIO_ReadOutputDataBit(GPIO_GetPin(RelayOffIO[index]));
 		if(val){
 			outval = PAD_OUT_HIGH;
 		}else{
 			outval = PAD_OUT_LOW;
 		}
 		if(isenter){
-			Pad_Config(LedIO[index], PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
+			Pad_Config(RelayOffIO[index], PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
 		}else{
-			Pad_Config(LedIO[index], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);	
+			Pad_Config(RelayOffIO[index], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);	
 		}
-		
 	}	
+	#endif
 }
+
 
 static uint8_t ReadKeyStatu(void)
 {
 	uint8_t keyval=0 ;
 	
-	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC1_ENUM]))==1){
+	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC1_ENUM]))==0){
 		keyval |= (1<<0);
-	} 
-	
-	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC2_ENUM]))==1){
+	} 	
+	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC2_ENUM]))==0){
 		keyval |= (1<<1);
+	} 
+	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC3_ENUM]))==0){
+		keyval |= (1<<2);
 	} 
 	
 	return keyval; 
@@ -326,6 +552,28 @@ bool HAL_Switch_Is_Relese(void)
 	} else {
 		return false;
 	}
-
 }
 
+
+extern uint8_t Read_ZVD_Statu(void)
+{
+	uint8_t zvdval=0 ;
+	
+	zvdval = GPIO_ReadInputDataBit(CHECK_ZVD_GPIO_PIN);
+	
+	return zvdval; 
+}
+
+void CHECK_ZVD_PIN_INPUT_Handler(void)
+{
+    GPIO_INTConfig(CHECK_ZVD_GPIO_PIN, DISABLE);
+    GPIO_MaskINTConfig(CHECK_ZVD_GPIO_PIN, ENABLE);
+	
+//    APP_PRINT_INFO0("Enter GPIO Interrupt");
+    DBG_DIRECT("Enter GPIO Interrupt!");
+
+    GPIO_ClearINTPendingBit(CHECK_ZVD_GPIO_PIN);
+    GPIO_MaskINTConfig(CHECK_ZVD_GPIO_PIN, DISABLE);
+    GPIO_INTConfig(CHECK_ZVD_GPIO_PIN, ENABLE);
+
+}
