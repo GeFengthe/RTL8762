@@ -236,98 +236,116 @@ bool HAL_BlinkProLed_Statu(void)
 
 
 #if SWITCH1_RELAY_CTL_USED == 1
-static void HAL_Sw1Relay_OnRelese_Timeout_cb(void *timer)
-{
-	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC1_ENUM]), Bit_RESET);
-}
+plt_timer_t Sw1OnCtrl_timer = NULL;
+plt_timer_t Sw2OnCtrl_timer = NULL;
+plt_timer_t Sw3OnCtrl_timer = NULL;
+
 static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
 {
-	plt_timer_t Sw1OnRelese_timer = NULL;
+	static uint8_t enrtecnt=0;
 	
-	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC1_ENUM]), Bit_SET);
-	
-	Sw1OnRelese_timer = plt_timer_create("sw1onr", 20, false, 0, HAL_Sw1Relay_OnRelese_Timeout_cb);
-	if (Sw1OnRelese_timer != NULL){
-		plt_timer_start(Sw1OnRelese_timer, 0);
-	}
-}
-static void HAL_Sw1Relay_OffRelese_Timeout_cb(void *timer)
-{
-	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]), Bit_RESET);
-}
-static void HAL_Sw1Relay_OffCtl_Timeout_cb(void *timer)
-{
-	plt_timer_t Sw1OffRelese_timer = NULL;
-	
-	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]), Bit_SET);
-	
-	Sw1OffRelese_timer = plt_timer_create("sw1offr", 20, false, 0, HAL_Sw1Relay_OffRelese_Timeout_cb);
-	if (Sw1OffRelese_timer != NULL){
-		plt_timer_start(Sw1OffRelese_timer, 0);
+	enrtecnt++;
+	if( enrtecnt == 1 ){ // on
+		if(mSwitchManager->status[SKYSWITC1_ENUM] == 0){
+			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]), Bit_SET);	
+		}else{
+			GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC1_ENUM]), Bit_SET);	
+		}			
+		
+		if(Sw1OnCtrl_timer){
+			plt_timer_change_period(Sw1OnCtrl_timer, 20, 0);
+		}
+
+	} else { // ==2 off
+		
+		if(mSwitchManager->status[SKYSWITC1_ENUM] == 0){
+			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]), Bit_RESET);	
+		}else{
+			GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC1_ENUM]), Bit_RESET);	
+		}
+		
+		if(Sw1OnCtrl_timer){
+			plt_timer_stop(Sw1OnCtrl_timer, 0);
+		}
+		enrtecnt = 0;
 	}
 }
 
-static void HAL_Sw2Relay_OnRelese_Timeout_cb(void *timer)
-{
-	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC2_ENUM]), Bit_RESET);
-}
 static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
-{
-	plt_timer_t Sw2OnRelese_timer = NULL;
+{	
+	static uint8_t enrtecnt=0;
+	static uint8_t oldzvd=1;
 	
-	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC2_ENUM]), Bit_SET);
-	
-	Sw2OnRelese_timer = plt_timer_create("sw2onr", 20, false, 0, HAL_Sw2Relay_OnRelese_Timeout_cb);
-	if (Sw2OnRelese_timer != NULL){
-		plt_timer_start(Sw2OnRelese_timer, 0);
+	if(Read_ZVD_Statu()!=oldzvd){ 
+		
+		APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X %d r\n",__func__, Read_ZVD_Statu(), oldzvd);
+		if(oldzvd==0){
+			enrtecnt++;
+		}
 	}
-}
-static void HAL_Sw2Relay_OffRelese_Timeout_cb(void *timer)
-{
-	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC2_ENUM]), Bit_RESET);
-}
-static void HAL_Sw2Relay_OffCtl_Timeout_cb(void *timer)
-{
-	plt_timer_t Sw2OffRelese_timer = NULL;
+	oldzvd = Read_ZVD_Statu();
 	
-	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC2_ENUM]), Bit_SET);
-	
-	Sw2OffRelese_timer = plt_timer_create("sw2offr", 20, false, 0, HAL_Sw2Relay_OffRelese_Timeout_cb);
-	if (Sw2OffRelese_timer != NULL){
-		plt_timer_start(Sw2OffRelese_timer, 0);
+	if( enrtecnt == 1 ){ // on
+		if(mSwitchManager->status[SKYSWITC2_ENUM] == 0){
+			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC2_ENUM]), Bit_SET);	
+		}else{
+			GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC2_ENUM]), Bit_SET);	
+		}			
+		
+		if(Sw2OnCtrl_timer){
+			plt_timer_change_period(Sw2OnCtrl_timer, 20, 0);
+		}
+		enrtecnt++;
+	} else if(enrtecnt>=2){ // ==2 off
+		
+		if(mSwitchManager->status[SKYSWITC2_ENUM] == 0){
+			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC2_ENUM]), Bit_RESET);	
+		}else{
+			GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC2_ENUM]), Bit_RESET);	
+		}
+		
+		if(Sw2OnCtrl_timer){
+			plt_timer_stop(Sw2OnCtrl_timer, 0);
+		}
+		enrtecnt = 0;
+		
+		APP_DBG_PRINTF("%s Sw2OnCtrl_timer:%02X %d r\n",__func__, enrtecnt, enrtecnt);
 	}
 }
 
-static void HAL_Sw3Relay_OnRelese_Timeout_cb(void *timer)
-{
-	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC3_ENUM]), Bit_RESET);
-}
 static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
 {
-	plt_timer_t Sw3OnRelese_timer = NULL;
+	static uint8_t enrtecnt=0;
 	
-	GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC3_ENUM]), Bit_SET);
-	
-	Sw3OnRelese_timer = plt_timer_create("sw3onr", 20, false, 0, HAL_Sw3Relay_OnRelese_Timeout_cb);
-	if (Sw3OnRelese_timer != NULL){
-		plt_timer_start(Sw3OnRelese_timer, 0);
+	enrtecnt++;
+	if( enrtecnt == 1 ){ // on
+		if(mSwitchManager->status[SKYSWITC3_ENUM] == 0){
+			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]), Bit_SET);	
+		}else{
+			GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC3_ENUM]), Bit_SET);	
+		}			
+		
+		if(Sw3OnCtrl_timer){
+			plt_timer_change_period(Sw3OnCtrl_timer, 20, 0);
+		}
+		
+		APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X r\n",__func__, Read_ZVD_Statu());
+
+	} else { // ==2 off
+		
+		if(mSwitchManager->status[SKYSWITC3_ENUM] == 0){
+			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]), Bit_RESET);	
+		}else{
+			GPIO_WriteBit(GPIO_GetPin(RelayOnIO[SKYSWITC3_ENUM]), Bit_RESET);	
+		}
+		
+		if(Sw3OnCtrl_timer){
+			plt_timer_stop(Sw3OnCtrl_timer, 0);
+		}
+		enrtecnt = 0;
 	}
 }
-static void HAL_Sw3Relay_OffRelese_Timeout_cb(void *timer)
-{
-	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]), Bit_RESET);
-}
-static void HAL_Sw3Relay_OffCtl_Timeout_cb(void *timer)
-{
-	plt_timer_t Sw3OffRelese_timer = NULL;
-	
-	GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]), Bit_SET);
-	
-	Sw3OffRelese_timer = plt_timer_create("sw3offr", 20, false, 0, HAL_Sw3Relay_OffRelese_Timeout_cb);
-	if (Sw3OffRelese_timer != NULL){
-		plt_timer_start(Sw3OffRelese_timer, 0);
-	}
-}
+
 #endif
 void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 {
@@ -336,44 +354,79 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 		switch(mode){
 			case LEDTURNON:{
 				if(index == SKYSWITC1_ENUM){
-					plt_timer_t Sw1OnCtrl_timer = NULL;
-					Sw1OnCtrl_timer = plt_timer_create("sw1on", 6, false, 0, HAL_Sw1Relay_OnCtl_Timeout_cb);
-					if (Sw1OnCtrl_timer != NULL){
-						plt_timer_start(Sw1OnCtrl_timer, 0);
+					if(Sw1OnCtrl_timer == NULL){
+						Sw1OnCtrl_timer = plt_timer_create("s1c1", 6, true, 111, HAL_Sw1Relay_OnCtl_Timeout_cb);
+						if (Sw1OnCtrl_timer != NULL){
+							plt_timer_start(Sw1OnCtrl_timer, 0);
+						}	
+					}else{		
+						if(plt_timer_is_active(Sw1OnCtrl_timer)==false){
+							plt_timer_change_period(Sw1OnCtrl_timer, 6, 0);
+						}
 					}
+
 				} else if(index == SKYSWITC2_ENUM){
-					plt_timer_t Sw2OnCtrl_timer = NULL;
-					Sw2OnCtrl_timer = plt_timer_create("sw2on", 6, false, 0, HAL_Sw2Relay_OnCtl_Timeout_cb);
-					if (Sw2OnCtrl_timer != NULL){
-						plt_timer_start(Sw2OnCtrl_timer, 0);
-					}	
-				} else if(index == SKYSWITC3_ENUM){
-					plt_timer_t Sw3OnCtrl_timer = NULL;
-					Sw3OnCtrl_timer = plt_timer_create("sw3on", 6, false, 0, HAL_Sw3Relay_OnCtl_Timeout_cb);
-					if (Sw3OnCtrl_timer != NULL){
-						plt_timer_start(Sw3OnCtrl_timer, 0);
+					if(Sw2OnCtrl_timer == NULL){
+						Sw2OnCtrl_timer = plt_timer_create("s2c1", 6, true, 111, HAL_Sw2Relay_OnCtl_Timeout_cb);
+						if (Sw2OnCtrl_timer != NULL){
+							plt_timer_start(Sw2OnCtrl_timer, 0);
+						}	
+					}else{		
+						if(plt_timer_is_active(Sw2OnCtrl_timer)==false){
+							plt_timer_change_period(Sw2OnCtrl_timer, 6, 0);
+						}
 					}
+
+				} else if(index == SKYSWITC3_ENUM){
+					if(Sw3OnCtrl_timer == NULL){
+						Sw3OnCtrl_timer = plt_timer_create("s3c1", 6, true, 111, HAL_Sw3Relay_OnCtl_Timeout_cb);
+						if (Sw3OnCtrl_timer != NULL){
+							plt_timer_start(Sw3OnCtrl_timer, 0);
+						}	
+					}else{		
+						if(plt_timer_is_active(Sw3OnCtrl_timer)==false){
+							plt_timer_change_period(Sw3OnCtrl_timer, 6, 0);
+						}
+					}
+
 				}
 			break;
 			}
 			case LEDTURNOFF:{
 				if(index == SKYSWITC1_ENUM){
-					plt_timer_t Sw1OffCtrl_timer = NULL;
-					Sw1OffCtrl_timer = plt_timer_create("sw1off", 6, false, 0, HAL_Sw1Relay_OffCtl_Timeout_cb);
-					if (Sw1OffCtrl_timer != NULL){
-						plt_timer_start(Sw1OffCtrl_timer, 0);
+					if(Sw1OnCtrl_timer == NULL){
+						Sw1OnCtrl_timer = plt_timer_create("s1c1", 6, true, 111, HAL_Sw1Relay_OnCtl_Timeout_cb);
+						if (Sw1OnCtrl_timer != NULL){
+							plt_timer_start(Sw1OnCtrl_timer, 0);
+						}	
+					}else{		
+						if(plt_timer_is_active(Sw1OnCtrl_timer)==false){
+							plt_timer_change_period(Sw1OnCtrl_timer, 6, 0);
+						}
 					}
+
 				} else if(index == SKYSWITC2_ENUM){
-					plt_timer_t Sw2OffCtrl_timer = NULL;
-					Sw2OffCtrl_timer = plt_timer_create("sw2off", 6, false, 0, HAL_Sw2Relay_OffCtl_Timeout_cb);
-					if (Sw2OffCtrl_timer != NULL){
-						plt_timer_start(Sw2OffCtrl_timer, 0);
-					}	
+					if(Sw2OnCtrl_timer == NULL){
+						Sw2OnCtrl_timer = plt_timer_create("s2c1", 6, true, 111, HAL_Sw2Relay_OnCtl_Timeout_cb);
+						if (Sw2OnCtrl_timer != NULL){
+							plt_timer_start(Sw2OnCtrl_timer, 0);
+						}	
+					}else{		
+						if(plt_timer_is_active(Sw2OnCtrl_timer)==false){
+							plt_timer_change_period(Sw2OnCtrl_timer, 6, 0);
+						}
+					}
+
 				} else if(index == SKYSWITC3_ENUM){
-					plt_timer_t Sw3OffCtrl_timer = NULL;
-					Sw3OffCtrl_timer = plt_timer_create("sw3off", 6, false, 0, HAL_Sw3Relay_OffCtl_Timeout_cb);
-					if (Sw3OffCtrl_timer != NULL){
-						plt_timer_start(Sw3OffCtrl_timer, 0);
+					if(Sw3OnCtrl_timer == NULL){
+						Sw3OnCtrl_timer = plt_timer_create("s3c1", 6, true, 111, HAL_Sw3Relay_OnCtl_Timeout_cb);
+						if (Sw3OnCtrl_timer != NULL){
+							plt_timer_start(Sw3OnCtrl_timer, 0);
+						}	
+					}else{		
+						if(plt_timer_is_active(Sw3OnCtrl_timer)==false){
+							plt_timer_change_period(Sw3OnCtrl_timer, 6, 0);
+						}
 					}
 				}
 			break;

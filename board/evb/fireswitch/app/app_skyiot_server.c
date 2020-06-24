@@ -1431,36 +1431,37 @@ static void Main_Event_Handle(void)
 							mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = event.prop_value;							
 							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
 							mIotManager.swt1_seqnum = event.seqence_num;
+							
+							if (mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] == 0){
+								HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNOFF);
+							}else {
+								HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+							}
 						}
 						if (event.prop_ID == ATTR_CLUSTER_ID_SW2){
 							mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = event.prop_value;							
 							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
 							mIotManager.swt2_seqnum = event.seqence_num;
+							
+							if (mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] == 0){
+								HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNOFF);
+							}else {
+								HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+							}
 						}
 						if (event.prop_ID == ATTR_CLUSTER_ID_SW3){
 							mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = event.prop_value;							
 							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
 							mIotManager.swt3_seqnum = event.seqence_num;
+							
+							if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
+								HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
+							}else {
+								HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+							}
 						}
 
-						//
-						if (mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] == 0){
-							HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNOFF);
-						}else {
-							HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
-						}
-						if (mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] == 0){
-							HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNOFF);
-						}else {
-							HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
-						}
-						if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
-							HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
-						}else {
-							HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
-						}
 #endif
-
 						
 						// SkyBleMesh_WriteConfig();
 				}	
@@ -1495,31 +1496,32 @@ static void Main_Event_Handle(void)
 			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT1)){
 				mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC1_ENUM];							
 				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
+				
+				if (mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] == 0){
+					HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNOFF);
+				}else {
+					HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+				}
 			}
 			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT2)){
 				mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC2_ENUM];							
 				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
+				
+				if (mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] == 0){
+					HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNOFF);
+				}else {
+					HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+				}
 			}
 			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT3)){
 				mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC3_ENUM];							
 				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
-			}
-			
-			//
-			if (mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] == 0){
-				HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNOFF);
-			}else {
-				HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
-			}
-			if (mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] == 0){
-				HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNOFF);
-			}else {
-				HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
-			}
-			if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
-				HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
-			}else {
-				HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+				
+				if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
+					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
+				}else {
+					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+				}
 			}
 			
 		}else if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE){
@@ -1545,30 +1547,28 @@ static void Main_WithoutNet_Handle(void)
 
 		if(mIotManager.mSwitchManager.keymode == KEY_SHORTPRESS_MODE){
 			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT1)){
-				mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC1_ENUM]; 						
+				mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC1_ENUM];
+				if (mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] == 0){
+					HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNOFF);
+				}else {
+					HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+				} 						
 			}
 			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT2)){
-				mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC2_ENUM]; 		
+				mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC2_ENUM]; 
+				if (mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] == 0){
+					HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNOFF);
+				}else {
+					HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+				}		
 			}
 			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT3)){
-				mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC3_ENUM]; 		
-			}
-			
-			//
-			if (mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] == 0){
-				HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNOFF);
-			}else {
-				HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
-			}
-			if (mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] == 0){
-				HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNOFF);
-			}else {
-				HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
-			}
-			if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
-				HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
-			}else {
-				HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+				mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC3_ENUM]; 	
+				if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
+					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
+				}else {
+					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+				}	
 			}
 			
 		}else if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE){
