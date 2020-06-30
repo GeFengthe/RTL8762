@@ -321,7 +321,7 @@ void app_exit_dlps_config(void)
 */
 bool app_dlps_check_cb(void)
 {
-    return switch_check_dlps_statu();
+    return 0; // switch_check_dlps_statu();
 }
 #if 0
 void System_Handler(void)

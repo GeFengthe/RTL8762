@@ -10,8 +10,8 @@
 #define USE_SWITCH_FOR_SKYIOT  1
 
 
-#define LED_PRO_OFF 1   // 配网指示灯
-#define LED_PRO_ON  0 
+#define LED_PRO_OFF 0   // 配网指示灯
+#define LED_PRO_ON  1 
 
 #define LEDTURNOFF    	0
 #define LEDTURNON    	1
