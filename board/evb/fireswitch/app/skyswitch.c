@@ -273,19 +273,23 @@ static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
 
 static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 {	
-	static uint8_t enrtecnt=0;
+	static uint8_t enrtecnt=0; // 0~4:tmr计数 5:on 6:off
 	static uint8_t oldzvd=1;
 	
-	if(Read_ZVD_Statu()!=oldzvd){ 
-		
-		APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X %d r\n",__func__, Read_ZVD_Statu(), oldzvd);
-		if(oldzvd==0){
-			enrtecnt++;
+	enrtecnt++;
+	if(enrtecnt < 5){
+		if(Read_ZVD_Statu()!=oldzvd){ 
+			
+			APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X %d r\n",__func__, Read_ZVD_Statu(), oldzvd);
+			if(oldzvd==1){
+				enrtecnt = 4;
+				plt_timer_change_period(Sw2OnCtrl_timer, 6, 0);
+				return;
+			}
 		}
-	}
-	oldzvd = Read_ZVD_Statu();
-	
-	if( enrtecnt == 1 ){ // on
+		oldzvd = Read_ZVD_Statu();
+	}	
+	else if( enrtecnt == 5 ){ // on
 		if(mSwitchManager->status[SKYSWITC2_ENUM] == 0){
 			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC2_ENUM]), Bit_SET);	
 		}else{
@@ -296,7 +300,7 @@ static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 			plt_timer_change_period(Sw2OnCtrl_timer, 20, 0);
 		}
 		enrtecnt++;
-	} else if(enrtecnt>=2){ // ==2 off
+	} else if(enrtecnt>5){ // ==6 off
 		
 		if(mSwitchManager->status[SKYSWITC2_ENUM] == 0){
 			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC2_ENUM]), Bit_RESET);	
@@ -407,13 +411,13 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 
 				} else if(index == SKYSWITC2_ENUM){
 					if(Sw2OnCtrl_timer == NULL){
-						Sw2OnCtrl_timer = plt_timer_create("s2c1", 6, true, 111, HAL_Sw2Relay_OnCtl_Timeout_cb);
+						Sw2OnCtrl_timer = plt_timer_create("s2c1", 5, true, 111, HAL_Sw2Relay_OnCtl_Timeout_cb);
 						if (Sw2OnCtrl_timer != NULL){
 							plt_timer_start(Sw2OnCtrl_timer, 0);
 						}	
 					}else{		
 						if(plt_timer_is_active(Sw2OnCtrl_timer)==false){
-							plt_timer_change_period(Sw2OnCtrl_timer, 6, 0);
+							plt_timer_change_period(Sw2OnCtrl_timer, 5, 0);
 						}
 					}
 
