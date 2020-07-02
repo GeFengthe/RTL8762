@@ -1155,10 +1155,13 @@ static void SkyBleMesh_ChangeScan_Timeout_cb(void *ptimer)
     app_send_msg_to_apptask(&unprov_timeout_msg);
 }
 
-void SkyBleMesh_ChangeScan_timer(void)
+void SkyBleMesh_ChangeScan_timer(uint8_t multi)
 {
+	if(multi==0 || multi>200){
+		multi = 1;
+	}
 	if(skyble_changescan_timer == NULL){ 	
-		skyble_changescan_timer = plt_timer_create("change scan", CHANGE_SCAN_PARAM_TIME_OUT, false, 0, SkyBleMesh_ChangeScan_Timeout_cb);
+		skyble_changescan_timer = plt_timer_create("change scan", CHANGE_SCAN_PARAM_TIME_OUT*multi, false, 0, SkyBleMesh_ChangeScan_Timeout_cb);
 		if (skyble_changescan_timer != NULL){
 			plt_timer_start(skyble_changescan_timer, 0);
 		}
@@ -1179,10 +1182,11 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
             break;
         }
 		case PROV_SUCCESS_TIMEOUT:{
-            uint16_t scan_interval = 800;  //!< 250ms
+            uint16_t scan_interval = 400;  //!< 250ms
             uint16_t scan_window   = 0x30; //!< 30ms
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+			data_uart_debug("%s scan_window %d  scan_interval:%02X r\n",__func__, scan_window, scan_interval);
             break;
         }
 		default:

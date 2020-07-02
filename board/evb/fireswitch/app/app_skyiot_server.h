@@ -81,7 +81,7 @@ extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate);
 extern bool SkyBleMesh_IsProvision_Sate(void);
 extern void SkyBleMesh_Unprov_timer(void);	
 extern void SkyBleMesh_Unprov_timer_delet(void);
-extern void SkyBleMesh_ChangeScan_timer(void);
+extern void SkyBleMesh_ChangeScan_timer(uint8_t multi);
 extern void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg);
 extern void SkyBleMesh_unBind_complete(void);
 

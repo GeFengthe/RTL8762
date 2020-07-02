@@ -275,7 +275,7 @@ static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
 	}
 }
 
-#define TMP_WAIT_ZVD_SIGNAL_CNT   5   
+#define TMP_WAIT_ZVD_SIGNAL_CNT   1000   
 static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 {	
 	static uint16_t enrtecnt=0; // 0~4:tmr计数 5:on 6:off

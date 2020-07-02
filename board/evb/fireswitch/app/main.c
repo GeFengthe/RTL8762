@@ -124,7 +124,7 @@ void mesh_stack_init(void)
     {
         .role = MESH_ROLE_DEVICE,
         .relay = 1,
-        .proxy = 0, // 1, gatt应该需要打开
+        .proxy = 1, // 1, gatt应该需要打开
         .fn = 0,
         .lpn = 0,
         .prov = 1, // =0配网网关收不到消息。=1 dlps时mesh_service_adv_stop。
@@ -147,7 +147,7 @@ void mesh_stack_init(void)
 			  .udb_interval = 10,//  default MESH_UDB_PERIOD
 			  .snb_interval = 100,//  default MESH_SNB_PERIOD
 //			  .prov_interval =1,// mesh GATT service
-//			  .proxy_interval =5,// mesh GATT service 后面
+			  .proxy_interval =5,// mesh GATT service 后面
     };
     mesh_node_cfg(features, &node_cfg);
     mesh_node.pb_adv_retrans_count = 6;
@@ -275,7 +275,7 @@ void driver_init(void)
     if (node_state == UNPROV_DEVICE){
         SkyBleMesh_Unprov_timer();
     }else{
-        SkyBleMesh_ChangeScan_timer();
+        SkyBleMesh_ChangeScan_timer(1);
     }
 	
 	
@@ -321,7 +321,7 @@ void app_exit_dlps_config(void)
 */
 bool app_dlps_check_cb(void)
 {
-    return switch_check_dlps_statu();
+    return false;// switch_check_dlps_statu();
 }
 #if 0
 void System_Handler(void)
