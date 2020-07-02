@@ -124,10 +124,10 @@ void mesh_stack_init(void)
     {
         .role = MESH_ROLE_DEVICE,
         .relay = 1,
-        .proxy = 0,
+        .proxy = 0, // 1, gatt应该需要打开
         .fn = 0,
         .lpn = 0,
-        .prov = 0,
+        .prov = 1, // =0配网网关收不到消息。=1 dlps时mesh_service_adv_stop。
         .udb = 1,
         .snb = 1,
         .bg_scan = 1,
@@ -147,7 +147,7 @@ void mesh_stack_init(void)
 			  .udb_interval = 10,//  default MESH_UDB_PERIOD
 			  .snb_interval = 100,//  default MESH_SNB_PERIOD
 //			  .prov_interval =1,// mesh GATT service
-//			  .proxy_interval =5,// mesh GATT service
+//			  .proxy_interval =5,// mesh GATT service 后面
     };
     mesh_node_cfg(features, &node_cfg);
     mesh_node.pb_adv_retrans_count = 6;

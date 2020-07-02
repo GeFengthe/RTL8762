@@ -12,6 +12,7 @@
 #include "trace.h"
 
 #include "data_uart.h"
+#include "app_skyiot_dlps.h"
 
 // #define APP_DBG_PRINTF(fmt, ...)
 #define APP_DBG_PRINTF   DBG_DIRECT
@@ -246,6 +247,7 @@ static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
 	static uint8_t enrtecnt=0;
 	
 	enrtecnt++;
+	APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X r\n",__func__, enrtecnt);
 	if( enrtecnt == 1 ){ // on
 		if(mSwitchManager->status[SKYSWITC1_ENUM] == 0){
 			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]), Bit_SET);	
@@ -266,7 +268,8 @@ static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
 		}
 		
 		if(Sw1OnCtrl_timer){
-			plt_timer_stop(Sw1OnCtrl_timer, 0);
+			plt_timer_stop(Sw1OnCtrl_timer, 0);			
+			Switch_Relay1_tmr_ctrl_dlps(true);
 		}
 		enrtecnt = 0;
 	}
@@ -279,6 +282,7 @@ static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 	static uint8_t oldzvd=1;
 	
 	enrtecnt++;
+	APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X r\n",__func__, enrtecnt);
 	if(enrtecnt < TMP_WAIT_ZVD_SIGNAL_CNT){
 		if(Read_ZVD_Statu()!=oldzvd){ 
 			
@@ -312,6 +316,7 @@ static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 		
 		if(Sw2OnCtrl_timer){
 			plt_timer_stop(Sw2OnCtrl_timer, 0);
+			Switch_Relay2_tmr_ctrl_dlps(true);
 		}
 		data_uart_debug("%s Sw2OnCtrl_timer:%d r\n",__func__, enrtecnt);
 		
@@ -325,6 +330,7 @@ static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
 	static uint8_t enrtecnt=0;
 	
 	enrtecnt++;
+	APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X r\n",__func__, enrtecnt);
 	if( enrtecnt == 1 ){ // on
 		if(mSwitchManager->status[SKYSWITC3_ENUM] == 0){
 			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]), Bit_SET);	
@@ -335,8 +341,6 @@ static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
 		if(Sw3OnCtrl_timer){
 			plt_timer_change_period(Sw3OnCtrl_timer, 20, 0);
 		}
-		
-		APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X r\n",__func__, Read_ZVD_Statu());
 
 	} else { // ==2 off
 		
@@ -348,6 +352,7 @@ static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
 		
 		if(Sw3OnCtrl_timer){
 			plt_timer_stop(Sw3OnCtrl_timer, 0);
+			Switch_Relay3_tmr_ctrl_dlps(true);
 		}
 		enrtecnt = 0;
 	}
@@ -356,11 +361,13 @@ static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
 #endif
 void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 {
+	APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X %d r\n",__func__, index, mode);
 	#if SWITCH1_RELAY_CTL_USED == 1
 	if(index < SKYSWITC_NUMBERS){
 		switch(mode){
 			case LEDTURNON:{
 				if(index == SKYSWITC1_ENUM){
+					Switch_Relay1_tmr_ctrl_dlps(false);
 					if(Sw1OnCtrl_timer == NULL){
 						Sw1OnCtrl_timer = plt_timer_create("s1c1", 6, true, 111, HAL_Sw1Relay_OnCtl_Timeout_cb);
 						if (Sw1OnCtrl_timer != NULL){
@@ -373,6 +380,7 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 					}
 
 				} else if(index == SKYSWITC2_ENUM){
+					Switch_Relay2_tmr_ctrl_dlps(false);
 					if(Sw2OnCtrl_timer == NULL){
 						Sw2OnCtrl_timer = plt_timer_create("s2c1", 5, true, 111, HAL_Sw2Relay_OnCtl_Timeout_cb);
 						if (Sw2OnCtrl_timer != NULL){
@@ -385,6 +393,7 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 					}
 
 				} else if(index == SKYSWITC3_ENUM){
+					Switch_Relay3_tmr_ctrl_dlps(false);
 					if(Sw3OnCtrl_timer == NULL){
 						Sw3OnCtrl_timer = plt_timer_create("s3c1", 6, true, 111, HAL_Sw3Relay_OnCtl_Timeout_cb);
 						if (Sw3OnCtrl_timer != NULL){
@@ -401,6 +410,7 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 			}
 			case LEDTURNOFF:{
 				if(index == SKYSWITC1_ENUM){
+					Switch_Relay1_tmr_ctrl_dlps(false);
 					if(Sw1OnCtrl_timer == NULL){
 						Sw1OnCtrl_timer = plt_timer_create("s1c1", 6, true, 111, HAL_Sw1Relay_OnCtl_Timeout_cb);
 						if (Sw1OnCtrl_timer != NULL){
@@ -413,6 +423,7 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 					}
 
 				} else if(index == SKYSWITC2_ENUM){
+					Switch_Relay2_tmr_ctrl_dlps(false);
 					if(Sw2OnCtrl_timer == NULL){
 						Sw2OnCtrl_timer = plt_timer_create("s2c1", 5, true, 111, HAL_Sw2Relay_OnCtl_Timeout_cb);
 						if (Sw2OnCtrl_timer != NULL){
@@ -425,6 +436,7 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 					}
 
 				} else if(index == SKYSWITC3_ENUM){
+					Switch_Relay3_tmr_ctrl_dlps(false);					
 					if(Sw3OnCtrl_timer == NULL){
 						Sw3OnCtrl_timer = plt_timer_create("s3c1", 6, true, 111, HAL_Sw3Relay_OnCtl_Timeout_cb);
 						if (Sw3OnCtrl_timer != NULL){
@@ -605,13 +617,16 @@ bool HAL_Switch_Init(SkySwitchManager *manager)
 
 bool HAL_Switch_Is_Relese(void)
 {
-	uint8_t keypress = ReadKeyStatu();
+	uint8_t keypress=0;
+	if(mSwitchManager->keyval==0 && mSwitchManager->keymode==0) {  // 没有未处理键值
+		
+		keypress = ReadKeyStatu();		
+		if(IsSwitchInited==true && keystatus==SCAN_KEY_INIT && keypress==0){ // 按键释放
+			return true;
+		} 
+	}  
 	
-	if(IsSwitchInited==true && keystatus==SCAN_KEY_INIT && keypress==0){
-		return true;
-	} else {
-		return false;
-	}
+	return false;
 }
 
 

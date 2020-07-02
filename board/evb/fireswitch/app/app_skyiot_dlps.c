@@ -55,13 +55,14 @@ void SkyBleMesh_EnterDlps_timer(void)
 		}
 	}
 }
-
+#include "mesh_api.h"
 void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
 	// ble 
 	beacon_stop();  	
 	if(SkyBleMesh_IsProvision_Sate() == false){ // unprov  未配网休眠不SCAN
 		gap_sched_scan(false);   // gap layer scam
+        mesh_service_adv_stop();
 	}else{	
 	}
 		
@@ -173,6 +174,31 @@ void Reenter_tmr_ctrl_dlps(bool allowenter)
         DlpsCtrlStatu_t.bit.dlpstmr = 0;
     }else{
         DlpsCtrlStatu_t.bit.dlpstmr = 1;
+    }
+}
+
+void Switch_Relay1_tmr_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.sw1tmr = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.sw1tmr = 1;
+    }
+}
+void Switch_Relay2_tmr_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.sw2tmr = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.sw2tmr = 1;
+    }
+}
+void Switch_Relay3_tmr_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.sw3tmr = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.sw3tmr = 1;
     }
 }
 

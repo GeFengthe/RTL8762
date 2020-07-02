@@ -21,7 +21,7 @@
 #include "app_msg.h"
 #include "skyswitch.h"
 
-#define MESH_TEST_PRESSURE       1
+#define MESH_TEST_PRESSURE       0
 
 #define PRODUCT_TYPE    (100)	  //switch
 #define PRODUCT_MODEL   ("IPA03") //ipa03	
@@ -30,7 +30,7 @@
 
 // #define MESH_ADV_NAME_LEN (30)
 
-#define MESHDEVICE_UNPROV_TIME_OUT          (1*60*1000)  // 2min
+#define MESHDEVICE_UNPROV_TIME_OUT          (2*60*1000)  // 2min
 #define CHANGE_SCAN_PARAM_TIME_OUT          (10*1000)    // 10s
 
 

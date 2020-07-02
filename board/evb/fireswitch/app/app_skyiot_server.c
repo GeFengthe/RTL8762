@@ -1034,12 +1034,12 @@ static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 		if(skybleprovsucesscnt == (SKYBLEPROVSUCCESS_MAXCNT+1)){			
 			#if USE_SWITCH_FOR_SKYIOT
 			HAL_BlinkProLed_Disable();
-			mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
-			mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = 1;
-			mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = 1;
-			HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
-			HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
-			HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+//			mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
+//			mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = 1;
+//			mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = 1;
+//			HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+//			HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+//			HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
 			#endif	
 
 			// 闪灯结束后延时10s，触发配网成功事件。 
@@ -1946,14 +1946,14 @@ extern uint8_t SkyBleMesh_App_Init(void)
 		// 按保存的参数，恢复对设备的控制
     }	
 			
-	#if USE_SWITCH_FOR_SKYIOT
-	mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
-	mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = 1;
-	mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = 1;
-	HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
-	HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
-	HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
-	#endif	
+//	#if USE_SWITCH_FOR_SKYIOT
+//	mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
+//	mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = 1;
+//	mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = 1;
+//	HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+//	HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+//	HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+//	#endif	
 	
     for(int i =0 ;i < 16;i++){
         APP_DBG_PRINTF2("mIotManager.device_uuid[%d] = 0x%02x\n",i,mIotManager.device_uuid[i]);
