@@ -43,16 +43,16 @@ static uint8_t RelayOffIO[SKYSWITC_NUMBERS] = {SWITCH1_RELAYOFF_GPIO, SWITCH2_RE
 #endif
 
 // 过零检查,用中断实现
-#define CHECK_ZVD_GPIO               P2_2 // P2_5 
+#define CHECK_ZVD_GPIO               P2_5 
 #define CHECK_ZVD_GPIO_PIN           GPIO_GetPin(CHECK_ZVD_GPIO)
 #define CHECK_ZVD_PIN_INPUT_IRQN     GPIO21_IRQn
 #define CHECK_ZVD_PIN_INPUT_Handler  GPIO21_Handler
 
-#define SWITCH1_GPIO             P2_4
+#define SWITCH1_GPIO             P2_3  // switch 1\2 文档与硬件是反的，这里按硬件处理
 #define SWITCH1_GPIO_PIN         GPIO_GetPin(SWITCH1_GPIO)
-#define SWITCH2_GPIO             P2_3
+#define SWITCH2_GPIO             P2_4
 #define SWITCH2_GPIO_PIN         GPIO_GetPin(SWITCH2_GPIO)
-#define SWITCH3_GPIO             P2_5   // P2_2
+#define SWITCH3_GPIO             P2_2
 #define SWITCH3_GPIO_PIN         GPIO_GetPin(SWITCH3_GPIO)
 
 #define PROVISION_LED_GPIO       P2_7
@@ -272,7 +272,7 @@ static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
 	}
 }
 
-#define TMP_WAIT_ZVD_SIGNAL_CNT   1000   
+#define TMP_WAIT_ZVD_SIGNAL_CNT   5   
 static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 {	
 	static uint16_t enrtecnt=0; // 0~4:tmr计数 5:on 6:off
@@ -449,24 +449,24 @@ void HAL_SwitchLed_Dlps_Control(uint8_t index, uint8_t val, bool isenter)
 	// 这里先成对处理，可以直接给低
 	PAD_OUTPUT_VAL outval;
 	if(index < SKYSWITC_NUMBERS){
-		val = GPIO_ReadOutputDataBit(GPIO_GetPin(RelayOnIO[index]));
-		if(val){
-			outval = PAD_OUT_HIGH;
-		}else{
+//		val = GPIO_ReadOutputDataBit(GPIO_GetPin(RelayOnIO[index]));
+//		if(val){
+//			outval = PAD_OUT_HIGH;
+//		}else{
 			outval = PAD_OUT_LOW;
-		}		
+//		}		
 		if(isenter){
 			Pad_Config(RelayOnIO[index], PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
 		}else{
 			Pad_Config(RelayOnIO[index], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);	
 		}
 		
-		val = GPIO_ReadOutputDataBit(GPIO_GetPin(RelayOffIO[index]));
-		if(val){
-			outval = PAD_OUT_HIGH;
-		}else{
+//		val = GPIO_ReadOutputDataBit(GPIO_GetPin(RelayOffIO[index]));
+//		if(val){
+//			outval = PAD_OUT_HIGH;
+//		}else{
 			outval = PAD_OUT_LOW;
-		}
+//		}
 		if(isenter){
 			Pad_Config(RelayOffIO[index], PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
 		}else{
@@ -487,9 +487,9 @@ static uint8_t ReadKeyStatu(void)
 	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC2_ENUM]))==0){
 		keyval |= (1<<1);
 	} 
-//	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC3_ENUM]))==0){
-//		keyval |= (1<<2);
-//	} 
+	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC3_ENUM]))==0){
+		keyval |= (1<<2);
+	} 
 	
 	return keyval; 
 }

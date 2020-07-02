@@ -77,9 +77,13 @@ void SkyBleMesh_EnterDlps_cfg(void)
     Pad_ControlSelectValue(P3_1, PAD_SW_MODE);
 	
 	// switch1
-	Pad_Config(LPN_BUTTON, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-	System_WakeUpPinEnable(LPN_BUTTON, PAD_WAKEUP_POL_HIGH, 0);	
-	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
+	Pad_Config(P2_3, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+	System_WakeUpPinEnable(P2_3, PAD_WAKEUP_POL_LOW, 0);
+	Pad_Config(P2_4, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+	System_WakeUpPinEnable(P2_4, PAD_WAKEUP_POL_LOW, 0);
+	Pad_Config(P2_2, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+	System_WakeUpPinEnable(P2_2, PAD_WAKEUP_POL_LOW, 0);	
+//	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
 	SkyBleMesh_DlpsLight_Handle(true);
 }
 
@@ -90,13 +94,25 @@ void SkyBleMesh_ExitDlps_cfg(void)
     Pad_ControlSelectValue(P3_1, PAD_PINMUX_MODE);
 	
 	// switch1
-	Pad_Config(LPN_BUTTON, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-	if(System_WakeUpInterruptValue(P2_4) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
-        Pad_ClearWakeupINTPendingBit(P2_4);
-		System_WakeUpPinDisable(LPN_BUTTON);
+	Pad_Config(P2_3, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+	if(System_WakeUpInterruptValue(P2_3) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
+        Pad_ClearWakeupINTPendingBit(P2_3);
+		System_WakeUpPinDisable(P2_3);
 		switch_io_ctrl_dlps(false);		
 	}
-	// light
+	Pad_Config(P2_4, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+	if(System_WakeUpInterruptValue(P2_4) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
+        Pad_ClearWakeupINTPendingBit(P2_4);
+		System_WakeUpPinDisable(P2_4);
+		switch_io_ctrl_dlps(false);		
+	}
+	Pad_Config(P2_2, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+	if(System_WakeUpInterruptValue(P2_2) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
+        Pad_ClearWakeupINTPendingBit(P2_2);
+		System_WakeUpPinDisable(P2_2);
+		switch_io_ctrl_dlps(false);		
+	}
+//	// light
 	SkyBleMesh_DlpsLight_Handle(false);
 	
 	// ble

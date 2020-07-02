@@ -968,10 +968,10 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 						ackattrsval &= ~BLEMESH_REPORT_FLAG_SWT2;
 						break;
 					}
-					case ATTR_CLUSTER_ID_SW3:{
-						ackattrsval &= ~BLEMESH_REPORT_FLAG_SWT3;
-						break;
-					}
+//					case ATTR_CLUSTER_ID_SW3:{
+//						ackattrsval &= ~BLEMESH_REPORT_FLAG_SWT3;
+//						break;
+//					}
 					
 				}
 				revackpackcnt++;
@@ -1179,7 +1179,7 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
             break;
         }
 		case PROV_SUCCESS_TIMEOUT:{
-            uint16_t scan_interval = 400;  //!< 250ms
+            uint16_t scan_interval = 800;  //!< 250ms
             uint16_t scan_window   = 0x30; //!< 30ms
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
@@ -1367,10 +1367,10 @@ static void Reset_iotmanager_para(void)
 	#if USE_SWITCH_FOR_SKYIOT
 	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
 	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
+//	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
 	mIotManager.swt1_seqnum = 0; 
 	mIotManager.swt2_seqnum = 0; 
-	mIotManager.swt3_seqnum = 0; 
+//	mIotManager.swt3_seqnum = 0; 
 	#endif
 }
 static void Main_Event_Handle(void)
@@ -1388,7 +1388,7 @@ static void Main_Event_Handle(void)
 			#if USE_SWITCH_FOR_SKYIOT
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
-			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
+//			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
 			#endif
 		}
 	}
@@ -1449,17 +1449,17 @@ static void Main_Event_Handle(void)
 								HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
 							}
 						}
-						if (event.prop_ID == ATTR_CLUSTER_ID_SW3){
-							mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = event.prop_value;							
-							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
-							mIotManager.swt3_seqnum = event.seqence_num;
-							
-							if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
-								HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
-							}else {
-								HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
-							}
-						}
+//						if (event.prop_ID == ATTR_CLUSTER_ID_SW3){
+//							mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = event.prop_value;							
+//							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
+//							mIotManager.swt3_seqnum = event.seqence_num;
+//							
+//							if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
+//								HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
+//							}else {
+//								HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+//							}
+//						}
 
 #endif
 						
@@ -1475,7 +1475,7 @@ static void Main_Event_Handle(void)
 					#if USE_SWITCH_FOR_SKYIOT
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
-					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
+//					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
 					#endif
 				}
 					
@@ -1513,16 +1513,16 @@ static void Main_Event_Handle(void)
 					HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
 				}
 			}
-			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT3)){
-				mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC3_ENUM];							
-				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
-				
-				if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
-					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
-				}else {
-					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
-				}
-			}
+//			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT3)){
+//				mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC3_ENUM];							
+//				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
+//				
+//				if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
+//					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
+//				}else {
+//					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+//				}
+//			}
 			
 		}else if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE){
 
@@ -1562,14 +1562,14 @@ static void Main_WithoutNet_Handle(void)
 					HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
 				}		
 			}
-			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT3)){
-				mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC3_ENUM]; 	
-				if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
-					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
-				}else {
-					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
-				}	
-			}
+//			if ((mIotManager.mSwitchManager.keyval&BLEMESH_REPORT_FLAG_SWT3)){
+//				mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = !mIotManager.mSwitchManager.status[SKYSWITC3_ENUM]; 	
+//				if (mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] == 0){
+//					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNOFF);
+//				}else {
+//					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+//				}	
+//			}
 			
 		}else if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE){
 
@@ -1666,11 +1666,12 @@ static void Main_Upload_State(void)
 			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_SWT2;
 			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, mIotManager.mSwitchManager.status[SKYSWITC2_ENUM],mIotManager.swt2_seqnum);						
 			mIotManager.swt2_seqnum = 0; 
-		}else if ((mIotManager.report_flag & BLEMESH_REPORT_FLAG_SWT3)){
-			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_SWT3;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, mIotManager.mSwitchManager.status[SKYSWITC3_ENUM],mIotManager.swt3_seqnum);						
-			mIotManager.swt3_seqnum = 0; 
 		}
+//		else if ((mIotManager.report_flag & BLEMESH_REPORT_FLAG_SWT3)){
+//			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_SWT3;
+//			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, mIotManager.mSwitchManager.status[SKYSWITC3_ENUM],mIotManager.swt3_seqnum);						
+//			mIotManager.swt3_seqnum = 0; 
+//		}
 		#endif
 
 	}
@@ -1776,7 +1777,7 @@ extern void test_update_attr(void)
 	#if USE_SWITCH_FOR_SKYIOT
 		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;		
 		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;	
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
+//		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
 
 	#endif
 
@@ -1981,7 +1982,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	// SkyBleMesh_MainLoop_timer(); // called in app_task
 
 	IsSkyAppInited = true;
-	// blemesh_sysinit_ctrl_dlps(true);
+	blemesh_sysinit_ctrl_dlps(true);
 
 	
 	return 0; 

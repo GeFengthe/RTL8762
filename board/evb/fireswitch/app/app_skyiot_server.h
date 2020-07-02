@@ -30,7 +30,7 @@
 
 // #define MESH_ADV_NAME_LEN (30)
 
-#define MESHDEVICE_UNPROV_TIME_OUT          (10*60*1000)  // 10min
+#define MESHDEVICE_UNPROV_TIME_OUT          (1*60*1000)  // 2min
 #define CHANGE_SCAN_PARAM_TIME_OUT          (10*1000)    // 10s
 
 

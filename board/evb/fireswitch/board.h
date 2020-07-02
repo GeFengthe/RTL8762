@@ -30,7 +30,6 @@ extern "C" {
 #define DATA_UART_TX_PIN    P3_0
 #define DATA_UART_RX_PIN    P3_1
 
-#define LPN_BUTTON          P2_4
 
 #endif
 /** @defgroup IO Driver Config
