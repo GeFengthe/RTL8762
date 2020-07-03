@@ -27,4 +27,4 @@
 *.disasm
 *.trace
 *.lst
-*.bat
+#*.bat
