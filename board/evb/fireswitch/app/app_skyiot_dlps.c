@@ -55,14 +55,13 @@ void SkyBleMesh_EnterDlps_timer(void)
 		}
 	}
 }
-#include "mesh_api.h"
+
 void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
 	// ble 
 	beacon_stop();  	
 	if(SkyBleMesh_IsProvision_Sate() == false){ // unprov  未配网休眠不SCAN
 		gap_sched_scan(false);   // gap layer scam
-        mesh_service_adv_stop();
 	}else{	
 	}
 		
@@ -84,7 +83,7 @@ void SkyBleMesh_EnterDlps_cfg(void)
 	System_WakeUpPinEnable(P2_4, PAD_WAKEUP_POL_LOW, 0);
 	Pad_Config(P2_2, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
 	System_WakeUpPinEnable(P2_2, PAD_WAKEUP_POL_LOW, 0);	
-//	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
+	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
 	SkyBleMesh_DlpsLight_Handle(true);
 }
 
@@ -113,7 +112,7 @@ void SkyBleMesh_ExitDlps_cfg(void)
 		System_WakeUpPinDisable(P2_2);
 		switch_io_ctrl_dlps(false);		
 	}
-//	// light
+	// light
 	SkyBleMesh_DlpsLight_Handle(false);
 	
 	// ble

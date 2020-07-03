@@ -86,7 +86,7 @@ void bt_stack_config_init(void);
 #define OTA_TIMEOUT_CTITTV                         0xFF
 //add more here
 
-
+#define TIMER_MAX_NUMBER  32
 
 #ifdef __cplusplus
 }

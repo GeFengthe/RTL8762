@@ -4,10 +4,9 @@
 #include <stdint.h>    // standard integer definition
 #include <math.h>
 #include "platform_os.h"
-#include "rtl876x_rcc.h"
 #include "rtl876x_gpio.h"
 #include "rtl876x_pinmux.h"
-#include "rtl876x_nvic.h"
+#include "rtl876x_rcc.h"
 #include "skyswitch.h"
 #include "trace.h"
 
@@ -639,16 +638,16 @@ extern uint8_t Read_ZVD_Statu(void)
 	return zvdval; 
 }
 
-void CHECK_ZVD_PIN_INPUT_Handler(void)
-{
-    GPIO_INTConfig(CHECK_ZVD_GPIO_PIN, DISABLE);
-    GPIO_MaskINTConfig(CHECK_ZVD_GPIO_PIN, ENABLE);
-	
-//    APP_PRINT_INFO0("Enter GPIO Interrupt");
-    DBG_DIRECT("Enter GPIO Interrupt!");
+//void CHECK_ZVD_PIN_INPUT_Handler(void)
+//{
+//    GPIO_INTConfig(CHECK_ZVD_GPIO_PIN, DISABLE);
+//    GPIO_MaskINTConfig(CHECK_ZVD_GPIO_PIN, ENABLE);
+//	
+////    APP_PRINT_INFO0("Enter GPIO Interrupt");
+//    DBG_DIRECT("Enter GPIO Interrupt!");
 
-    GPIO_ClearINTPendingBit(CHECK_ZVD_GPIO_PIN);
-    GPIO_MaskINTConfig(CHECK_ZVD_GPIO_PIN, DISABLE);
-    GPIO_INTConfig(CHECK_ZVD_GPIO_PIN, ENABLE);
+//    GPIO_ClearINTPendingBit(CHECK_ZVD_GPIO_PIN);
+//    GPIO_MaskINTConfig(CHECK_ZVD_GPIO_PIN, DISABLE);
+//    GPIO_INTConfig(CHECK_ZVD_GPIO_PIN, ENABLE);
 
-}
+//}
