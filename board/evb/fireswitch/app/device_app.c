@@ -117,9 +117,9 @@ void app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t cause)
             APP_PRINT_INFO0("GAP stack ready");
             uint8_t bt_addr[6];
             gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
-            data_uart_debug("bt addr: 0x%02x%02x%02x%02x%02x%02x\r\n>",
-                            bt_addr[5], bt_addr[4], bt_addr[3],
-                            bt_addr[2], bt_addr[1], bt_addr[0]);
+//            data_uart_debug("bt addr: 0x%02x%02x%02x%02x%02x%02x\r\n>",
+//                            bt_addr[5], bt_addr[4], bt_addr[3],
+//                            bt_addr[2], bt_addr[1], bt_addr[0]);
         }
     }
     gap_dev_state = new_state;
@@ -156,7 +156,7 @@ void app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new_state, uint
                                  disc_cause);
             }
 
-            data_uart_debug("Disconnect conn_id %d\r\n", conn_id);
+//            data_uart_debug("Disconnect conn_id %d\r\n", conn_id);
             memset(&app_link_table[conn_id], 0, sizeof(T_APP_LINK));
 #if DFU_AUTO_BETWEEN_DEVICES
             dfu_client_disconnect_cb(conn_id);
@@ -185,7 +185,7 @@ void app_handle_conn_state_evt(uint8_t conn_id, T_GAP_CONN_STATE new_state, uint
             APP_PRINT_INFO5("GAP_CONN_STATE_CONNECTED:remote_bd %s, remote_addr_type %d, conn_interval 0x%x, conn_latency 0x%x, conn_supervision_timeout 0x%x",
                             TRACE_BDADDR(app_link_table[conn_id].bd_addr), app_link_table[conn_id].bd_type,
                             conn_interval, conn_latency, conn_supervision_timeout);
-            data_uart_debug("Connected success conn_id %d\r\n", conn_id);
+//            data_uart_debug("Connected success conn_id %d\r\n", conn_id);
 #if F_BT_LE_5_0_SET_PHY_SUPPORT
             {
                 uint8_t tx_phy;
@@ -233,13 +233,13 @@ void app_handle_authen_state_evt(uint8_t conn_id, uint8_t new_state, uint16_t ca
         {
             if (cause == GAP_SUCCESS)
             {
-                data_uart_debug("Pair success\r\n");
+//                data_uart_debug("Pair success\r\n");
                 APP_PRINT_INFO0("app_handle_authen_state_evt: GAP_AUTHEN_STATE_COMPLETE pair success");
 
             }
             else
             {
-                data_uart_debug("Pair failed: cause 0x%x\r\n", cause);
+//                data_uart_debug("Pair failed: cause 0x%x\r\n", cause);
                 APP_PRINT_INFO0("app_handle_authen_state_evt: GAP_AUTHEN_STATE_COMPLETE pair failed");
             }
         }
@@ -384,9 +384,9 @@ void app_handle_gap_msg(T_IO_MSG *p_gap_msg)
             APP_PRINT_INFO2("GAP_MSG_LE_BOND_PASSKEY_DISPLAY: conn_id %d, passkey %d",
                             conn_id, display_value);
             le_bond_passkey_display_confirm(conn_id, GAP_CFM_CAUSE_ACCEPT);
-            data_uart_debug("GAP_MSG_LE_BOND_PASSKEY_DISPLAY: conn_id %d, passkey %d\r\n",
-                            conn_id,
-                            display_value);
+//            data_uart_debug("GAP_MSG_LE_BOND_PASSKEY_DISPLAY: conn_id %d, passkey %d\r\n",
+//                            conn_id,
+//                            display_value);
         }
         break;
 
@@ -397,9 +397,9 @@ void app_handle_gap_msg(T_IO_MSG *p_gap_msg)
             le_bond_get_display_key(conn_id, &display_value);
             APP_PRINT_INFO2("GAP_MSG_LE_BOND_USER_CONFIRMATION: conn_id %d, passkey %d",
                             conn_id, display_value);
-            data_uart_debug("GAP_MSG_LE_BOND_USER_CONFIRMATION: conn_id %d, passkey %d\r\n",
-                            conn_id,
-                            display_value);
+//            data_uart_debug("GAP_MSG_LE_BOND_USER_CONFIRMATION: conn_id %d, passkey %d\r\n",
+//                            conn_id,
+//                            display_value);
             //le_bond_user_confirm(conn_id, GAP_CFM_CAUSE_ACCEPT);
         }
         break;
@@ -410,7 +410,7 @@ void app_handle_gap_msg(T_IO_MSG *p_gap_msg)
             conn_id = gap_msg.msg_data.gap_bond_passkey_input.conn_id;
             APP_PRINT_INFO2("GAP_MSG_LE_BOND_PASSKEY_INPUT: conn_id %d, key_press %d",
                             conn_id, gap_msg.msg_data.gap_bond_passkey_input.key_press);
-            data_uart_debug("GAP_MSG_LE_BOND_PASSKEY_INPUT: conn_id %d\r\n", conn_id);
+//            data_uart_debug("GAP_MSG_LE_BOND_PASSKEY_INPUT: conn_id %d\r\n", conn_id);
             //le_bond_passkey_input_confirm(conn_id, passkey, GAP_CFM_CAUSE_ACCEPT);
         }
         break;
@@ -715,21 +715,21 @@ void device_info_cb(uint8_t bt_addr[6], uint8_t bt_addr_type, int8_t rssi, devic
     {
         return;
     }
-    data_uart_debug("bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", bt_addr[5], bt_addr[4],
-                    bt_addr[3], bt_addr[2], bt_addr[1], bt_addr[0], bt_addr_type, rssi);
+//    data_uart_debug("bt addr=0x%02x%02x%02x%02x%02x%02x type=%d rssi=%d ", bt_addr[5], bt_addr[4],
+//                    bt_addr[3], bt_addr[2], bt_addr[1], bt_addr[0], bt_addr_type, rssi);
     switch (pinfo->type)
     {
     case DEVICE_INFO_UDB:
-        data_uart_debug("udb=");
-        data_uart_dump(pinfo->pbeacon_udb->dev_uuid, 16);
+//        data_uart_debug("udb=");
+//        data_uart_dump(pinfo->pbeacon_udb->dev_uuid, 16);
         break;
     case DEVICE_INFO_PROV_ADV:
-        data_uart_debug("prov=");
-        data_uart_dump(pinfo->pservice_data->provision.dev_uuid, 16);
+//        data_uart_debug("prov=");
+//        data_uart_dump(pinfo->pservice_data->provision.dev_uuid, 16);
         break;
     case DEVICE_INFO_PROXY_ADV:
-        data_uart_debug("proxy=");
-        data_uart_dump((uint8_t *)&pinfo->pservice_data->proxy, pinfo->len);
+//        data_uart_debug("proxy=");
+//        data_uart_dump((uint8_t *)&pinfo->pservice_data->proxy, pinfo->len);
         break;
     default:
         break;
@@ -753,24 +753,24 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
         switch (cb_data.pb_generic_cb_type)
         {
         case PB_GENERIC_CB_LINK_OPENED:
-            data_uart_debug("PB-ADV Link Opened!\r\n>");
+//            data_uart_debug("PB-ADV Link Opened!\r\n>");
             break;
         case PB_GENERIC_CB_LINK_OPEN_FAILED:
-            data_uart_debug("PB-ADV Link Open Failed!\r\n>");
+//            data_uart_debug("PB-ADV Link Open Failed!\r\n>");
             break;
         case PB_GENERIC_CB_LINK_CLOSED:
-            data_uart_debug("PB-ADV Link Closed!\r\n>");
+//            data_uart_debug("PB-ADV Link Closed!\r\n>");
             break;
         default:
             break;
         }
         break;
     case PROV_CB_TYPE_UNPROV:
-        data_uart_debug("unprov device!\r\n>");
+//        data_uart_debug("unprov device!\r\n>");
 		SkyBleMesh_Provision_State(MESH_PROVISION_STATE_UNPROV);
         break;
     case PROV_CB_TYPE_START:
-        data_uart_debug("being prov-ed!\r\n");
+//        data_uart_debug("being prov-ed!\r\n");
 		SkyBleMesh_Provision_State(MESH_PROVISION_STATE_START);
         break;
     case PROV_CB_TYPE_PUBLIC_KEY:
@@ -787,9 +787,9 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
             prov_start_p pprov_start = cb_data.pprov_start;
             prov_auth_value_type = prov_auth_value_type_get(pprov_start);
             /* use cmd to set auth data */
-            data_uart_debug("auth method=%d[nsoi] action=%d size=%d type=%d[nbNa]\r\n>",
-                            pprov_start->auth_method,
-                            pprov_start->auth_action, pprov_start->auth_size, prov_auth_value_type);
+//            data_uart_debug("auth method=%d[nsoi] action=%d size=%d type=%d[nbNa]\r\n>",
+//                            pprov_start->auth_method,
+//                            pprov_start->auth_action, pprov_start->auth_size, prov_auth_value_type);
             //uint8_t auth_data[16] = {1};
             switch (pprov_start->auth_method)
             {
@@ -819,17 +819,17 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 			SkyBleMesh_ChangeScan_timer(3);
 			
             prov_data_p pprov_data = cb_data.pprov_data;
-            data_uart_debug("been prov-ed with addr 0x%04x!\r\n", pprov_data->unicast_address);
+//            data_uart_debug("been prov-ed with addr 0x%04x!\r\n", pprov_data->unicast_address);
 			SkyBleMesh_Provision_State(MESH_PROVISION_STATE_SUCCEED);
         }
         break;
     case PROV_CB_TYPE_FAIL:
-        data_uart_debug("provision fail, type=%d!\r\n", cb_data.prov_fail.fail_type);
+//       data_uart_debug("provision fail, type=%d!\r\n", cb_data.prov_fail.fail_type);
 		SkyBleMesh_Provision_State(MESH_PROVISION_STATE_FAILED);
         break;
     case PROV_CB_TYPE_PROV:
         /* stack ready */
-        data_uart_debug("ms addr: 0x%04x\r\n>", mesh_node.unicast_addr);
+//        data_uart_debug("ms addr: 0x%04x\r\n>", mesh_node.unicast_addr);
 		SkyBleMesh_Provision_State(MESH_PROVISION_STATE_PROVED);
         break;
     default:
@@ -850,7 +850,7 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 void fn_cb(uint8_t frnd_index, fn_cb_type_t type, uint16_t lpn_addr)
 {
     char *string[] = {"establishing with lpn 0x%04x\r\n", "no poll from 0x%04x\r\n", "established with lpn 0x%04x\r\n", "lpn 0x%04x lost\r\n"};
-    data_uart_debug(string[type], lpn_addr);
+//    data_uart_debug(string[type], lpn_addr);
     if (type == FN_CB_TYPE_ESTABLISH_SUCCESS || type == FN_CB_TYPE_FRND_LOST)
     {
         user_cmd_time(NULL);
@@ -869,7 +869,7 @@ void fn_cb(uint8_t frnd_index, fn_cb_type_t type, uint16_t lpn_addr)
 void lpn_cb(uint8_t frnd_index, lpn_cb_type_t type, uint16_t fn_addr)
 {
     char *string[] = {"established with fn 0x%04x\r\n", "no frnd offer\r\n", "no frnd update\r\n", "fn 0x%04x lost\r\n"};
-    data_uart_debug(string[type], fn_addr);
+//    data_uart_debug(string[type], fn_addr);
     if (type == LPN_CB_TYPE_ESTABLISH_SUCCESS || type == LPN_CB_TYPE_FRIENDSHIP_LOST)
     {
         user_cmd_time(NULL);
@@ -913,11 +913,11 @@ void hb_cb(hb_data_type_t type, void *pargs)
             hb_data_timer_state_t *pdata = pargs;
             if (HB_TIMER_STATE_START == pdata->state)
             {
-                data_uart_debug("heartbeat publish timer start, period = %d\r\n", pdata->period);
+//                data_uart_debug("heartbeat publish timer start, period = %d\r\n", pdata->period);
             }
             else
             {
-                data_uart_debug("heartbeat publish timer stop\r\n");
+//                data_uart_debug("heartbeat publish timer stop\r\n");
             }
         }
         break;
@@ -926,32 +926,32 @@ void hb_cb(hb_data_type_t type, void *pargs)
             hb_data_timer_state_t *pdata = pargs;
             if (HB_TIMER_STATE_START == pdata->state)
             {
-                data_uart_debug("heartbeat subscription timer start, period = %d\r\n", pdata->period);
+//                data_uart_debug("heartbeat subscription timer start, period = %d\r\n", pdata->period);
             }
             else
             {
-                data_uart_debug("heartbeat subscription timer stop\r\n");
+//                data_uart_debug("heartbeat subscription timer stop\r\n");
             }
         }
         break;
     case HB_DATA_PUB_COUNT_UPDATE:
         {
             hb_data_pub_count_update_t *pdata = pargs;
-            data_uart_debug("heartbeat publish count update: %d\r\n", pdata->count);
+//            data_uart_debug("heartbeat publish count update: %d\r\n", pdata->count);
         }
         break;
     case HB_DATA_SUB_PERIOD_UPDATE:
         {
             hb_data_sub_period_update_t *pdata = pargs;
-            data_uart_debug("heartbeat subscription period update: %d\r\n", pdata->period);
+//            data_uart_debug("heartbeat subscription period update: %d\r\n", pdata->period);
         }
         break;
     case HB_DATA_SUB_RECEIVE:
         {
             hb_data_sub_receive_t *pdata = pargs;
-            data_uart_debug("receive heartbeat: src = %d, init_ttl = %d, features = %d-%d-%d-%d, ttl = %d\r\n",
-                            pdata->src, pdata->init_ttl, pdata->features.relay, pdata->features.proxy,
-                            pdata->features.frnd, pdata->features.lpn, pdata->ttl);
+//            data_uart_debug("receive heartbeat: src = %d, init_ttl = %d, features = %d-%d-%d-%d, ttl = %d\r\n",
+//                            pdata->src, pdata->init_ttl, pdata->features.relay, pdata->features.proxy,
+//                            pdata->features.frnd, pdata->features.lpn, pdata->ttl);
         }
         break;
     default:

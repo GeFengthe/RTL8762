@@ -73,8 +73,8 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 void SkyBleMesh_EnterDlps_cfg(void)
 {	
 	// debug uart
-    Pad_ControlSelectValue(P3_0, PAD_SW_MODE);
-    Pad_ControlSelectValue(P3_1, PAD_SW_MODE);
+//    Pad_ControlSelectValue(P3_0, PAD_SW_MODE);
+//    Pad_ControlSelectValue(P3_1, PAD_SW_MODE);
 	
 	// switch1
 	Pad_Config(P2_3, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
@@ -90,8 +90,8 @@ void SkyBleMesh_EnterDlps_cfg(void)
 void SkyBleMesh_ExitDlps_cfg(void)
 {
 	// debug uart
-    Pad_ControlSelectValue(P3_0, PAD_PINMUX_MODE);
-    Pad_ControlSelectValue(P3_1, PAD_PINMUX_MODE);
+//    Pad_ControlSelectValue(P3_0, PAD_PINMUX_MODE);
+//    Pad_ControlSelectValue(P3_1, PAD_PINMUX_MODE);
 	
 	// switch1
 	Pad_Config(P2_3, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);

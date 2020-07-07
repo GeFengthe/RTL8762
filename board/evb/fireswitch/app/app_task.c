@@ -142,8 +142,8 @@ void app_main_task(void *p_param)
     gap_start_bt_stack(evt_queue_handle, io_queue_handle, MAX_NUMBER_OF_GAP_MESSAGE);
 
     mesh_start(EVENT_MESH, EVENT_IO_TO_APP, evt_queue_handle, io_queue_handle);
-    uart_init();
-    user_cmd_init("MeshDevice");
+//    uart_init();
+//    user_cmd_init("MeshDevice");
 	
 	os_sem_create(&skyswitch_sem_handle, 0, 1);
 	os_sem_create(&skydlpstmr_sem_handle, 0, 1);

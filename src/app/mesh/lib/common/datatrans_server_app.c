@@ -30,7 +30,7 @@ static int32_t vendor_model_server_data(const mesh_model_info_p pmodel_info,
     UNUSED(pmodel_info);
 	
 	Receive_meshdata_t *pdata = pargs;
-	data_uart_debug("vendor_model_server_data opcode %08X, %d \n", pdata->opcode_3B, pdata->data_len );
+//	data_uart_debug("vendor_model_server_data opcode %08X, %d \n", pdata->opcode_3B, pdata->data_len );
 	
 	opcode_1B = ((pdata->opcode_3B>>16)&0xff); 
 	// application call back

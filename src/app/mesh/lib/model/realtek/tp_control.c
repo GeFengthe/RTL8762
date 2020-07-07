@@ -118,7 +118,7 @@ void tp_send_cb(mesh_model_info_p pmodel_info, mesh_msg_send_stat_t stat, uint32
     }
     else
     {
-        data_uart_debug("tp tx fail reason=%d\r\n", stat);
+//        data_uart_debug("tp tx fail reason=%d\r\n", stat);
     }
     /* throughput mode */
     if (tp_tx_ctx.count)
@@ -131,9 +131,9 @@ void tp_send_cb(mesh_model_info_p pmodel_info, mesh_msg_send_stat_t stat, uint32
         else
         {
             tp_tx_ctx.end_time = plt_time_read_ms();
-            data_uart_debug("tp tx elapsed time=%dms tp=%dbyte/s\r\n",
-                            tp_tx_ctx.end_time - tp_tx_ctx.begin_time,
-                            ACCESS_PAYLOAD_MAX_SIZE * tp_tx_ctx.tid * 1000 / (tp_tx_ctx.end_time - tp_tx_ctx.begin_time));
+//            data_uart_debug("tp tx elapsed time=%dms tp=%dbyte/s\r\n",
+//                            tp_tx_ctx.end_time - tp_tx_ctx.begin_time,
+//                            ACCESS_PAYLOAD_MAX_SIZE * tp_tx_ctx.tid * 1000 / (tp_tx_ctx.end_time - tp_tx_ctx.begin_time));
             tp_tx_ctx.count = 0;
         }
     }

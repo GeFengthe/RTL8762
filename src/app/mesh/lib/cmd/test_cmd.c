@@ -22,7 +22,7 @@ user_cmd_parse_result_t user_cmd_node_state_set(user_cmd_parse_value_t *pparse_v
 {
     mesh_node_state_t node_state = pparse_value->dw_parameter[0] == 0 ? UNPROV_DEVICE : PROV_NODE;
     mesh_node.node_state = node_state;
-    data_uart_debug("Node State:\t%d\r\n", mesh_node.node_state);
+//    data_uart_debug("Node State:\t%d\r\n", mesh_node.node_state);
     return USER_CMD_RESULT_OK;
 }
 
@@ -34,7 +34,7 @@ user_cmd_parse_result_t user_cmd_node_addr_set(user_cmd_parse_value_t *pparse_va
     }
     uint16_t addr = pparse_value->dw_parameter[0];
     mesh_node.unicast_addr = addr & 0x7fff;
-    data_uart_debug("NodeAddr:\t0x%04x\r\n", mesh_node.unicast_addr);
+//    data_uart_debug("NodeAddr:\t0x%04x\r\n", mesh_node.unicast_addr);
     return USER_CMD_RESULT_OK;
 }
 
@@ -45,9 +45,9 @@ user_cmd_parse_result_t user_cmd_net_key_set(user_cmd_parse_value_t *pparse_valu
     uint8_t net_key[16];
     plt_hex_to_bin(net_key, (uint8_t *)pparse_value->pparameter[2], sizeof(net_key));
     net_key_update(net_key_index, net_key_index_g, net_key);
-    data_uart_debug("NetKey:\t\t");
-    data_uart_dump(mesh_node.net_key_list[net_key_index].pnet_key[key_state_to_tx_loop(
-                                                                      mesh_node.net_key_list[net_key_index].key_state)]->net_key, 16);
+//    data_uart_debug("NetKey:\t\t");
+//    data_uart_dump(mesh_node.net_key_list[net_key_index].pnet_key[key_state_to_tx_loop(
+//                                                                      mesh_node.net_key_list[net_key_index].key_state)]->net_key, 16);
     return USER_CMD_RESULT_OK;
 }
 
@@ -58,7 +58,7 @@ user_cmd_parse_result_t user_cmd_net_key_refresh(user_cmd_parse_value_t *pparse_
     phase_old = key_state_to_key_refresh_phase(mesh_node.net_key_list[net_key_index].key_state);
     net_key_refresh(net_key_index);
     phase_new = key_state_to_key_refresh_phase(mesh_node.net_key_list[net_key_index].key_state);
-    data_uart_debug("NetKey %d: phase %d -> %d\r\n", net_key_index, phase_old, phase_new);
+//    data_uart_debug("NetKey %d: phase %d -> %d\r\n", net_key_index, phase_old, phase_new);
     return USER_CMD_RESULT_OK;
 }
 
@@ -70,9 +70,9 @@ user_cmd_parse_result_t user_cmd_app_key_set(user_cmd_parse_value_t *pparse_valu
     uint8_t app_key[16];
     plt_hex_to_bin(app_key, (uint8_t *)pparse_value->pparameter[3], sizeof(app_key));
     app_key_update(app_key_index, net_key_index, app_key_index_g, app_key);
-    data_uart_debug("AppKey:\t\t");
-    data_uart_dump(mesh_node.app_key_list[app_key_index].papp_key[key_state_to_tx_loop(
-                                                                      mesh_node.app_key_list[app_key_index].key_state)]->app_key, 16);
+//    data_uart_debug("AppKey:\t\t");
+//    data_uart_dump(mesh_node.app_key_list[app_key_index].papp_key[key_state_to_tx_loop(
+//                                                                      mesh_node.app_key_list[app_key_index].key_state)]->app_key, 16);
     return USER_CMD_RESULT_OK;
 }
 
@@ -84,9 +84,9 @@ user_cmd_parse_result_t user_cmd_dev_key_set(user_cmd_parse_value_t *pparse_valu
     uint8_t dev_key[16];
     plt_hex_to_bin(dev_key, (uint8_t *)pparse_value->pparameter[3], sizeof(dev_key));
     dev_key_set(index, unicast_addr, element_num, dev_key);
-    data_uart_debug("DevKey:\t\t%d-0x%04x-%d-", index, mesh_node.dev_key_list[index].unicast_addr,
-                    mesh_node.dev_key_list[index].element_num);
-    data_uart_dump(mesh_node.dev_key_list[index].dev_key, 16);
+//    data_uart_debug("DevKey:\t\t%d-0x%04x-%d-", index, mesh_node.dev_key_list[index].unicast_addr,
+//                    mesh_node.dev_key_list[index].element_num);
+//    data_uart_dump(mesh_node.dev_key_list[index].dev_key, 16);
     return USER_CMD_RESULT_OK;
 }
 
@@ -94,7 +94,7 @@ user_cmd_parse_result_t user_cmd_seq_set(user_cmd_parse_value_t *pparse_value)
 {
     uint32_t seq = pparse_value->dw_parameter[0];
     mesh_seq_set(seq);
-    data_uart_debug("Seq:\t\t0x%06x\r\n", mesh_node.seq);
+//    data_uart_debug("Seq:\t\t0x%06x\r\n", mesh_node.seq);
     return USER_CMD_RESULT_OK;
 }
 
@@ -102,13 +102,13 @@ user_cmd_parse_result_t user_cmd_iv_index_set(user_cmd_parse_value_t *pparse_val
 {
     uint32_t iv_index = pparse_value->dw_parameter[0];
     iv_index_set(iv_index);
-    data_uart_debug("IVindex:\t0x%x\r\n", mesh_node.iv_index);
+//    data_uart_debug("IVindex:\t0x%x\r\n", mesh_node.iv_index);
     return USER_CMD_RESULT_OK;
 }
 
 user_cmd_parse_result_t user_cmd_iv_index_transit(user_cmd_parse_value_t *pparse_value)
 {
-    data_uart_debug("IVindex:\t%d-0x%x\r\n", mesh_node.iv_update_flag, mesh_node.iv_index);
+//    data_uart_debug("IVindex:\t%d-0x%x\r\n", mesh_node.iv_update_flag, mesh_node.iv_index);
     if (pparse_value->dw_parameter[0])
     {
         iv_index_transit_to_iv_update();
@@ -117,21 +117,21 @@ user_cmd_parse_result_t user_cmd_iv_index_transit(user_cmd_parse_value_t *pparse
     {
         iv_index_transit_to_normal();
     }
-    data_uart_debug("IVindex:\t%d-0x%x\r\n", mesh_node.iv_update_flag, mesh_node.iv_index);
+//    data_uart_debug("IVindex:\t%d-0x%x\r\n", mesh_node.iv_update_flag, mesh_node.iv_index);
     return USER_CMD_RESULT_OK;
 }
 
 user_cmd_parse_result_t user_cmd_iv_index_mode(user_cmd_parse_value_t *pparse_value)
 {
     iv_index_test_mode_set(pparse_value->dw_parameter[0]);
-    data_uart_debug("IVindex mode: %s\r\n", pparse_value->dw_parameter[0] ? "Test" : "Normal");
+//    data_uart_debug("IVindex mode: %s\r\n", pparse_value->dw_parameter[0] ? "Test" : "Normal");
     return USER_CMD_RESULT_OK;
 }
 
 user_cmd_parse_result_t user_cmd_nmc_clear(user_cmd_parse_value_t *pparse_value)
 {
     nmc_init();
-    data_uart_debug("Net Msg Cache are cleared.\r\n");
+//    data_uart_debug("Net Msg Cache are cleared.\r\n");
     return USER_CMD_RESULT_OK;
 }
 

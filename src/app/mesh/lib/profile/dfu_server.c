@@ -481,7 +481,7 @@ void  dfu_server_handle_cp(uint16_t length, uint8_t *p_value)
 
             dfu_ctx.image_length += IMG_HEADER_SIZE;
 
-            data_uart_debug("%s being ota-ed %3d%%", dfu_ctx.signature == AppPatch ? "app" : "patch", 0);
+//            data_uart_debug("%s being ota-ed %3d%%", dfu_ctx.signature == AppPatch ? "app" : "patch", 0);
             dfu_ctx.fsm = DFU_CB_START;
             if (pfnDfuExtendedCB)
             {
@@ -790,8 +790,8 @@ void dfu_server_handle_data(uint16_t length, uint8_t *p_value)
                 ota_tmp_buf_used_size = 0;
             }
         } //if(gBufCheckEN == true)
-        data_uart_debug("\b\b\b\b%3d%%",
-                        (dfu_ctx.curr_offset + ota_tmp_buf_used_size) * 100 / dfu_ctx.image_length);
+//        data_uart_debug("\b\b\b\b%3d%%",
+//                        (dfu_ctx.curr_offset + ota_tmp_buf_used_size) * 100 / dfu_ctx.image_length);
     }
 }
 

@@ -284,8 +284,6 @@ static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 	APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X r\n",__func__, enrtecnt);
 	if(enrtecnt < TMP_WAIT_ZVD_SIGNAL_CNT){
 		if(Read_ZVD_Statu()!=oldzvd){ 
-			
-			data_uart_debug("%s Read_ZVD_Statu:%02X %d %d r\n",__func__, Read_ZVD_Statu(), oldzvd, enrtecnt);
 			if(oldzvd==1){
 				enrtecnt = TMP_WAIT_ZVD_SIGNAL_CNT-1;
 				plt_timer_change_period(Sw2OnCtrl_timer, 6, 0);
@@ -317,13 +315,12 @@ static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 			plt_timer_stop(Sw2OnCtrl_timer, 0);
 			Switch_Relay2_tmr_ctrl_dlps(true);
 		}
-		data_uart_debug("%s Sw2OnCtrl_timer:%d r\n",__func__, enrtecnt);
+//		data_uart_debug("%s Sw2OnCtrl_timer:%d r\n",__func__, enrtecnt);
 		
 		enrtecnt = 0;
 		
 	}
 }
-
 static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
 {
 	static uint8_t enrtecnt=0;
@@ -353,7 +350,9 @@ static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
 			plt_timer_stop(Sw3OnCtrl_timer, 0);
 			Switch_Relay3_tmr_ctrl_dlps(true);
 		}
+		
 		enrtecnt = 0;
+		
 	}
 }
 

@@ -652,7 +652,7 @@ bool dfu_client_push_image(void)
     }
     memcpy(pdata, pheader + dfu_ctx.curr_offset, msg_size);
     dfu_ctx.curr_offset += msg_size;
-    data_uart_debug("\b\b\b\b%3d%%", dfu_ctx.curr_offset * 100 / dfu_ctx.image_length);
+//    data_uart_debug("\b\b\b\b%3d%%", dfu_ctx.curr_offset * 100 / dfu_ctx.image_length);
     if (OTP->ota_with_encryption_data)
     {
         uint8_t *ptmp = pdata;
@@ -703,7 +703,7 @@ void dfu_client_handle_cp_msg(uint8_t conn_id, uint8_t *pdata, uint16_t len)
         {
             if (dfu_ctx.app_version <= target_version)
             {
-                data_uart_debug("app no need ota!\r\n");
+//                data_uart_debug("app no need ota!\r\n");
                 dfu_ctx.signature = RomPatch;
                 uint8_t data[DFU_LENGTH_REPORT_TARGET_INFO];
                 data[0] = DFU_OPCODE_REPORT_TARGET_INFO;
@@ -716,7 +716,7 @@ void dfu_client_handle_cp_msg(uint8_t conn_id, uint8_t *pdata, uint16_t len)
         {
             if (target_version >= dfu_ctx.patch_version)
             {
-                data_uart_debug("patch no need ota!\r\n");
+//                data_uart_debug("patch no need ota!\r\n");
                 return;
             }
         }
@@ -747,7 +747,7 @@ void dfu_client_handle_cp_msg(uint8_t conn_id, uint8_t *pdata, uint16_t len)
                dfu_ctx.signature == AppPatch,
                target_version, dfu_ctx.signature == AppPatch ? dfu_ctx.app_version : dfu_ctx.patch_version,
                dfu_ctx.image_length);
-        data_uart_debug("%s being ota-ing %3d%%", dfu_ctx.signature == AppPatch ? "app" : "patch", 0);
+//        data_uart_debug("%s being ota-ing %3d%%", dfu_ctx.signature == AppPatch ? "app" : "patch", 0);
         dfu_ctx.fsm_client = DFU_CB_START;
         if (pf_dfu_client_app_info_cb)
         {
@@ -822,7 +822,7 @@ T_APP_RESULT dfu_client_handle_msg(T_CLIENT_ID client_id, uint8_t conn_id, void 
         {
         case DFU_DISC_DONE:
             /* Discovery Simple BLE service procedure successfully done. */
-            data_uart_debug("Dfu service discovery end!\r\n");
+//            data_uart_debug("Dfu service discovery end!\r\n");
             printi("dfu_client_handle_msg: discover procedure done.");
             dfu_client_cp_cccd_set(conn_id, 1);
             dfu_fsm_write = DFU_FSM_WRITE_CCCD_ENABLE;
@@ -831,7 +831,7 @@ T_APP_RESULT dfu_client_handle_msg(T_CLIENT_ID client_id, uint8_t conn_id, void 
         case DFU_DISC_NOT_FOUND:
             /* Discovery Request failed. */
             printw("dfu_client_handle_msg: discover request failed.");
-            data_uart_debug("Dfu service discovery failed!\r\n");
+//            data_uart_debug("Dfu service discovery failed!\r\n");
             break;
         default:
             break;
@@ -1028,9 +1028,9 @@ void dfu_client_handle_adv_pkt(T_LE_SCAN_INFO *p_le_scan_info)
                                 dfu_fsm_auto_connect = DFU_FSM_AUTO_CONN_OTA;
                                 memcpy(dfu_client_ctx.bt_addr, p_le_scan_info->bd_addr, 6);
                                 dfu_client_ctx.addr_type = p_le_scan_info->remote_addr_type;
-                                data_uart_debug("Dfu client try connecting 0x%02x%02x%02x%02x%02x%02x\r\n>",
-                                                p_le_scan_info->bd_addr[5], p_le_scan_info->bd_addr[4], p_le_scan_info->bd_addr[3],
-                                                p_le_scan_info->bd_addr[2], p_le_scan_info->bd_addr[1], p_le_scan_info->bd_addr[0]);
+//                                data_uart_debug("Dfu client try connecting 0x%02x%02x%02x%02x%02x%02x\r\n>",
+//                                                p_le_scan_info->bd_addr[5], p_le_scan_info->bd_addr[4], p_le_scan_info->bd_addr[3],
+//                                                p_le_scan_info->bd_addr[2], p_le_scan_info->bd_addr[1], p_le_scan_info->bd_addr[0]);
                             }
                             else
                             {
