@@ -1138,7 +1138,7 @@ void SkyBleMesh_Unprov_timer_delet(void)
 {
     if (skyble_unprov_timer) {
         plt_timer_delete(skyble_unprov_timer, 0);
-        blemesh_unprov_ctrl_dlps(true);
+      //  blemesh_unprov_ctrl_dlps(true);
     } else {
         APP_PRINT_INFO0("switch_swtimer->unprov_timer_stop failure!");
     }
@@ -1184,10 +1184,13 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
             break;
         }
 		case PROV_SUCCESS_TIMEOUT:{
-            uint16_t scan_interval = 800;  //!< 250ms
+            uint16_t scan_interval = 400;  //!< 250ms
             uint16_t scan_window   = 0x30; //!< 30ms
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+			// mesh配网30s后才进入
+			// 一定在上报配网信息后，否则APP没有设备信息。
+            blemesh_unprov_ctrl_dlps(true); 
             break;
         }
 		default:
