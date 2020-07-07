@@ -33,9 +33,9 @@
 #define SWITCH2_RELAYOFF_GPIO         P4_0
 #define SWITCH2_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH2_RELAYOFF_GPIO)
 
-#define SWITCH3_RELAYON_GPIO          P0_6
+#define SWITCH3_RELAYON_GPIO          P0_5 // P0_6硬件与文档不一致
 #define SWITCH3_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH3_RELAYON_GPIO)
-#define SWITCH3_RELAYOFF_GPIO         P0_5
+#define SWITCH3_RELAYOFF_GPIO         P0_6 // P0_5
 #define SWITCH3_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH3_RELAYOFF_GPIO)
 
 static uint8_t RelayOnIO[SKYSWITC_NUMBERS]  = {SWITCH1_RELAYON_GPIO, SWITCH2_RELAYON_GPIO, SWITCH3_RELAYON_GPIO};
@@ -89,7 +89,7 @@ static void HAL_GpioForSwitch_Init(void)
 	Pad_Config(SwitchIO[SKYSWITC3_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
     Pinmux_Config(SwitchIO[SKYSWITC3_ENUM], DWGPIO);
 	
-	Pad_Config(CHECK_ZVD_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+	Pad_Config(CHECK_ZVD_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_HIGH);
     Pinmux_Config(CHECK_ZVD_GPIO, DWGPIO);
 	#if SWITCH1_RELAY_CTL_USED == 1	
 	Pad_Config(RelayOnIO[SKYSWITC1_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
@@ -241,13 +241,26 @@ plt_timer_t Sw1OnCtrl_timer = NULL;
 plt_timer_t Sw2OnCtrl_timer = NULL;
 plt_timer_t Sw3OnCtrl_timer = NULL;
 
+#define TMP_WAIT_ZVD_SIGNAL_CNT   5   
 static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
-{
-	static uint8_t enrtecnt=0;
+{	
+	static uint16_t enrtecnt=0; // 0~4:tmr计数 5:on 6:off
+	static uint8_t oldzvd=1;
 	
 	enrtecnt++;
 	APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X r\n",__func__, enrtecnt);
-	if( enrtecnt == 1 ){ // on
+	if(enrtecnt < TMP_WAIT_ZVD_SIGNAL_CNT){
+		if(Read_ZVD_Statu()!=oldzvd){ 
+			
+			if(oldzvd==1){
+				enrtecnt = TMP_WAIT_ZVD_SIGNAL_CNT-1;
+				plt_timer_change_period(Sw1OnCtrl_timer, 6, 0);
+				return;
+			}
+		}
+		oldzvd = Read_ZVD_Statu();
+	}	
+	else if( enrtecnt == TMP_WAIT_ZVD_SIGNAL_CNT ){ // on
 		if(mSwitchManager->status[SKYSWITC1_ENUM] == 0){
 			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]), Bit_SET);	
 		}else{
@@ -257,8 +270,8 @@ static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
 		if(Sw1OnCtrl_timer){
 			plt_timer_change_period(Sw1OnCtrl_timer, 20, 0);
 		}
-
-	} else { // ==2 off
+		enrtecnt++;
+	} else if(enrtecnt>TMP_WAIT_ZVD_SIGNAL_CNT){ // ==6 off
 		
 		if(mSwitchManager->status[SKYSWITC1_ENUM] == 0){
 			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]), Bit_RESET);	
@@ -267,14 +280,14 @@ static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
 		}
 		
 		if(Sw1OnCtrl_timer){
-			plt_timer_stop(Sw1OnCtrl_timer, 0);			
+			plt_timer_stop(Sw1OnCtrl_timer, 0);
 			Switch_Relay1_tmr_ctrl_dlps(true);
 		}
+		
 		enrtecnt = 0;
+		
 	}
 }
-
-#define TMP_WAIT_ZVD_SIGNAL_CNT   1000   
 static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 {	
 	static uint16_t enrtecnt=0; // 0~4:tmr计数 5:on 6:off
@@ -322,12 +335,23 @@ static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 	}
 }
 static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
-{
-	static uint8_t enrtecnt=0;
+{	
+	static uint16_t enrtecnt=0; // 0~4:tmr计数 5:on 6:off
+	static uint8_t oldzvd=1;
 	
 	enrtecnt++;
 	APP_DBG_PRINTF("%s Read_ZVD_Statu:%02X r\n",__func__, enrtecnt);
-	if( enrtecnt == 1 ){ // on
+	if(enrtecnt < TMP_WAIT_ZVD_SIGNAL_CNT){
+		if(Read_ZVD_Statu()!=oldzvd){ 
+			if(oldzvd==1){
+				enrtecnt = TMP_WAIT_ZVD_SIGNAL_CNT-1;
+				plt_timer_change_period(Sw3OnCtrl_timer, 6, 0);
+				return;
+			}
+		}
+		oldzvd = Read_ZVD_Statu();
+	}	
+	else if( enrtecnt == TMP_WAIT_ZVD_SIGNAL_CNT ){ // on
 		if(mSwitchManager->status[SKYSWITC3_ENUM] == 0){
 			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]), Bit_SET);	
 		}else{
@@ -337,8 +361,8 @@ static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
 		if(Sw3OnCtrl_timer){
 			plt_timer_change_period(Sw3OnCtrl_timer, 20, 0);
 		}
-
-	} else { // ==2 off
+		enrtecnt++;
+	} else if(enrtecnt>TMP_WAIT_ZVD_SIGNAL_CNT){ // ==6 off
 		
 		if(mSwitchManager->status[SKYSWITC3_ENUM] == 0){
 			GPIO_WriteBit(GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]), Bit_RESET);	

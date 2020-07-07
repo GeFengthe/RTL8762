@@ -1184,7 +1184,7 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
             break;
         }
 		case PROV_SUCCESS_TIMEOUT:{
-            uint16_t scan_interval = 400;  //!< 250ms
+            uint16_t scan_interval = 800;  //!< 250ms
             uint16_t scan_window   = 0x30; //!< 30ms
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
