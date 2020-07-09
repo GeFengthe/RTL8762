@@ -59,6 +59,7 @@ typedef enum
 typedef enum
 {
     MAINLOOP_TIMEOUT,
+    ENTER_DLPS_TIMEOUT,
     UNPROV_TIMEOUT,
     PROV_SUCCESS_TIMEOUT
 } SW_TIMER_MSG_TYPE;

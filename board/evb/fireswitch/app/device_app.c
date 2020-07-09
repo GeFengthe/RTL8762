@@ -834,7 +834,7 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
 			SkyBleMesh_Unprov_timer_delet();
 			SkyBleMesh_ChangeScan_timer(2);
 			
-            prov_data_p pprov_data = cb_data.pprov_data;
+//            prov_data_p pprov_data = cb_data.pprov_data;
 //            data_uart_debug("been prov-ed with addr 0x%04x!\r\n", pprov_data->unicast_address);
 			SkyBleMesh_Provision_State(MESH_PROVISION_STATE_SUCCEED);
         }
@@ -865,7 +865,7 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
  */
 void fn_cb(uint8_t frnd_index, fn_cb_type_t type, uint16_t lpn_addr)
 {
-    char *string[] = {"establishing with lpn 0x%04x\r\n", "no poll from 0x%04x\r\n", "established with lpn 0x%04x\r\n", "lpn 0x%04x lost\r\n"};
+//    char *string[] = {"establishing with lpn 0x%04x\r\n", "no poll from 0x%04x\r\n", "established with lpn 0x%04x\r\n", "lpn 0x%04x lost\r\n"};
 //    data_uart_debug(string[type], lpn_addr);
     if (type == FN_CB_TYPE_ESTABLISH_SUCCESS || type == FN_CB_TYPE_FRND_LOST)
     {
@@ -884,7 +884,7 @@ void fn_cb(uint8_t frnd_index, fn_cb_type_t type, uint16_t lpn_addr)
  */
 void lpn_cb(uint8_t frnd_index, lpn_cb_type_t type, uint16_t fn_addr)
 {
-    char *string[] = {"established with fn 0x%04x\r\n", "no frnd offer\r\n", "no frnd update\r\n", "fn 0x%04x lost\r\n"};
+//    char *string[] = {"established with fn 0x%04x\r\n", "no frnd offer\r\n", "no frnd update\r\n", "fn 0x%04x lost\r\n"};
 //    data_uart_debug(string[type], fn_addr);
     if (type == LPN_CB_TYPE_ESTABLISH_SUCCESS || type == LPN_CB_TYPE_FRIENDSHIP_LOST)
     {
@@ -952,13 +952,13 @@ void hb_cb(hb_data_type_t type, void *pargs)
         break;
     case HB_DATA_PUB_COUNT_UPDATE:
         {
-            hb_data_pub_count_update_t *pdata = pargs;
+//            hb_data_pub_count_update_t *pdata = pargs;
 //            data_uart_debug("heartbeat publish count update: %d\r\n", pdata->count);
         }
         break;
     case HB_DATA_SUB_PERIOD_UPDATE:
         {
-            hb_data_sub_period_update_t *pdata = pargs;
+//            hb_data_sub_period_update_t *pdata = pargs;
 //            data_uart_debug("heartbeat subscription period update: %d\r\n", pdata->period);
         }
         break;

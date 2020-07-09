@@ -58,7 +58,7 @@ static uint8_t RelayOffIO[SKYSWITC_NUMBERS] = {SWITCH1_RELAYOFF_GPIO, SWITCH2_RE
 #define PROVISION_LED_GPIO       P2_7
 #define PROVISION_LED_GPIO_PIN   GPIO_GetPin(PROVISION_LED_GPIO)
 
-#define MAXPRESSTIME_5S   (250)  // 20ms定时器调用
+#define MAXPRESSTIME_5S   (100)  // 50ms定时器调用
 typedef enum{
 	SCAN_KEY_INIT = 0x00,
 	SCAN_KEY_PRESS,    
@@ -530,7 +530,7 @@ static uint8_t ReadKeyStatu(void)
 
 static void Scan_Keyboard_Function(void)
 {
-	 // 20ms定时器调用
+	 // 50ms定时器调用
 	uint8_t keypress=0;
 	static uint8_t oldkeypress=0;
 	

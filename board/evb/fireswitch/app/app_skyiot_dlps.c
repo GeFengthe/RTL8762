@@ -43,7 +43,10 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 
 static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 {
-    app_send_dlpstmr_sem();
+    T_IO_MSG msg;
+    msg.type = IO_MSG_TYPE_TIMER;
+    msg.subtype = ENTER_DLPS_TIMEOUT;
+    app_send_msg_to_apptask(&msg);
 }
 
 void SkyBleMesh_EnterDlps_timer(void)
@@ -67,7 +70,6 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 		
 	// sw timer
 	SkyBleMesh_StopMainLoop_tmr();
-	SkyBleMesh_StopScanSwitch_tmr();	
 }
 
 void SkyBleMesh_EnterDlps_cfg(void)
@@ -122,7 +124,6 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	
 	// sw timer
 	SkyBleMesh_StartMainLoop_tmr();
-	SkyBleMesh_StartScanSwitch_tmr();
 	
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);

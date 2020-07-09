@@ -181,7 +181,6 @@ typedef struct {
 static plt_timer_t skyblereset_timer = NULL;
 static plt_timer_t skybleprosuccess_timer = NULL;
 static plt_timer_t skyblemainloop_timer = NULL;
-static plt_timer_t skyblescanswitch_timer = NULL;
 static plt_timer_t skyble_unprov_timer = NULL;
 static plt_timer_t skyble_changescan_timer = NULL;
 
@@ -1183,6 +1182,13 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
     {
 		case MAINLOOP_TIMEOUT:{
              SkyBleMesh_MainLoop();
+			 #if USE_SWITCH_FOR_SKYIOT
+			 HAL_Switch_HandleTimer(NULL);
+			 #endif
+            break;
+        }
+		case ENTER_DLPS_TIMEOUT:{
+             SkyBleMesh_EnterDlps_TmrCnt_Handle();
             break;
         }
 		case UNPROV_TIMEOUT:{
@@ -1933,32 +1939,6 @@ extern void SkyBleMesh_StartMainLoop_tmr(void)
 	}
 }
 
-static void SkyBleMesh_ScanSwitch_Timeout_cb(void *timer)
-{
-   app_send_switch_sem();
-}
-static void SkyBleMesh_ScanSwitch_timer(void)
-{	
-	if(skyblescanswitch_timer == NULL){ 	
-		skyblescanswitch_timer = plt_timer_create("switch", 20, true, 0, SkyBleMesh_ScanSwitch_Timeout_cb);
-		if (skyblescanswitch_timer != NULL){
-			plt_timer_start(skyblescanswitch_timer, 0);
-		}
-	}
-}
-extern void SkyBleMesh_StopScanSwitch_tmr(void)
-{	
-	if(skyblescanswitch_timer){		
-		plt_timer_stop(skyblescanswitch_timer, 0);
-	}
-}
-extern void SkyBleMesh_StartScanSwitch_tmr(void)
-{	
-	if(skyblescanswitch_timer){		
-		plt_timer_start(skyblescanswitch_timer, 0);
-	}
-}
-
 extern uint8_t SkyBleMesh_App_Init(void)
 {
     uint32_t retcfg;
@@ -2033,16 +2013,15 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	mIotManager.reppack_len = 0;
 		
 	#if USE_SWITCH_FOR_SKYIOT
-		mIotManager.swt1_seqnum = 0; 
-		mIotManager.swt2_seqnum = 0; 
-		mIotManager.swt3_seqnum = 0; 
+	mIotManager.swt1_seqnum = 0; 
+	mIotManager.swt2_seqnum = 0; 
+	mIotManager.swt3_seqnum = 0; 
 	#endif
 	BleMesh_Packet_Init();
 	
-#if USE_SWITCH_FOR_SKYIOT
+	#if USE_SWITCH_FOR_SKYIOT
 	HAL_Switch_Init(&mIotManager.mSwitchManager);
-	SkyBleMesh_ScanSwitch_timer();
-#endif
+	#endif
 
 	// SkyBleMesh_MainLoop_timer(); // called in app_task
 

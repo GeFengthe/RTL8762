@@ -57,9 +57,6 @@ void *app_task_handle;   //!< APP Task handle
 void *evt_queue_handle;  //!< Event queue handle
 void *io_queue_handle;   //!< IO queue handle
 
-void *skyswitch_sem_handle=NULL;   //!< skyiot scan switch sem handle
-void *skydlpstmr_sem_handle=NULL;    //!< skyiot dlps tmr sem handle
-
 /*============================================================================*
  *                              Functions
  *============================================================================*/
@@ -80,18 +77,6 @@ bool app_send_msg_to_apptask(T_IO_MSG *p_msg)
         return false;
     }
     return true;
-}
-void app_send_switch_sem(void)
-{
-	if(skyswitch_sem_handle){
-		os_sem_give(skyswitch_sem_handle);
-	}
-}
-void app_send_dlpstmr_sem(void)
-{
-	if(skydlpstmr_sem_handle){
-		os_sem_give(skydlpstmr_sem_handle);
-	}
 }
 
 void app_send_uart_msg(uint8_t data)
@@ -144,10 +129,7 @@ void app_main_task(void *p_param)
     mesh_start(EVENT_MESH, EVENT_IO_TO_APP, evt_queue_handle, io_queue_handle);
 //    uart_init();
 //    user_cmd_init("MeshDevice");
-	
-	os_sem_create(&skyswitch_sem_handle, 0, 1);
-	os_sem_create(&skydlpstmr_sem_handle, 0, 1);
-	
+		
 	SkyBleMesh_MainLoop_timer();	
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);
@@ -176,14 +158,7 @@ void app_main_task(void *p_param)
                 gap_handle_msg(event);
             }
         }
-		
-		if (os_sem_take(skyswitch_sem_handle, 0) == true){			
-			HAL_Switch_HandleTimer(NULL);
-		}
-		if (os_sem_take(skydlpstmr_sem_handle, 0) == true){			
-			SkyBleMesh_EnterDlps_TmrCnt_Handle();
-		}
-				
+						
 		if(++tmpi >= 5000){
 			DBG_DIRECT("app_main_task %d %d \r\n", mesh_node_state_restore(), DlpsCtrlStatu_t.dword);
 			tmpi = 0;
