@@ -434,7 +434,7 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 				if(index == SKYSWITC1_ENUM){
 					Switch_Relay1_tmr_ctrl_dlps(false);
 					if(Sw1OnCtrl_timer == NULL){
-						Sw1OnCtrl_timer = plt_timer_create("s1c1", 6, true, 111, HAL_Sw1Relay_OnCtl_Timeout_cb);
+						Sw1OnCtrl_timer = plt_timer_create("s1c1", 6, true, 110, HAL_Sw1Relay_OnCtl_Timeout_cb);
 						if (Sw1OnCtrl_timer != NULL){
 							plt_timer_start(Sw1OnCtrl_timer, 0);
 						}	
@@ -460,7 +460,7 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 				} else if(index == SKYSWITC3_ENUM){
 					Switch_Relay3_tmr_ctrl_dlps(false);					
 					if(Sw3OnCtrl_timer == NULL){
-						Sw3OnCtrl_timer = plt_timer_create("s3c1", 6, true, 111, HAL_Sw3Relay_OnCtl_Timeout_cb);
+						Sw3OnCtrl_timer = plt_timer_create("s3c1", 6, true, 112, HAL_Sw3Relay_OnCtl_Timeout_cb);
 						if (Sw3OnCtrl_timer != NULL){
 							plt_timer_start(Sw3OnCtrl_timer, 0);
 						}	

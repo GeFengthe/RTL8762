@@ -61,7 +61,7 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 	// ble 
 	beacon_stop();  	
 	if(SkyBleMesh_IsProvision_Sate() == false){ // unprov  未配网休眠不SCAN
-		gap_sched_scan(false);   // gap layer scam
+		gap_sched_scan(false);   // gap layer scan
 	}else{	
 	}
 		

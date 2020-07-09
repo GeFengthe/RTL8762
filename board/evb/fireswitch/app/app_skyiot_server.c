@@ -39,7 +39,7 @@ uint8_t  ackattrsval=0;
 #define SKYBLERESET_MAXCNT         (10)    // 重配网延时服务，延时次数，即重配网闪灯次数
 #define SKYBLERESET_TIMEOUT        (150)   // 对开关，仅仅延时而已，给闪灯时间
 
-#define SKYBLEPROVSUCCESS_MAXCNT   (10)    // 配网成功闪
+#define SKYBLEPROVSUCCESS_MAXCNT   (16)    // 配网成功闪
 #define SKYBLEPROVSUCCESS_TIMEOUT  (500)
 
 
@@ -136,7 +136,7 @@ typedef struct {
 	// SkyBleMesh_IsProvision_Sate()
 	// uint8_t network_mode;  /* NETWORK_MODE_e, 设备的网络模式 */  
 	
-	uint8_t process_state; /* 设备工作状态 */	
+	uint8_t process_state; /* 设备工作状态: FF-正常; 55-配网状态 */ 	
 	uint8_t mac_address[MAC_ADDRESS_LEN];
 	char    product_model[BT_PRODUCT_MODEL_LEN];
 	uint32_t  product_type;
@@ -1054,6 +1054,8 @@ static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 				skybleprosuccess_timer = NULL;
 			}
 			skybleprovsucesscnt = 0;
+			
+			blemesh_unprov_ctrl_dlps(true); 
 		}
 	}
 
@@ -1125,8 +1127,13 @@ static void SkyBleMesh_Unprov_Timeout_cb(void *ptimer)
 
 void SkyBleMesh_Unprov_timer(void)
 {	
+	uint32_t timeout = MESH_UNPROV_INTODLPS_TIME_OUT;
+	
 	if(skyble_unprov_timer == NULL){ 	
-		skyble_unprov_timer = plt_timer_create("unprov calc", MESHDEVICE_UNPROV_TIME_OUT, false, 0, SkyBleMesh_Unprov_Timeout_cb);
+		if(mIotManager.process_state == 0x55){
+			timeout = MESH_UNPROV_NORMAL_TIME_OUT;
+		}
+		skyble_unprov_timer = plt_timer_create("unprov calc", timeout, false, 0, SkyBleMesh_Unprov_Timeout_cb);
 		if (skyble_unprov_timer != NULL){
 			plt_timer_start(skyble_unprov_timer, 0);
 			blemesh_unprov_ctrl_dlps(false);
@@ -1138,7 +1145,7 @@ void SkyBleMesh_Unprov_timer_delet(void)
 {
     if (skyble_unprov_timer) {
         plt_timer_delete(skyble_unprov_timer, 0);
-      //  blemesh_unprov_ctrl_dlps(true);
+//        blemesh_unprov_ctrl_dlps(true);
     } else {
         APP_PRINT_INFO0("switch_swtimer->unprov_timer_stop failure!");
     }
@@ -1181,13 +1188,26 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 		case UNPROV_TIMEOUT:{
             beacon_stop();
             blemesh_unprov_ctrl_dlps(true);
+						
+			if(mIotManager.process_state == 0x55){
+				mIotManager.process_state = 0xff;
+				SkyBleMesh_WriteConfig();	
+			}
             break;
         }
-		case PROV_SUCCESS_TIMEOUT:{
+		case PROV_SUCCESS_TIMEOUT:{			
+			if(mIotManager.process_state == 0x55){
+				mIotManager.process_state = 0xff;
+				SkyBleMesh_WriteConfig();	
+			}
+		
+			gap_sched_scan(false); 
             uint16_t scan_interval = 400;  //!< 250ms
             uint16_t scan_window   = 0x30; //!< 30ms
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+			gap_sched_scan(true); 
+			
 			// mesh配网30s后才进入
 			// 一定在上报配网信息后，否则APP没有设备信息。
             blemesh_unprov_ctrl_dlps(true); 
@@ -1280,9 +1300,14 @@ extern int SkyBleMesh_WriteConfig(void)
 	utils_md5_init(context);									   /* init context for 1st pass */
 	utils_md5_starts(context); 								   /* setup context for 1st pass */
 
+	memcpy(buffer + offset, &(mIotManager.process_state), 1);
+	offset += 1;
+	utils_md5_update(context, (unsigned char*)&(mIotManager.process_state), 1);
+	
 	memcpy(buffer + offset, mIotManager.mac_address, MAC_ADDRESS_LEN);
 	offset += MAC_ADDRESS_LEN;
 	utils_md5_update(context, (unsigned char*)mIotManager.mac_address, MAC_ADDRESS_LEN);
+
 	
 	memcpy(buffer + offset, mIotManager.device_uuid, BT_MESH_UUID_SIZE);
 	offset += BT_MESH_UUID_SIZE;
@@ -1332,6 +1357,10 @@ static int SkyBleMesh_ReadConfig(void)
 		return -1;
 	}
 	
+	//
+	memcpy(&(mIotManager.process_state), buffer + offset, 1);	
+	offset += 1;
+	utils_md5_update(context, (unsigned char*)&(mIotManager.process_state), 1);
 	//
 	memcpy(mIotManager.mac_address, buffer + offset, MAC_ADDRESS_LEN);	
 	offset += MAC_ADDRESS_LEN;
@@ -1531,10 +1560,18 @@ static void Main_Event_Handle(void)
 					HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
 				}
 			}
-			
+			if(mIotManager.process_state == 0x55){
+				mIotManager.process_state = 0xff;
+				SkyBleMesh_WriteConfig();	
+				SkyBleMesh_Reset_timer();
+			}
 		}else if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE){
 
 			SkyBleMesh_unBind_complete();	   // 进入重配网模式
+			if(mIotManager.process_state != 0x55){
+				mIotManager.process_state = 0x55;
+				SkyBleMesh_WriteConfig();
+			}
 			SkyBleMesh_Reset_timer();
 
 		}
@@ -1579,9 +1616,18 @@ static void Main_WithoutNet_Handle(void)
 				}	
 			}
 			
+			if(mIotManager.process_state == 0x55){
+				mIotManager.process_state = 0xff;
+				SkyBleMesh_WriteConfig();	
+				SkyBleMesh_Reset_timer();
+			}		
 		}else if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE){
 
 			SkyBleMesh_unBind_complete();	   // 进入重配网模式
+			if(mIotManager.process_state != 0x55){
+				mIotManager.process_state = 0x55;
+				SkyBleMesh_WriteConfig();
+			}
 			SkyBleMesh_Reset_timer();
 
 		}
@@ -1799,6 +1845,8 @@ extern void test_update_attr(void)
 
 extern void SkyBleMesh_MainLoop(void)
 {					
+	static uint32_t oldtick=0;
+	
 	if(IsSkyAppInited==false){
 		return;
 	}
@@ -1832,7 +1880,15 @@ extern void SkyBleMesh_MainLoop(void)
 				HAL_ProvisionLed_Control(LED_PRO_OFF);
 			}
 		}else{
-			HAL_ProvisionLed_Control(LED_PRO_OFF);
+			if(mIotManager.process_state == 0x55){	
+				uint32_t tick = HAL_GetTickCount();	
+				if(HAL_CalculateTickDiff(oldtick, tick) > SKYBLERESET_TIMEOUT){
+					HAL_ProvisionLed_Control(LEDBLINK); // 与进配网一样快闪
+					oldtick = tick;
+				}
+			}else{
+				HAL_ProvisionLed_Control(LED_PRO_OFF);			
+			}
 		}
 	}
 	
@@ -1946,6 +2002,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 		mIotManager.device_uuid[15]   = PRODUCT_TYPE & 0xFF;
 		#endif			
 			
+		mIotManager.process_state = 0xFF;
 		SkyiotManager_Default_Config();  // 设备默认配置 并 控制
 		SkyBleMesh_WriteConfig();        // 保存参数
 				
