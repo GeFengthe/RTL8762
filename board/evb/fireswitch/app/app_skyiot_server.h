@@ -23,10 +23,22 @@
 
 #define MESH_TEST_PRESSURE       0
 
+#if (SKY_SWITCH_TYPE == SKY_ONEWAYSWITCH_TYPE)
+#define PRODUCT_TYPE    (113)	    //switch
+#define PRODUCT_MODEL   ("SQP1M01") //SQP3M01	
+#define PRODUCT_BRAND   (11)	    //swaiot
+#define PRODUCT_VERSION ("1.0.01")
+#elif (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE)
+#define PRODUCT_TYPE    (114)	    //switch
+#define PRODUCT_MODEL   ("SQP2M01") //SQP3M01	
+#define PRODUCT_BRAND   (11)	    //swaiot
+#define PRODUCT_VERSION ("1.0.01")
+#elif (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 #define PRODUCT_TYPE    (115)	    //switch
 #define PRODUCT_MODEL   ("SQP3M01") //SQP3M01	
 #define PRODUCT_BRAND   (11)	    //swaiot
 #define PRODUCT_VERSION ("1.0.05")
+#endif
 
 // #define MESH_ADV_NAME_LEN (30)
 

@@ -23,6 +23,28 @@
 #define SWITCH1_RELAY_CTL_USED  1
 #if SWITCH1_RELAY_CTL_USED == 1
 // 这里IO统一在tmr里面处理，如有例外加保护，注意重入
+#if (SKY_SWITCH_TYPE == SKY_ONEWAYSWITCH_TYPE)
+#define SWITCH1_RELAYON_GPIO          P3_2
+#define SWITCH1_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH1_RELAYON_GPIO)
+#define SWITCH1_RELAYOFF_GPIO         P4_0
+#define SWITCH1_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH1_RELAYOFF_GPIO)
+static uint8_t RelayOnIO[SKYSWITC_NUMBERS]  = {SWITCH1_RELAYON_GPIO };
+static uint8_t RelayOffIO[SKYSWITC_NUMBERS] = {SWITCH1_RELAYOFF_GPIO };
+
+#elif (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE)
+#define SWITCH1_RELAYON_GPIO          P3_2
+#define SWITCH1_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH1_RELAYON_GPIO)
+#define SWITCH1_RELAYOFF_GPIO         P4_0
+#define SWITCH1_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH1_RELAYOFF_GPIO)
+
+#define SWITCH2_RELAYON_GPIO          P3_3
+#define SWITCH2_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH2_RELAYON_GPIO)
+#define SWITCH2_RELAYOFF_GPIO         P4_1
+#define SWITCH2_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH2_RELAYOFF_GPIO)
+static uint8_t RelayOnIO[SKYSWITC_NUMBERS]  = {SWITCH1_RELAYON_GPIO, SWITCH2_RELAYON_GPIO};
+static uint8_t RelayOffIO[SKYSWITC_NUMBERS] = {SWITCH1_RELAYOFF_GPIO, SWITCH2_RELAYOFF_GPIO};
+
+#elif (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 #define SWITCH1_RELAYON_GPIO          P3_3
 #define SWITCH1_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH1_RELAYON_GPIO)
 #define SWITCH1_RELAYOFF_GPIO         P4_1
@@ -37,9 +59,32 @@
 #define SWITCH3_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH3_RELAYON_GPIO)
 #define SWITCH3_RELAYOFF_GPIO         P0_6  
 #define SWITCH3_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH3_RELAYOFF_GPIO)
-
 static uint8_t RelayOnIO[SKYSWITC_NUMBERS]  = {SWITCH1_RELAYON_GPIO, SWITCH2_RELAYON_GPIO, SWITCH3_RELAYON_GPIO};
 static uint8_t RelayOffIO[SKYSWITC_NUMBERS] = {SWITCH1_RELAYOFF_GPIO, SWITCH2_RELAYOFF_GPIO, SWITCH3_RELAYOFF_GPIO};
+#endif
+
+#endif
+
+#if (SKY_SWITCH_TYPE == SKY_ONEWAYSWITCH_TYPE)
+#define SWITCH1_GPIO             P2_4  
+#define SWITCH1_GPIO_PIN         GPIO_GetPin(SWITCH1_GPIO)
+static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO};
+
+#elif (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE)
+#define SWITCH1_GPIO             P2_4  
+#define SWITCH1_GPIO_PIN         GPIO_GetPin(SWITCH1_GPIO)
+#define SWITCH2_GPIO             P2_2
+#define SWITCH2_GPIO_PIN         GPIO_GetPin(SWITCH2_GPIO)
+static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO, SWITCH2_GPIO};
+
+#elif (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+#define SWITCH1_GPIO             P2_4  
+#define SWITCH1_GPIO_PIN         GPIO_GetPin(SWITCH1_GPIO)
+#define SWITCH2_GPIO             P2_3
+#define SWITCH2_GPIO_PIN         GPIO_GetPin(SWITCH2_GPIO)
+#define SWITCH3_GPIO             P2_2
+#define SWITCH3_GPIO_PIN         GPIO_GetPin(SWITCH3_GPIO)
+static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO, SWITCH2_GPIO, SWITCH3_GPIO};
 #endif
 
 // 过零检查,用中断实现
@@ -47,13 +92,6 @@ static uint8_t RelayOffIO[SKYSWITC_NUMBERS] = {SWITCH1_RELAYOFF_GPIO, SWITCH2_RE
 #define CHECK_ZVD_GPIO_PIN           GPIO_GetPin(CHECK_ZVD_GPIO)
 #define CHECK_ZVD_PIN_INPUT_IRQN     GPIO21_IRQn
 #define CHECK_ZVD_PIN_INPUT_Handler  GPIO21_Handler
-
-#define SWITCH1_GPIO             P2_4  
-#define SWITCH1_GPIO_PIN         GPIO_GetPin(SWITCH1_GPIO)
-#define SWITCH2_GPIO             P2_3
-#define SWITCH2_GPIO_PIN         GPIO_GetPin(SWITCH2_GPIO)
-#define SWITCH3_GPIO             P2_2
-#define SWITCH3_GPIO_PIN         GPIO_GetPin(SWITCH3_GPIO)
 
 #define PROVISION_LED_GPIO       P2_7
 #define PROVISION_LED_GPIO_PIN   GPIO_GetPin(PROVISION_LED_GPIO)
@@ -65,9 +103,6 @@ typedef enum{
 	SCAN_KEY_PRESS_CONFIRM,    
 	SCAN_KEY_RELEASE,
 }SCAN_KEY_STATUS_e;
-
-
-static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO, SWITCH2_GPIO, SWITCH3_GPIO};
 
 static int32_t presstime=0;
 static SCAN_KEY_STATUS_e keystatus = SCAN_KEY_INIT;
@@ -83,28 +118,36 @@ static void HAL_GpioForSwitch_Init(void)
 {
 	/* Configure pad and pinmux firstly! */
 	Pad_Config(SwitchIO[SKYSWITC1_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-    Pinmux_Config(SwitchIO[SKYSWITC1_ENUM], DWGPIO);
+    Pinmux_Config(SwitchIO[SKYSWITC1_ENUM], DWGPIO);	
+	#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 	Pad_Config(SwitchIO[SKYSWITC2_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
     Pinmux_Config(SwitchIO[SKYSWITC2_ENUM], DWGPIO);
+	#endif	
+	#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 	Pad_Config(SwitchIO[SKYSWITC3_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
     Pinmux_Config(SwitchIO[SKYSWITC3_ENUM], DWGPIO);
+	#endif
 	
 	Pad_Config(CHECK_ZVD_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_HIGH);
     Pinmux_Config(CHECK_ZVD_GPIO, DWGPIO);
+	
 	#if SWITCH1_RELAY_CTL_USED == 1	
 	Pad_Config(RelayOnIO[SKYSWITC1_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
     Pinmux_Config(RelayOnIO[SKYSWITC1_ENUM], DWGPIO);
-	Pad_Config(RelayOnIO[SKYSWITC2_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-    Pinmux_Config(RelayOnIO[SKYSWITC2_ENUM], DWGPIO);
-	Pad_Config(RelayOnIO[SKYSWITC3_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-    Pinmux_Config(RelayOnIO[SKYSWITC3_ENUM], DWGPIO);
-	
 	Pad_Config(RelayOffIO[SKYSWITC1_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
     Pinmux_Config(RelayOffIO[SKYSWITC1_ENUM], DWGPIO);
+	#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+	Pad_Config(RelayOnIO[SKYSWITC2_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+    Pinmux_Config(RelayOnIO[SKYSWITC2_ENUM], DWGPIO);
 	Pad_Config(RelayOffIO[SKYSWITC2_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
     Pinmux_Config(RelayOffIO[SKYSWITC2_ENUM], DWGPIO);
+	#endif	
+	#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+	Pad_Config(RelayOnIO[SKYSWITC3_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+    Pinmux_Config(RelayOnIO[SKYSWITC3_ENUM], DWGPIO);	
 	Pad_Config(RelayOffIO[SKYSWITC3_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
     Pinmux_Config(RelayOffIO[SKYSWITC3_ENUM], DWGPIO);
+	#endif
 	#endif
 	
 	Pad_Config(PROVISION_LED_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
@@ -120,30 +163,30 @@ static void HAL_GpioForSwitch_Init(void)
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_IN;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
+	#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
     GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(SwitchIO[SKYSWITC2_ENUM]);
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_IN;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
+	#endif	
+	#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
     GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(SwitchIO[SKYSWITC3_ENUM]);
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_IN;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
+	#endif
 	
 	#if SWITCH1_RELAY_CTL_USED == 1	
     GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOnIO[SKYSWITC1_ENUM]);
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
-    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOnIO[SKYSWITC2_ENUM]);
-    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
-    GPIO_Init(&GPIO_InitStruct);
-    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOnIO[SKYSWITC3_ENUM]);
-    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
-    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
-    GPIO_Init(&GPIO_InitStruct);
-	
     GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOffIO[SKYSWITC1_ENUM]);
+    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
+    GPIO_Init(&GPIO_InitStruct);
+	#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOnIO[SKYSWITC2_ENUM]);
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
@@ -151,10 +194,17 @@ static void HAL_GpioForSwitch_Init(void)
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
+	#endif	
+	#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+    GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOnIO[SKYSWITC3_ENUM]);
+    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
+    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
+    GPIO_Init(&GPIO_InitStruct);	
     GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(RelayOffIO[SKYSWITC3_ENUM]);
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
+	#endif
 	#endif
 	
     GPIO_InitStruct.GPIO_Pin    = PROVISION_LED_GPIO_PIN;
@@ -237,11 +287,9 @@ bool HAL_BlinkProLed_Statu(void)
 
 
 #if SWITCH1_RELAY_CTL_USED == 1
-plt_timer_t Sw1OnCtrl_timer = NULL;
-plt_timer_t Sw2OnCtrl_timer = NULL;
-plt_timer_t Sw3OnCtrl_timer = NULL;
 
 #define TMP_WAIT_ZVD_SIGNAL_CNT   5   
+plt_timer_t Sw1OnCtrl_timer = NULL;
 static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
 {	
 	static uint16_t enrtecnt=0; // 0~4:tmr计数 5:on 6:off
@@ -288,6 +336,8 @@ static void HAL_Sw1Relay_OnCtl_Timeout_cb(void *timer)
 		
 	}
 }
+#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+plt_timer_t Sw2OnCtrl_timer = NULL;
 static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 {	
 	static uint16_t enrtecnt=0; // 0~4:tmr计数 5:on 6:off
@@ -334,6 +384,9 @@ static void HAL_Sw2Relay_OnCtl_Timeout_cb(void *timer)
 		
 	}
 }
+#endif	
+#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+plt_timer_t Sw3OnCtrl_timer = NULL;
 static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
 {	
 	static uint16_t enrtecnt=0; // 0~4:tmr计数 5:on 6:off
@@ -379,7 +432,7 @@ static void HAL_Sw3Relay_OnCtl_Timeout_cb(void *timer)
 		
 	}
 }
-
+#endif
 #endif
 void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 {
@@ -400,8 +453,9 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 							plt_timer_change_period(Sw1OnCtrl_timer, 6, 0);
 						}
 					}
-
-				} else if(index == SKYSWITC2_ENUM){
+				} 
+				#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+				else if(index == SKYSWITC2_ENUM){
 					Switch_Relay2_tmr_ctrl_dlps(false);
 					if(Sw2OnCtrl_timer == NULL){
 						Sw2OnCtrl_timer = plt_timer_create("s2c1", 5, true, 111, HAL_Sw2Relay_OnCtl_Timeout_cb);
@@ -413,8 +467,10 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 							plt_timer_change_period(Sw2OnCtrl_timer, 5, 0);
 						}
 					}
-
-				} else if(index == SKYSWITC3_ENUM){
+				} 
+				#endif	
+				#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+				else if(index == SKYSWITC3_ENUM){
 					Switch_Relay3_tmr_ctrl_dlps(false);
 					if(Sw3OnCtrl_timer == NULL){
 						Sw3OnCtrl_timer = plt_timer_create("s3c1", 6, true, 111, HAL_Sw3Relay_OnCtl_Timeout_cb);
@@ -426,8 +482,9 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 							plt_timer_change_period(Sw3OnCtrl_timer, 6, 0);
 						}
 					}
-
 				}
+				#endif	
+				
 			break;
 			}
 			case LEDTURNOFF:{
@@ -443,8 +500,9 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 							plt_timer_change_period(Sw1OnCtrl_timer, 6, 0);
 						}
 					}
-
-				} else if(index == SKYSWITC2_ENUM){
+				} 
+				#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+				else if(index == SKYSWITC2_ENUM){
 					Switch_Relay2_tmr_ctrl_dlps(false);
 					if(Sw2OnCtrl_timer == NULL){
 						Sw2OnCtrl_timer = plt_timer_create("s2c1", 5, true, 111, HAL_Sw2Relay_OnCtl_Timeout_cb);
@@ -456,8 +514,10 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 							plt_timer_change_period(Sw2OnCtrl_timer, 5, 0);
 						}
 					}
-
-				} else if(index == SKYSWITC3_ENUM){
+				} 
+				#endif	
+				#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+				else if(index == SKYSWITC3_ENUM){
 					Switch_Relay3_tmr_ctrl_dlps(false);					
 					if(Sw3OnCtrl_timer == NULL){
 						Sw3OnCtrl_timer = plt_timer_create("s3c1", 6, true, 112, HAL_Sw3Relay_OnCtl_Timeout_cb);
@@ -470,6 +530,7 @@ void HAL_SwitchLed_Control(uint8_t index, uint8_t mode)
 						}
 					}
 				}
+				#endif	
 			break;
 			}
 		}
@@ -518,13 +579,16 @@ static uint8_t ReadKeyStatu(void)
 	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC1_ENUM]))==0){
 		keyval |= (1<<0);
 	} 	
+	#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC2_ENUM]))==0){
 		keyval |= (1<<1);
 	} 
+	#endif	
+	#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 	if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC3_ENUM]))==0){
 		keyval |= (1<<2);
 	} 
-	
+	#endif	
 	return keyval; 
 }
 
