@@ -1729,7 +1729,7 @@ static void Main_Upload_State(void)
 		}
 		else if ((mIotManager.report_flag & BLEMESH_REPORT_FLAG_SWT3)){
 			mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_SWT3;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, mIotManager.mSwitchManager.status[SKYSWITC3_ENUM],mIotManager.swt3_seqnum);						
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW3, mIotManager.mSwitchManager.status[SKYSWITC3_ENUM],mIotManager.swt3_seqnum);						
 			mIotManager.swt3_seqnum = 0; 
 		}
 		#endif

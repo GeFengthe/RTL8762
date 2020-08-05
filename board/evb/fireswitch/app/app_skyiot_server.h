@@ -23,9 +23,9 @@
 
 #define MESH_TEST_PRESSURE       0
 
-#define PRODUCT_TYPE    (100)	  //switch
-#define PRODUCT_MODEL   ("IPA03") //ipa03	
-#define PRODUCT_BRAND   (1)	      //skyworth
+#define PRODUCT_TYPE    (115)	    //switch
+#define PRODUCT_MODEL   ("SQP3M01") //SQP3M01	
+#define PRODUCT_BRAND   (11)	    //swaiot
 #define PRODUCT_VERSION ("1.0.05")
 
 // #define MESH_ADV_NAME_LEN (30)

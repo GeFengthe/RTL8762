@@ -33,9 +33,9 @@
 #define SWITCH2_RELAYOFF_GPIO         P4_0
 #define SWITCH2_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH2_RELAYOFF_GPIO)
 
-#define SWITCH3_RELAYON_GPIO          P0_5 // P0_6硬件与文档不一致
+#define SWITCH3_RELAYON_GPIO          P0_5  
 #define SWITCH3_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH3_RELAYON_GPIO)
-#define SWITCH3_RELAYOFF_GPIO         P0_6 // P0_5
+#define SWITCH3_RELAYOFF_GPIO         P0_6  
 #define SWITCH3_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH3_RELAYOFF_GPIO)
 
 static uint8_t RelayOnIO[SKYSWITC_NUMBERS]  = {SWITCH1_RELAYON_GPIO, SWITCH2_RELAYON_GPIO, SWITCH3_RELAYON_GPIO};
@@ -48,9 +48,9 @@ static uint8_t RelayOffIO[SKYSWITC_NUMBERS] = {SWITCH1_RELAYOFF_GPIO, SWITCH2_RE
 #define CHECK_ZVD_PIN_INPUT_IRQN     GPIO21_IRQn
 #define CHECK_ZVD_PIN_INPUT_Handler  GPIO21_Handler
 
-#define SWITCH1_GPIO             P2_3  // switch 1\2 文档与硬件是反的，这里按硬件处理
+#define SWITCH1_GPIO             P2_4  
 #define SWITCH1_GPIO_PIN         GPIO_GetPin(SWITCH1_GPIO)
-#define SWITCH2_GPIO             P2_4
+#define SWITCH2_GPIO             P2_3
 #define SWITCH2_GPIO_PIN         GPIO_GetPin(SWITCH2_GPIO)
 #define SWITCH3_GPIO             P2_2
 #define SWITCH3_GPIO_PIN         GPIO_GetPin(SWITCH3_GPIO)
