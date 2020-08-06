@@ -162,8 +162,12 @@ typedef struct {
 	#if USE_SWITCH_FOR_SKYIOT
 		SkySwitchManager mSwitchManager;
 		uint8_t swt1_seqnum;
+		#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 		uint8_t swt2_seqnum;
+		#endif
+		#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 		uint8_t swt3_seqnum;
+		#endif
 	#endif
 
 	
@@ -1412,14 +1416,18 @@ static void Reset_iotmanager_para(void)
 	mIotManager.alive_status        = 1;//set device to online status
 	mIotManager.recv_alive_tick     = HAL_GetTickCount();
 
-	#if USE_SWITCH_FOR_SKYIOT
+#if USE_SWITCH_FOR_SKYIOT
 	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
 	mIotManager.swt1_seqnum = 0; 
+	#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
 	mIotManager.swt2_seqnum = 0; 
+	#endif
+	#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
 	mIotManager.swt3_seqnum = 0; 
 	#endif
+#endif
 }
 static void Main_Event_Handle(void)
 {
@@ -1433,11 +1441,15 @@ static void Main_Event_Handle(void)
 		tick = HAL_GetTickCount();
 		if(delayreport <= HAL_CalculateTickDiff(oldtick, tick)){
 			delayreport = 0;
-			#if USE_SWITCH_FOR_SKYIOT
+		#if USE_SWITCH_FOR_SKYIOT
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
+			#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
+			#endif
+			#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
 			#endif
+		#endif
 		}
 	}
 			
@@ -1524,11 +1536,15 @@ static void Main_Event_Handle(void)
 					Reset_iotmanager_para();
 				}
 				if(mIotManager.alive_status == 1){		
-					#if USE_SWITCH_FOR_SKYIOT
+				#if USE_SWITCH_FOR_SKYIOT
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;
+					#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;
+					#endif
+					#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
 					#endif
+				#endif
 				}
 					
 			break;
@@ -1715,11 +1731,15 @@ static bool Main_Check_Online(void)
 				memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
 				mIotManager.reppack_len = 0;
 				
-				#if USE_SWITCH_FOR_SKYIOT
-					mIotManager.swt1_seqnum = 0; 
-					mIotManager.swt2_seqnum = 0; 
-					mIotManager.swt3_seqnum = 0; 
+			#if USE_SWITCH_FOR_SKYIOT
+				mIotManager.swt1_seqnum = 0;
+				#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+				mIotManager.swt2_seqnum = 0; 
 				#endif
+				#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+				mIotManager.swt3_seqnum = 0; 
+				#endif
+			#endif
 			}
 		}
 		alivetick = HAL_GetTickCount();
@@ -1759,7 +1779,7 @@ static void Main_Upload_State(void)
 	}
 	
 }
-
+// DLPS相关
 bool SkyBleMesh_Is_No_ReportMsg(void)
 {
 	bool ret = false;
@@ -1816,61 +1836,73 @@ void SkyBleMesh_DlpsLight_Handle(bool isenter)
 #if (MY_TEST_TIMER || MESH_TEST_PRESSURE)
 void SkyBleMesh_Test_Timeout_cb(void *timer)
 {	
-	static uint8_t testcnt=0,reconflag=0;
-	
-	static uint32_t oldtick=0;
-	uint32_t newtick=0, diff_ms=0;	
-	
-	newtick = HAL_GetTickCount();
-	diff_ms = HAL_CalculateTickDiff(oldtick, newtick);
-	if( diff_ms >= 1000 ){
-		// add test code
-		
-		if(testperid){
-			if (mIotManager.alive_status == 1){
-				if(++testcnt >= testperid){
-					if(reconflag==0){
-						test_update_attr();
-					}else{
-						reconflag = 0;
-					}
-					testcnt = 0;
-				}			
-			}else{
-				testcnt = 0;
-				reconflag = 1;
-			}
-		}else{
-			testcnt = 0;
-		}
-		
-		
-		
-		
-		
-		
-		// test code end
-		oldtick = newtick;
-	}
+//	static uint8_t testcnt=0,reconflag=0;
+//	
+//	static uint32_t oldtick=0;
+//	uint32_t newtick=0, diff_ms=0;	
+//	
+//	newtick = HAL_GetTickCount();
+//	diff_ms = HAL_CalculateTickDiff(oldtick, newtick);
+//	if( diff_ms >= 1000 ){
+//		// add test code
+//		
+//		if(testperid){
+//			if (mIotManager.alive_status == 1){
+//				if(++testcnt >= testperid){
+//					if(reconflag==0){
+//						test_update_attr();
+//					}else{
+//						reconflag = 0;
+//					}
+//					testcnt = 0;
+//				}			
+//			}else{
+//				testcnt = 0;
+//				reconflag = 1;
+//			}
+//		}else{
+//			testcnt = 0;
+//		}
+//		
+//		
+//		
+//		
+//		
+//		
+//		// test code end
+//		oldtick = newtick;
+//	}
 
 }
 #endif
 
-#if MESH_TEST_PRESSURE == 1
+#if 1 //MESH_TEST_PRESSURE == 1
 extern void test_update_attr(void)
 {
-		
-	#if USE_SWITCH_FOR_SKYIOT
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;		
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;	
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
+	bool ret = false;
+	uint8_t i=0;
 
-	#endif
-
-	if(ackattrsval){
-		acktimoutcnt++;
+	
+	DBG_DIRECT("mIotManager.alive_status %d %d\n", mIotManager.alive_status, mIotManager.report_flag);
+	
+	for(i=0; i<MAX_TX_BUF_DEEP; i++){
+		if( MeshTxAttrStruct[i].fullflag==1 ){
+			DBG_DIRECT("buff index %d , code %02X\n", i, MeshTxAttrStruct[i].buf[0]);
+		}
 	}
-	ackattrsval = mIotManager.report_flag;
+
+//		
+//	#if USE_SWITCH_FOR_SKYIOT
+//		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT1;		
+//		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT2;	
+//		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SWT3;
+
+//	#endif
+
+//	if(ackattrsval){
+//		acktimoutcnt++;
+//	}
+//	ackattrsval = mIotManager.report_flag;
 		
 }
 #endif
@@ -2042,11 +2074,15 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
 	mIotManager.reppack_len = 0;
 		
-	#if USE_SWITCH_FOR_SKYIOT
-	mIotManager.swt1_seqnum = 0; 
+#if USE_SWITCH_FOR_SKYIOT 
+	mIotManager.swt1_seqnum = 0;
+	#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 	mIotManager.swt2_seqnum = 0; 
+	#endif
+	#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 	mIotManager.swt3_seqnum = 0; 
 	#endif
+#endif
 	BleMesh_Packet_Init();
 	
 	#if USE_SWITCH_FOR_SKYIOT

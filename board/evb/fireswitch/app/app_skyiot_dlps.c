@@ -79,12 +79,7 @@ void SkyBleMesh_EnterDlps_cfg(void)
 //    Pad_ControlSelectValue(P3_1, PAD_SW_MODE);
 	
 	// switch1
-	Pad_Config(P2_3, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-	System_WakeUpPinEnable(P2_3, PAD_WAKEUP_POL_LOW, 0);
-	Pad_Config(P2_4, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-	System_WakeUpPinEnable(P2_4, PAD_WAKEUP_POL_LOW, 0);
-	Pad_Config(P2_2, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-	System_WakeUpPinEnable(P2_2, PAD_WAKEUP_POL_LOW, 0);	
+	HAL_SwitchKey_Dlps_Control(true);	
 	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
 	SkyBleMesh_DlpsLight_Handle(true);
 }
@@ -95,25 +90,8 @@ void SkyBleMesh_ExitDlps_cfg(void)
 //    Pad_ControlSelectValue(P3_0, PAD_PINMUX_MODE);
 //    Pad_ControlSelectValue(P3_1, PAD_PINMUX_MODE);
 	
-	// switch1
-	Pad_Config(P2_3, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-	if(System_WakeUpInterruptValue(P2_3) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
-        Pad_ClearWakeupINTPendingBit(P2_3);
-		System_WakeUpPinDisable(P2_3);
-		switch_io_ctrl_dlps(false);		
-	}
-	Pad_Config(P2_4, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-	if(System_WakeUpInterruptValue(P2_4) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
-        Pad_ClearWakeupINTPendingBit(P2_4);
-		System_WakeUpPinDisable(P2_4);
-		switch_io_ctrl_dlps(false);		
-	}
-	Pad_Config(P2_2, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-	if(System_WakeUpInterruptValue(P2_2) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
-        Pad_ClearWakeupINTPendingBit(P2_2);
-		System_WakeUpPinDisable(P2_2);
-		switch_io_ctrl_dlps(false);		
-	}
+	// switch
+	HAL_SwitchKey_Dlps_Control(false);
 	// light
 	SkyBleMesh_DlpsLight_Handle(false);
 	

@@ -13,7 +13,7 @@
 #define SKY_TWOWAYSWITCH_TYPE         2   // 两路
 #define SKY_THREEWAYSWITCH_TYPE       3   // 三路
 
-#define SKY_SWITCH_TYPE   SKY_TWOWAYSWITCH_TYPE  
+#define SKY_SWITCH_TYPE   SKY_THREEWAYSWITCH_TYPE  
 
 
 #define LED_PRO_OFF 0   // 配网指示灯
@@ -23,9 +23,19 @@
 #define LEDTURNON    	1
 #define LEDBLINK    	2
 
+#if (SKY_SWITCH_TYPE == SKY_ONEWAYSWITCH_TYPE)
+#define BLEMESH_REPORT_FLAG_SWT1 (0x1)
+
+#elif (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE)
+#define BLEMESH_REPORT_FLAG_SWT1 (0x1)
+#define BLEMESH_REPORT_FLAG_SWT2 (0x2)
+
+#elif (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
 #define BLEMESH_REPORT_FLAG_SWT1 (0x1)
 #define BLEMESH_REPORT_FLAG_SWT2 (0x2)
 #define BLEMESH_REPORT_FLAG_SWT3 (0x4)
+
+#endif
 
 enum SKY_SWITCH_INDEX_ENUM{
     SKYSWITC1_ENUM = 0x00,	
@@ -58,6 +68,7 @@ extern bool HAL_Switch_Init(SkySwitchManager *manager);
 extern void HAL_ProvisionLed_Control(uint8_t mode);
 extern void HAL_ProvLed_Dlps_Control(uint8_t val, bool isenter);
 extern void HAL_SwitchLed_Dlps_Control(uint8_t index, uint8_t val, bool isenter);
+extern void HAL_SwitchKey_Dlps_Control(bool isenter);
 extern void HAL_BlinkProLed_Enable(void);
 extern void HAL_BlinkProLed_Disable(void);
 extern bool HAL_BlinkProLed_Statu(void);

@@ -45,14 +45,14 @@ static uint8_t RelayOnIO[SKYSWITC_NUMBERS]  = {SWITCH1_RELAYON_GPIO, SWITCH2_REL
 static uint8_t RelayOffIO[SKYSWITC_NUMBERS] = {SWITCH1_RELAYOFF_GPIO, SWITCH2_RELAYOFF_GPIO};
 
 #elif (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
-#define SWITCH1_RELAYON_GPIO          P3_3
+#define SWITCH1_RELAYON_GPIO          P3_2
 #define SWITCH1_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH1_RELAYON_GPIO)
-#define SWITCH1_RELAYOFF_GPIO         P4_1
+#define SWITCH1_RELAYOFF_GPIO         P4_0
 #define SWITCH1_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH1_RELAYOFF_GPIO)
 
-#define SWITCH2_RELAYON_GPIO          P3_2
+#define SWITCH2_RELAYON_GPIO          P3_3
 #define SWITCH2_RELAYON_GPIO_PIN      GPIO_GetPin(SWITCH2_RELAYON_GPIO)
-#define SWITCH2_RELAYOFF_GPIO         P4_0
+#define SWITCH2_RELAYOFF_GPIO         P4_1
 #define SWITCH2_RELAYOFF_GPIO_PIN     GPIO_GetPin(SWITCH2_RELAYOFF_GPIO)
 
 #define SWITCH3_RELAYON_GPIO          P0_5  
@@ -66,7 +66,7 @@ static uint8_t RelayOffIO[SKYSWITC_NUMBERS] = {SWITCH1_RELAYOFF_GPIO, SWITCH2_RE
 #endif
 
 #if (SKY_SWITCH_TYPE == SKY_ONEWAYSWITCH_TYPE)
-#define SWITCH1_GPIO             P2_4  
+#define SWITCH1_GPIO             P2_3  
 #define SWITCH1_GPIO_PIN         GPIO_GetPin(SWITCH1_GPIO)
 static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO};
 
@@ -544,24 +544,14 @@ void HAL_SwitchLed_Dlps_Control(uint8_t index, uint8_t val, bool isenter)
 	// 这里先成对处理，可以直接给低
 	PAD_OUTPUT_VAL outval;
 	if(index < SKYSWITC_NUMBERS){
-//		val = GPIO_ReadOutputDataBit(GPIO_GetPin(RelayOnIO[index]));
-//		if(val){
-//			outval = PAD_OUT_HIGH;
-//		}else{
-			outval = PAD_OUT_LOW;
-//		}		
+		outval = PAD_OUT_LOW;
 		if(isenter){
 			Pad_Config(RelayOnIO[index], PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
 		}else{
 			Pad_Config(RelayOnIO[index], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);	
 		}
 		
-//		val = GPIO_ReadOutputDataBit(GPIO_GetPin(RelayOffIO[index]));
-//		if(val){
-//			outval = PAD_OUT_HIGH;
-//		}else{
-			outval = PAD_OUT_LOW;
-//		}
+		outval = PAD_OUT_LOW;
 		if(isenter){
 			Pad_Config(RelayOffIO[index], PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
 		}else{
@@ -570,7 +560,47 @@ void HAL_SwitchLed_Dlps_Control(uint8_t index, uint8_t val, bool isenter)
 	}	
 	#endif
 }
-
+void HAL_SwitchKey_Dlps_Control(bool isenter)
+{
+		if(isenter){
+			Pad_Config(SWITCH1_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+			System_WakeUpPinEnable(SWITCH1_GPIO, PAD_WAKEUP_POL_LOW, 0);
+			#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+			Pad_Config(SWITCH2_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+			System_WakeUpPinEnable(SWITCH2_GPIO, PAD_WAKEUP_POL_LOW, 0);
+			#endif	
+			#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+			Pad_Config(SWITCH3_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+			System_WakeUpPinEnable(SWITCH3_GPIO, PAD_WAKEUP_POL_LOW, 0);
+			#endif	
+			
+		}else{
+			Pad_Config(SWITCH1_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+			if(System_WakeUpInterruptValue(SWITCH1_GPIO) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
+				Pad_ClearWakeupINTPendingBit(SWITCH1_GPIO);
+				System_WakeUpPinDisable(SWITCH1_GPIO);
+				switch_io_ctrl_dlps(false);		
+			}
+			#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+			Pad_Config(SWITCH2_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+			if(System_WakeUpInterruptValue(SWITCH2_GPIO) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
+				Pad_ClearWakeupINTPendingBit(SWITCH2_GPIO);
+				System_WakeUpPinDisable(SWITCH2_GPIO);
+				switch_io_ctrl_dlps(false);		
+			}
+			#endif	
+			#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+			Pad_Config(SWITCH3_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+			if(System_WakeUpInterruptValue(SWITCH3_GPIO) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
+				Pad_ClearWakeupINTPendingBit(SWITCH3_GPIO);
+				System_WakeUpPinDisable(SWITCH3_GPIO);
+				switch_io_ctrl_dlps(false);		
+			}
+			#endif	
+	
+		}
+		
+}
 
 static uint8_t ReadKeyStatu(void)
 {

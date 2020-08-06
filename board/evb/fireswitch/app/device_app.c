@@ -120,22 +120,7 @@ void app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t cause)
             gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
 //            data_uart_debug("bt addr: 0x%02x%02x%02x%02x%02x%02x\r\n>",
 //                            bt_addr[5], bt_addr[4], bt_addr[3],
-//                            bt_addr[2], bt_addr[1], bt_addr[0]);
-			
-//			/* Modify the time value of the first DLPS entry after power on if node is provisioned */
-//			if (mesh_node.node_state == PROV_NODE)
-//			{
-//				uint16_t scan_interval = 400;  //!< 500ms
-//				uint16_t scan_window = 0x30;   //!< 30ms
-//				gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-//				gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
-
-//				/* The time value of the first DLPS entry after power on is 20*50ms */
-//				if (false == gap_set_lps_bootup_active_time(20))
-//				{
-//					APP_PRINT_WARN0("Warn: gap_set_lps_bootup_active_time failed!");
-//				}
-//			}
+//                            bt_addr[2], bt_addr[1], bt_addr[0]);			
         }
     }
     gap_dev_state = new_state;
