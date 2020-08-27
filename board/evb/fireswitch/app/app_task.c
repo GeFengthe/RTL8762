@@ -183,10 +183,10 @@ void test_dlps_function(bool enter)
 		blemesh_sysinit_ctrl_dlps(true);
 	}else{	
 	
-		uint16_t scan_interval = 400;  //!< 250ms
-		uint16_t scan_window   = 0x30; //!< 30ms
-		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+//		uint16_t scan_interval = 400;  //!< 250ms
+//		uint16_t scan_window   = 0x30; //!< 30ms
+//		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+//		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
 		
 		blemesh_sysinit_ctrl_dlps(false);
 	}

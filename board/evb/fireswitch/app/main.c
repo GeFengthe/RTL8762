@@ -178,6 +178,19 @@ void mesh_stack_init(void)
     /** register proxy adv callback */
     device_info_cb_reg(device_info_cb);
     // hb_init(hb_cb);
+	
+	
+	// 为了降低功耗
+	#if 1
+	gap_sched_scan(false); 
+	#else
+	gap_sched_scan(false); 
+	uint16_t scan_interval = 0xA0;  //!< 250ms
+	uint16_t scan_window   = 0x30; //!< 30ms
+	gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+	gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+	gap_sched_scan(true); 
+	#endif
 }
 
 /**
@@ -273,6 +286,13 @@ void driver_init(void)
 	// 要在 mesh_stack_init后获取，后面整理下
     mesh_node_state_t node_state = mesh_node_state_restore();
     if (node_state == UNPROV_DEVICE){
+		gap_sched_scan(false); 
+		uint16_t scan_interval = 0xA0;  //!< 250ms
+		uint16_t scan_window   = 0x30; //!< 30ms
+		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+		gap_sched_scan(true); 
+		
         SkyBleMesh_Unprov_timer();
     }else{
         SkyBleMesh_ChangeScan_timer(1);
