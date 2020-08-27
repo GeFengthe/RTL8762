@@ -13,7 +13,7 @@
 #define SKY_TWOWAYSWITCH_TYPE         2   // 两路
 #define SKY_THREEWAYSWITCH_TYPE       3   // 三路
 
-#define SKY_SWITCH_TYPE   SKY_THREEWAYSWITCH_TYPE  
+#define SKY_SWITCH_TYPE   SKY_ONEWAYSWITCH_TYPE  
 
 
 #define LED_PRO_OFF 0   // 配网指示灯

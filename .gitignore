@@ -20,6 +20,8 @@
 *.sh
 *.o
 #*.axf
+app.axf
+app.hex
 *.bin
 *.log
 *.map
