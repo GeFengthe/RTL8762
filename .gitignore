@@ -14,12 +14,12 @@
 *.apk
 *.tmp
 *.omf
-*.ini
+#*.ini
 *.csv
 *.prf
 *.sh
 *.o
-*.axf
+#*.axf
 *.bin
 *.log
 *.map
