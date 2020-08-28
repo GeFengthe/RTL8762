@@ -44,7 +44,7 @@
 
 #define MESH_UNPROV_INTODLPS_TIME_OUT       (5*1000)     // 5S
 #define MESH_UNPROV_NORMAL_TIME_OUT         (3*60*1000)  // 3min
-#define CHANGE_SCAN_PARAM_TIME_OUT          (5*1000)     // 5s
+#define CHANGE_SCAN_PARAM_TIME_OUT          (5*100) // (5*1000)     // 5s
 
 
 /* APP CONFIG DATA */

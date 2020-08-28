@@ -16,7 +16,6 @@
 #include "platform_types.h"
 #include "datatrans_model.h"
 
-BEGIN_DECLS
 
 /**
  * @addtogroup DATATRANS_SERVER_APP
@@ -92,6 +91,10 @@ BEGIN_DECLS
 
 #endif
 
+
+
+
+BEGIN_DECLS
 
 extern mesh_model_info_t VendorModel_Server;  
 
