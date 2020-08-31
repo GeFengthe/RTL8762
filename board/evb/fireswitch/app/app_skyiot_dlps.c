@@ -45,7 +45,7 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 {
 	static uint8_t startdelay = 100;
 	if(startdelay){
-		startdelay--; // reset 5s check dlps
+		startdelay--; // when reset,check dlps after 5s 
 		return;
 	}
 	
