@@ -112,7 +112,6 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);
 
-	SkyBleMesh_Start_Default_Ctrl();
 }
 bool switch_check_dlps_statu(void)
 {

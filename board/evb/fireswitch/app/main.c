@@ -295,11 +295,11 @@ void driver_init(void)
 		
         SkyBleMesh_Unprov_timer();
 		
-		SkyBleMesh_Start_Default_Ctrl();
     }else{
         SkyBleMesh_ChangeScan_timer(1);
     }
 		 
+	SkyBleMesh_Start_Default_Ctrl();
 }
 
 #if ENABLE_DLPS
