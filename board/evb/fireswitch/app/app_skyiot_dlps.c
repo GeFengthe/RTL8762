@@ -43,6 +43,12 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 
 static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 {
+	static uint8_t startdelay = 100;
+	if(startdelay){
+		startdelay--; // reset 5s check dlps
+		return;
+	}
+	
     T_IO_MSG msg;
     msg.type = IO_MSG_TYPE_TIMER;
     msg.subtype = ENTER_DLPS_TIMEOUT;
