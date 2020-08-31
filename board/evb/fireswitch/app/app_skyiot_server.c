@@ -174,6 +174,7 @@ typedef struct {
 		#endif
 	#endif
 
+	bool prov_suc_report; // 配网成功上报使能上报。
 	
 	 uint32_t report_flag;	 // 按位对应设备的控制属性,置位即发
 	// Queue_t	 req_queue;		/* message queue for wifi , uart module */
@@ -1081,18 +1082,30 @@ static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 			HAL_BlinkProLed_Disable();
 			
 			#if SKY_SWITCH_TYPE == SKY_ONEWAYSWITCH_TYPE
+			if(mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] != 1){			
+				HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+				mIotManager.prov_suc_report = true;
+			}
 			mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
-			HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
 			#endif
-			#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+			#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)			
+			if(mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] != 1){			
+				HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+				mIotManager.prov_suc_report = true;
+			}
+			if(mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] != 1){			
+				HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+				mIotManager.prov_suc_report = true;
+			}
 			mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
-			HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
 			mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = 1;
-			HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
 			#endif	
 			#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+			if(mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] != 1){			
+				HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+				mIotManager.prov_suc_report = true;
+			}
 			mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = 1;
-			HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
 			#endif	
 			#endif	
 
@@ -1263,7 +1276,7 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 			}
 		
 			gap_sched_scan(false); 
-            uint16_t scan_interval = 400;  //!< 250ms
+            uint16_t scan_interval = 0x1C0;  //!< 280ms
             uint16_t scan_window   = 0x30; //!< 30ms
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
@@ -1285,10 +1298,12 @@ extern void SkyBleMesh_unBind_complete(void)
 {	
     APP_DBG_PRINTF0("******************* SkyMesh_unBind_complete **************************\r\n");    
 
-	mesh_node_clear(); // 恢复重配网
+	mesh_node_clear(); // 恢复重配网	
+	mIotManager.prov_suc_report = false;
 	
 	beacon_stop();  	
 	gap_sched_scan(false);   
+	
 }
 
 /*
@@ -1485,6 +1500,7 @@ static void Main_Event_Handle(void)
 	static uint32_t oldtick=0, delayreport=0; 
 	uint32_t tick=0;
 	req_event_t event;
+	uint32_t tmp_report=0;
 	
 	if(delayreport){
 
@@ -1512,9 +1528,14 @@ static void Main_Event_Handle(void)
 
 		switch(event.event_id)
 		{
-			case EVENT_TYPE_PROVISIONED:{				
+			case EVENT_TYPE_PROVISIONED:{	
+				tmp_report = mIotManager.report_flag;				
 				Reset_iotmanager_para();
-				mIotManager.report_flag = 0; // 配网成功后不主动上报，等待网关请求。
+				if(mIotManager.prov_suc_report == false){
+					mIotManager.report_flag = 0; // 配网成功后不主动上报，等待网关请求。
+				}
+				mIotManager.prov_suc_report = false;
+				mIotManager.report_flag |= tmp_report;
 			break;
 			}
 			case EVENT_TYPE_KEEPALIVE:{
@@ -2038,15 +2059,13 @@ extern void SkyBleMesh_MainLoop(void)
 		Main_Event_Handle();
 		
 		//判断设备是否离线
-		if(Main_Check_Online() == false){
-			return;
+		if(Main_Check_Online() == true){
+			//状态上报 
+			Main_Upload_State();
+			
+			// 轮询发送缓存
+			BleMesh_Vendor_Send_Packet();
 		}
-
-		//状态上报 
-		Main_Upload_State();
-		
-		// 轮询发送缓存
-		BleMesh_Vendor_Send_Packet();
 		
 	}else{
 		// 没有配网也要执行控制，不给上报标志
@@ -2113,6 +2132,32 @@ extern void SkyBleMesh_StartMainLoop_tmr(void)
 	}
 }
 
+
+void  SkyBleMesh_Start_Default_Ctrl(void)
+{
+	static bool onetimes = false;
+	if( onetimes ) {
+		return;
+	}		
+	onetimes = true;
+	
+	#if USE_SWITCH_FOR_SKYIOT
+	#if SKY_SWITCH_TYPE == SKY_ONEWAYSWITCH_TYPE
+	mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
+	HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+	#endif
+	#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+	mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
+	HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
+	mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = 1;
+	HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
+	#endif	
+	#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
+	mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = 1;
+	HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
+	#endif	
+	#endif	
+}
 extern uint8_t SkyBleMesh_App_Init(void)
 {
     uint32_t retcfg;
@@ -2163,28 +2208,12 @@ extern uint8_t SkyBleMesh_App_Init(void)
     } else {
         APP_DBG_PRINTF0("SkyBleMesh_ReadConfig read succ\n");
     }	
-			
-	#if USE_SWITCH_FOR_SKYIOT
-	#if SKY_SWITCH_TYPE == SKY_ONEWAYSWITCH_TYPE
-	mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
-	HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
-	#endif
-	#if (SKY_SWITCH_TYPE == SKY_TWOWAYSWITCH_TYPE || SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
-	mIotManager.mSwitchManager.status[SKYSWITC1_ENUM] = 1; // 默认开
-	HAL_SwitchLed_Control(SKYSWITC1_ENUM, LEDTURNON);
-	mIotManager.mSwitchManager.status[SKYSWITC2_ENUM] = 1;
-	HAL_SwitchLed_Control(SKYSWITC2_ENUM, LEDTURNON);
-	#endif	
-	#if (SKY_SWITCH_TYPE == SKY_THREEWAYSWITCH_TYPE)
-	mIotManager.mSwitchManager.status[SKYSWITC3_ENUM] = 1;
-	HAL_SwitchLed_Control(SKYSWITC3_ENUM, LEDTURNON);
-	#endif	
-	#endif	
-	
+				
     for(int i =0 ;i < 16;i++){
         APP_DBG_PRINTF2("mIotManager.device_uuid[%d] = 0x%02x\n",i,mIotManager.device_uuid[i]);
     }
 
+	mIotManager.prov_suc_report = false;
 	mIotManager.alive_wakeup_cnt    = 0;
 	mIotManager.alive_status        = 0;		
 	mIotManager.report_flag         = 0;

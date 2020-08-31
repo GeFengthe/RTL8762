@@ -294,11 +294,12 @@ void driver_init(void)
 		gap_sched_scan(true); 
 		
         SkyBleMesh_Unprov_timer();
+		
+		SkyBleMesh_Start_Default_Ctrl();
     }else{
         SkyBleMesh_ChangeScan_timer(1);
     }
-	
-	
+		 
 }
 
 #if ENABLE_DLPS
