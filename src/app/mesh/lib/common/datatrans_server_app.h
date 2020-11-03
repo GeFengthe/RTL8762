@@ -30,6 +30,12 @@
 #define ATTR_CLUSTER_ID_CTP (0x0006) // 4 byte
 #define ATTR_CLUSTER_ID_HUE (0x0007) // 4 byte
 #define ATTR_CLUSTER_ID_SAT (0x0008) // 4 byte
+#define ATTR_CLUSTER_ID_TIM	(0x0009) // 4Byte
+#define ATTR_CLUSTER_ID_BAT	(0x0101) // 1Byte
+#define ATTR_CLUSTER_ID_INF	(0x0201) // 1Byte
+#define ATTR_CLUSTER_ID_AMB	(0x0202) // 1Byte
+#define ATTR_CLUSTER_ID_MOD	(0x0203) // 1Byte
+
 
 // 这里的command是从网关角度来定义的
 
