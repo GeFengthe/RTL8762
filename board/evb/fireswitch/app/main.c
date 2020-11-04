@@ -287,7 +287,7 @@ void driver_init(void)
     mesh_node_state_t node_state = mesh_node_state_restore();
     if (node_state == UNPROV_DEVICE){
 		gap_sched_scan(false); 
-		uint16_t scan_interval = 0xA0;  //!< 250ms
+		uint16_t scan_interval = 0xA0;  //!< 100ms
 		uint16_t scan_window   = 0x30; //!< 30ms
 		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
 		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
@@ -299,7 +299,7 @@ void driver_init(void)
         SkyBleMesh_ChangeScan_timer(1);
     }
 		 
-	SkyBleMesh_Start_Default_Ctrl();
+	// SkyBleMesh_Start_Default_Ctrl();
 }
 
 #if ENABLE_DLPS
@@ -331,7 +331,7 @@ void app_enter_dlps_config(void)
 */
 void app_exit_dlps_config(void)
 {
-	DBG_DIRECT("Exit DLPS %d\r\n",System_WakeUpInterruptValue(P2_4));	
+	DBG_DIRECT("Exit DLPS\r\n");	
 	
 	SkyBleMesh_ExitDlps_cfg();
 	

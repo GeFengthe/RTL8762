@@ -115,7 +115,6 @@ void uart_init(void)
  */
 void app_main_task(void *p_param)
 {
-	uint32_t tmpi=0;
     uint8_t event;
 
 	#if USE_SOFT_WATCHDOG
@@ -127,12 +126,11 @@ void app_main_task(void *p_param)
     gap_start_bt_stack(evt_queue_handle, io_queue_handle, MAX_NUMBER_OF_GAP_MESSAGE);
 
     mesh_start(EVENT_MESH, EVENT_IO_TO_APP, evt_queue_handle, io_queue_handle);
-//    uart_init();
-//    user_cmd_init("MeshDevice");
 		
 	SkyBleMesh_MainLoop_timer();	
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);
+    DBG_DIRECT("PRODUCT_VERSION: %s\r\n", PRODUCT_VERSION);
     while (true)
     {
 		#if USE_SOFT_WATCHDOG
@@ -158,11 +156,7 @@ void app_main_task(void *p_param)
                 gap_handle_msg(event);
             }
         }
-						
-		if(++tmpi >= 5000){
-			DBG_DIRECT("app_main_task %d %d \r\n", mesh_node_state_restore(), DlpsCtrlStatu_t.dword);
-			tmpi = 0;
-		}
+				
 				
 		#if MESH_TEST_PRESSURE == 1
 		SkyBleMesh_Test_Timeout_cb(NULL);

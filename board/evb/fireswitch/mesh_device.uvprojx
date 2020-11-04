@@ -337,7 +337,7 @@
               <MiscControls>--gnu --preinclude app_flags.h --bss_threshold=0</MiscControls>
               <Define>MESH_DEVICE</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\inc\app;..\..\..\inc\bluetooth\gap;..\..\..\inc\bluetooth\gap\gap_lib;..\..\..\inc\bluetooth\profile;..\..\..\inc\bluetooth\profile\server;..\..\..\inc\bluetooth\profile\client;..\..\..\inc\os;..\..\..\inc\peripheral;..\..\..\inc\platform;..\..\..\inc\platform\cmsis;..\..\..\src\app\mesh\lib;..\..\..\src\app\mesh\lib\lib;..\..\..\src\app\mesh\lib\platform;..\..\..\src\app\mesh\lib\gap;..\..\..\src\app\mesh\lib\cmd;..\..\..\src\app\mesh\lib\model;..\..\..\src\app\mesh\lib\model\realtek;..\..\..\src\app\mesh\lib\profile;..\..\..\src\app\mesh\lib\utility;..\..\..\src\app\mesh\lib\inc;..\..\..\src\app\mesh\lib\common;..\..\..\src\app\mesh\device;..\fireswitch;.\app</IncludePath>
+              <IncludePath>..\..\..\inc\app;..\..\..\inc\bluetooth\gap;..\..\..\inc\bluetooth\gap\gap_lib;..\..\..\inc\bluetooth\profile;..\..\..\inc\bluetooth\profile\server;..\..\..\inc\bluetooth\profile\client;..\..\..\inc\os;..\..\..\inc\peripheral;..\..\..\inc\platform;..\..\..\inc\platform\cmsis;..\..\..\src\app\mesh\lib;..\..\..\src\app\mesh\lib\lib;..\..\..\src\app\mesh\lib\platform;..\..\..\src\app\mesh\lib\gap;..\..\..\src\app\mesh\lib\cmd;..\..\..\src\app\mesh\lib\model;..\..\..\src\app\mesh\lib\model\realtek;..\..\..\src\app\mesh\lib\profile;..\..\..\src\app\mesh\lib\utility;..\..\..\src\app\mesh\lib\inc;..\..\..\src\app\mesh\lib\common;..\..\..\src\app\mesh\device;.\app;..\nightlight</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -411,6 +411,11 @@
               <FileType>4</FileType>
               <FilePath>..\..\..\src\app\mesh\lib\lib\mesh_dev.lib</FilePath>
             </File>
+            <File>
+              <FileName>bee2_adc_lib.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\bin\bee2_adc_lib.lib</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -459,16 +464,16 @@
                 </FileArmAds>
               </FileOption>
             </File>
-            <File>
-              <FileName>system_rtl8762c.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\..\..\src\mcu\rtl876x\system_rtl8762c.c</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>io</GroupName>
           <Files>
+            <File>
+              <FileName>system_rtl8762c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\mcu\rtl876x\system_rtl8762c.c</FilePath>
+            </File>
             <File>
               <FileName>rtl876x_io_dlps.c</FileName>
               <FileType>1</FileType>
@@ -493,6 +498,11 @@
               <FileName>rtl876x_tim.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\..\..\src\mcu\peripheral\rtl876x_tim.c</FilePath>
+            </File>
+            <File>
+              <FileName>rtl876x_adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\mcu\peripheral\rtl876x_adc.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -648,6 +658,21 @@
               <FileName>skyswitch.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\skyswitch.c</FilePath>
+            </File>
+            <File>
+              <FileName>skylight.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\skylight.c</FilePath>
+            </File>
+            <File>
+              <FileName>skyinf.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\skyinf.c</FilePath>
+            </File>
+            <File>
+              <FileName>skyadc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\skyadc.c</FilePath>
             </File>
           </Files>
         </Group>

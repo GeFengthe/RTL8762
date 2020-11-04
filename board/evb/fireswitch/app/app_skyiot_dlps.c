@@ -10,6 +10,7 @@
 #include "app_task.h"
 #include "app_skyiot_dlps.h"
 #include "app_skyiot_server.h"
+#include "skyadc.h"
 
 
 DLPS_CTRL_STATU_T DlpsCtrlStatu_t={(DLPS_JUST_SYSINIT_OK|DLPS_JUST_WAITING_TMR)};
@@ -80,14 +81,12 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 
 void SkyBleMesh_EnterDlps_cfg(void)
 {	
-	// debug uart
-//    Pad_ControlSelectValue(P3_0, PAD_SW_MODE);
-//    Pad_ControlSelectValue(P3_1, PAD_SW_MODE);
-	
 	// switch1
 	HAL_SwitchKey_Dlps_Control(true);	
 	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
 	SkyBleMesh_DlpsLight_Handle(true);
+    HAL_INF_Dlps_Control(true);
+    HAL_Adc_Dlps_Control(true);
 }
 
 void SkyBleMesh_ExitDlps_cfg(void)
@@ -100,6 +99,8 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	HAL_SwitchKey_Dlps_Control(false);
 	// light
 	SkyBleMesh_DlpsLight_Handle(false);
+    HAL_INF_Dlps_Control(false);
+    HAL_Adc_Dlps_Control(false);
 	
 	// ble
 	if(SkyBleMesh_IsProvision_Sate()){ // provisioned
@@ -162,32 +163,21 @@ void Reenter_tmr_ctrl_dlps(bool allowenter)
     }
 }
 
-void Switch_Relay1_tmr_ctrl_dlps(bool allowenter)
+void Led_Relay_tmr_ctrl_dlps(bool allowenter)
 {
     if(allowenter){
-        DlpsCtrlStatu_t.bit.sw1tmr = 0;
+        DlpsCtrlStatu_t.bit.ledtmr = 0;
     }else{
-        DlpsCtrlStatu_t.bit.sw1tmr = 1;
-    }
-}
-void Switch_Relay2_tmr_ctrl_dlps(bool allowenter)
-{
-    if(allowenter){
-        DlpsCtrlStatu_t.bit.sw2tmr = 0;
-    }else{
-        DlpsCtrlStatu_t.bit.sw2tmr = 1;
-    }
-}
-void Switch_Relay3_tmr_ctrl_dlps(bool allowenter)
-{
-    if(allowenter){
-        DlpsCtrlStatu_t.bit.sw3tmr = 0;
-    }else{
-        DlpsCtrlStatu_t.bit.sw3tmr = 1;
+        DlpsCtrlStatu_t.bit.ledtmr = 1;
     }
 }
 
-
-
-
+void inf_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.inf = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.inf = 1;
+    }
+}
 

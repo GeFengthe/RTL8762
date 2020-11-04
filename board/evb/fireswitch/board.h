@@ -53,7 +53,7 @@ extern "C" {
 #define USE_IR_DLPS          0
 #define USE_RTC_DLPS         0
 #define USE_UART_DLPS        1
-#define USE_ADC_DLPS         0
+#define USE_ADC_DLPS         1
 #define USE_SPI0_DLPS        0
 #define USE_SPI1_DLPS        0
 #define USE_SPI2W_DLPS       0
@@ -62,8 +62,8 @@ extern "C" {
 #define USE_GPIO_DLPS        1
 #define USE_PWM0_DLPS        0
 #define USE_PWM1_DLPS        0
-#define USE_PWM2_DLPS        0
-#define USE_PWM3_DLPS        0
+#define USE_PWM2_DLPS        1
+#define USE_PWM3_DLPS        1
 
 
 /* do not modify USE_IO_DRIVER_DLPS macro */
