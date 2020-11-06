@@ -69,6 +69,11 @@ typedef enum
 #define APP_REACT_MODE_M                1
 #define APP_REACT_MODE_S                2
 #define APP_REACT_MODE_A                3
+#define BATT_NORMAL                     0           // 电压正常
+#define BATT_WARING                     1           // 警戒电压
+#define BATT_WARIN_RANK                 3100        // 警戒电压等级1对应的电压值
+#define BATT_THRESHOLD_VAL              100         // 电压判定误差范畴
+#define BATT_TIMEOUT                    10*60*1000  // 电压采集时间周期
 
 
 typedef enum
@@ -76,7 +81,8 @@ typedef enum
     MAINLOOP_TIMEOUT,
     ENTER_DLPS_TIMEOUT,
     UNPROV_TIMEOUT,
-    PROV_SUCCESS_TIMEOUT
+    PROV_SUCCESS_TIMEOUT,
+    BATTLOOP_TIMEOUT,
 } SW_TIMER_MSG_TYPE;
 
 typedef enum
@@ -112,6 +118,8 @@ extern void SkyBleMesh_StopScanSwitch_tmr(void);
 extern void SkyBleMesh_StartScanSwitch_tmr(void);
 extern void SkyBleMesh_MainLoop(void);
 extern uint8_t SkyBleMesh_App_Init(void);
+extern uint8_t SkyBleMesh_Batt_Detect(void);
+extern uint8_t SkyBleMesh_Batt_Station(void);
 
 
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx);

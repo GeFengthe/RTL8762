@@ -64,6 +64,7 @@ static void Driver_ADC_init()
     adcInitStruct.bitmap              = 0xFFFF;
 	adcInitStruct.adcSamplePeriod     = 255;
     ADC_Init(ADC, &adcInitStruct);
+    ADC_BypassCmd(ADC_CHANNEL_4, ENABLE);           // 分压
     ADC_INTConfig(ADC, ADC_INT_ONE_SHOT_DONE, ENABLE);
 	ADC_CalibrationInit();
 }
@@ -160,7 +161,7 @@ void HAL_SkyAdc_Sample(uint16_t *bat_dat, uint16_t *lp_dat)
 		for (int j=0;j<8;j++)
         {
             sample_data[j] = ADC_ReadByScheduleIndex(ADC, ADC_SCHEDULE_0+j);
-            vol[j] = ADC_GetVoltage(DIVIDE_SINGLE_MODE, sample_data[j], &ErrorStatus);
+            vol[j] = ADC_GetVoltage(BYPASS_SINGLE_MODE, sample_data[j], &ErrorStatus);
         }
         batt_data[i] = calc_avg(vol, 0, 8);
 		

@@ -12,6 +12,7 @@
 
 #include "data_uart.h"
 #include "app_skyiot_dlps.h"
+#include "app_skyiot_server.h"
 
 // #define APP_DBG_PRINTF(fmt, ...)
 #define APP_DBG_PRINTF   DBG_DIRECT
@@ -194,7 +195,8 @@ static void Scan_Keyboard_Function(void)
 static bool IsSwitchInited = false;
 void HAL_Switch_HandleTimer(void *timer)
 {
-	if(IsSwitchInited == false){
+	if(IsSwitchInited == false\
+       || SkyBleMesh_Batt_Station() != BATT_NORMAL){
 		return;
 	}
 		

@@ -13,6 +13,7 @@
 #include "trace.h"
 #include "skylight.h"
 #include "app_skyiot_dlps.h"
+#include "app_skyiot_server.h"
 
 
 plt_timer_t LEDCtrl_timer = NULL;
@@ -110,8 +111,10 @@ static void Pwm_Pin_Tmr_Config(const light_t *light)
     /* Enable PWM output */
     if((light->pin_num == LED_FRONT && (mLightManager->light_newmode == UNREACT_MODE_M || mLightManager->light_newmode == UNREACT_MODE_A)) ||
        (light->pin_num == LED_REAR && (mLightManager->light_newmode == UNREACT_MODE_S || mLightManager->light_newmode == UNREACT_MODE_A))){
+        if(SkyBleMesh_Batt_Station() == BATT_NORMAL){
             TIM_Cmd(light->tim_id, ENABLE);
-       }
+        }
+    }
     
 }
 
@@ -287,32 +290,37 @@ bool HAL_Lighting_Init(SkyLightManager *manager)
 void HAL_Light_Dlps_Control(bool isenter)
 {
 	if(isenter){
-		switch((uint8_t)mLightManager->light_newmode)
-		{
-			case RELEASE_MODE:
-			case REACT_MODE_M:
-			case REACT_MODE_S:
-			case REACT_MODE_A:
-			case UNREACT_MODE_N:
-				Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
-				Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
-				break;
-			
-			case UNREACT_MODE_M:
-				Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-				Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
-				break;
-			
-			case UNREACT_MODE_S:
-				Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
-				Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-				break;
-			
-			case UNREACT_MODE_A:
-				Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-				Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-				break;
-		}
+        if(SkyBleMesh_Batt_Station() == BATT_NORMAL){
+            switch((uint8_t)mLightManager->light_newmode)
+            {
+                case RELEASE_MODE:
+                case REACT_MODE_M:
+                case REACT_MODE_S:
+                case REACT_MODE_A:
+                case UNREACT_MODE_N:
+                    Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+                    Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+                    break;
+                
+                case UNREACT_MODE_M:
+                    Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+                    Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+                    break;
+                
+                case UNREACT_MODE_S:
+                    Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+                    Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+                    break;
+                
+                case UNREACT_MODE_A:
+                    Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+                    Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+                    break;
+            }
+        }else{
+            Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+            Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+        }
 	}else{
         HAL_PwmForLight_Init();
 	}

@@ -283,9 +283,11 @@ void driver_init(void)
 	OS_WDTInit();
 	#endif
 	
+	 uint8_t batt_station = SkyBleMesh_Batt_Detect();
 	// 要在 mesh_stack_init后获取，后面整理下
     mesh_node_state_t node_state = mesh_node_state_restore();
     if (node_state == UNPROV_DEVICE){
+        if(batt_station == BATT_NORMAL){
 		gap_sched_scan(false); 
 		uint16_t scan_interval = 0xA0;  //!< 100ms
 		uint16_t scan_window   = 0x30; //!< 30ms
@@ -294,7 +296,10 @@ void driver_init(void)
 		gap_sched_scan(true); 
 		
         SkyBleMesh_Unprov_timer();
-		
+        }else{
+            SkyBleMesh_unBind_complete();
+            DBG_DIRECT("NO Network");
+        }
     }else{
         SkyBleMesh_ChangeScan_timer(1);
     }

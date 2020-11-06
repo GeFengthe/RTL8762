@@ -129,6 +129,7 @@ void app_main_task(void *p_param)
 		
 	SkyBleMesh_MainLoop_timer();	
 	SkyBleMesh_EnterDlps_timer();
+    SkyBleMesh_BattLoop_timer();
 	Reenter_tmr_ctrl_dlps(false);
     DBG_DIRECT("PRODUCT_VERSION: %s\r\n", PRODUCT_VERSION);
     while (true)

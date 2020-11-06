@@ -160,6 +160,7 @@ typedef struct {
 		uint8_t amb_seq;
 		uint8_t mod_seq;
 		uint8_t tim_seq;
+        uint8_t batt_rank;
         SkyInfManager    mInfManger;
 		SkySwitchManager mSwitchManager;
 		SkyLightManager  mLightManager;
@@ -179,6 +180,7 @@ static plt_timer_t skybleprosuccess_timer = NULL;
 static plt_timer_t skyblemainloop_timer = NULL;
 static plt_timer_t skyble_unprov_timer = NULL;
 static plt_timer_t skyble_changescan_timer = NULL;
+static plt_timer_t skyblebattloop_timer = NULL;
 
 // FIFO
 static main_msg_fifo_t MainMsg_fifo={
@@ -1707,6 +1709,11 @@ static void SkySwitch_Handle(uint8_t key_mode)
             return;
         }
         
+        if(mIotManager.batt_rank != BATT_NORMAL){               // 电压低于正常值，不允许配网
+            APP_DBG_PRINTF0("low batt");
+            return;
+        }
+        
 		mIotManager.mLightManager.light_newmode = UNREACT_MODE_S;
 		mIotManager.mLightManager.led_time = LIGHT_DEFAULT_TIME;
 		mIotManager.amb_status = LIGHT_DEFAULT_WAY;
@@ -1794,11 +1801,16 @@ static void Skyapp_updata_mode(uint8_t light_mode_n)
         || mIotManager.mLightManager.light_oldmode == UNREACT_MODE_S\
         || mIotManager.mLightManager.light_oldmode == UNREACT_MODE_A)){
         HAL_Lighting_OFF();
-    }       
+        HAL_OpenInf_Power(true); 
+    }
+    
+    if(mIotManager.mLightManager.led_timercnt != 0){
+        mIotManager.mLightManager.led_timercnt = 0;
+        HAL_Lighting_OFF();
+    }
         
     mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_N;
     mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_N;
-    HAL_OpenInf_Power(true); 
 	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;
     mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
     mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
@@ -2189,6 +2201,12 @@ extern void SkyBleMesh_MainLoop(void)
             memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
             mIotManager.reppack_len = 0;
         }
+        
+        if(mIotManager.batt_rank == BATT_WARING\
+           && mIotManager.mLightManager.led_timercnt == 0){      
+            return;
+        }
+        
 		Main_WithoutNet_Handle();
         SkyFunction_Handle(newtick);
         
@@ -2206,6 +2224,15 @@ static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
     T_IO_MSG msg;
     msg.type = IO_MSG_TYPE_TIMER;
     msg.subtype = MAINLOOP_TIMEOUT;
+    app_send_msg_to_apptask(&msg);
+}
+
+static void SkyBleMesh_BattLoop_Timeout_cb(void *time)
+{
+	// 给APPtask发消息,subtype区分哪个tmr
+    T_IO_MSG msg;
+    msg.type = IO_MSG_TYPE_TIMER;
+    msg.subtype = BATTLOOP_TIMEOUT;
     app_send_msg_to_apptask(&msg);
 }
 
@@ -2233,6 +2260,15 @@ extern void SkyBleMesh_StartMainLoop_tmr(void)
 	if(skyblemainloop_timer){		
 		plt_timer_start(skyblemainloop_timer, 0);
 	}
+}
+extern void SkyBleMesh_BattLoop_timer(void)
+{
+    if(skyblebattloop_timer == NULL){
+        skyblebattloop_timer = plt_timer_create("batt", BATT_TIMEOUT, true, 0, SkyBleMesh_BattLoop_Timeout_cb);
+		if (skyblebattloop_timer != NULL){
+			plt_timer_start(skyblebattloop_timer, 0);
+		}
+    }
 }
 
 extern uint8_t SkyBleMesh_App_Init(void)
@@ -2332,4 +2368,38 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	return 0; 
 }
 
+extern uint8_t SkyBleMesh_Batt_Detect(void)
+{
+    uint16_t batt_val = 0;
+    uint16_t lp_val = 0;
+    uint8_t batt_station = 0;
+    HAL_SkyAdc_Sample(&batt_val, &lp_val);
+    APP_DBG_PRINTF1("batt_val:%dmv", batt_val);
+    batt_val = batt_val*5;
+    APP_DBG_PRINTF2("batt_val1:%dmv, lp_val:%dmv", batt_val, lp_val);
+
+    if(mIotManager.batt_rank == BATT_NORMAL){   // 上一次的电压检测为正常值
+        if(batt_val > BATT_WARIN_RANK){
+            mIotManager.batt_rank = BATT_NORMAL;
+            batt_station = BATT_NORMAL;
+        }else if(batt_val <= BATT_WARIN_RANK){
+            mIotManager.batt_rank = BATT_WARING;
+            batt_station = BATT_WARING;
+            SkyBleMesh_unBind_complete();       
+            APP_DBG_PRINTF0("BATT_WARING");
+        }
+    }else{
+        if(batt_val > BATT_WARIN_RANK+BATT_THRESHOLD_VAL){
+            mIotManager.batt_rank = BATT_NORMAL;
+            batt_station = BATT_NORMAL;
+        }
+    }
+
+    return batt_station;
+}
+
+extern uint8_t SkyBleMesh_Batt_Station(void)
+{
+    return mIotManager.batt_rank;
+}
 
