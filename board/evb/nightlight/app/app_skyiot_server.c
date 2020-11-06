@@ -1178,39 +1178,24 @@ static void Sky_Light_Batt_detect(void)
 
 static void SkyFunction_Handle(uint32_t newtick)
 {
-    if(ReadInfStatu() == 1){
-        if(mIotManager.mInfManger.inf_status_old == 0\
-           &&(mIotManager.mLightManager.light_newmode == REACT_MODE_M\
-           || mIotManager.mLightManager.light_newmode == REACT_MODE_S\
-           || mIotManager.mLightManager.light_newmode == REACT_MODE_A)\
-           && mIotManager.mLightManager.led_timercnt == 0){
-            mIotManager.mInfManger.inf_status_old = 1;
-            mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF0;
-        }
-        mIotManager.mInfManger.inf_status_new = 1;
-    }else{
-        if(mIotManager.mInfManger.inf_status_old == 1\
-           &&(mIotManager.mLightManager.light_newmode == REACT_MODE_M\
-           || mIotManager.mLightManager.light_newmode == REACT_MODE_S\
-           || mIotManager.mLightManager.light_newmode == REACT_MODE_A)\
-           && mIotManager.mLightManager.led_timercnt == 0){ 
-            mIotManager.mInfManger.inf_status_old = 0;
-            mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF1;
-        }
-        mIotManager.mInfManger.inf_status_new = 0;
-    }
-    
+
+    mIotManager.mInfManger.inf_status_new = ReadInfStatu();
     if(mIotManager.mInfManger.inf_status_old != mIotManager.mInfManger.inf_status_new\
        &&(mIotManager.mLightManager.light_newmode == REACT_MODE_M\
        || mIotManager.mLightManager.light_newmode == REACT_MODE_S\
        || mIotManager.mLightManager.light_newmode == REACT_MODE_A)\
        && mIotManager.mLightManager.led_timercnt == 0){
-        mIotManager.mInfManger.inf_status_old = 1;
-        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF0;
+        if(mIotManager.mInfManger.inf_status_new == 1){
+            mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_INF1;
+            mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF0;
+        }else{
+            mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_INF0;
+            mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF1;
+        }
+        mIotManager.mInfManger.inf_status_old = mIotManager.mInfManger.inf_status_new;
     }
     
     if(mIotManager.mInfManger.inf_status_new == 1){
-        mIotManager.mInfManger.inf_status_new = 0;
         if(mIotManager.mLightManager.light_newmode == UNREACT_MODE_N\
            || mIotManager.mLightManager.light_newmode == UNREACT_MODE_M\
            || mIotManager.mLightManager.light_newmode == UNREACT_MODE_S\
@@ -1299,6 +1284,10 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
             blemesh_unprov_ctrl_dlps(true); 
             break;
         }
+        
+        case BATTLOOP_TIMEOUT:
+            SkyBleMesh_Batt_Detect();
+            break;
 		default:
             break;
     }
