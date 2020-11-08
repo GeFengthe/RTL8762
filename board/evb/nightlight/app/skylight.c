@@ -326,17 +326,27 @@ void HAL_Light_Dlps_Control(bool isenter)
 	}
 }
 
+#include "app_task.h"
 static void SkyLed_Timeout_cb(void *timer)
+{
+    T_IO_MSG msg;
+    msg.type = IO_MSG_TYPE_TIMER;
+    msg.subtype = test_light_TIMEOUT;
+    app_send_msg_to_apptask(&msg);
+}
+void SkyLed_Timeout_cb_handel(void *timer)
 {
 	switch((uint8_t)mLightManager->led_mode)
 	{
 		case FAST_BLINK:
 			if(mLightManager->led_timercnt > 0){
-				if(m_step_cnt%10 == 1){
+				if(m_step_cnt%4 == 1){
 					if(mLightManager->led_timercnt%2 == 1){
 						HAL_UpdatePwmDuty(0, PWM_FREQUENCY);
+		                pwm_enable(&light_pwm[REAR_LED_PWM]);
 					}else{
-						HAL_UpdatePwmDuty(0, 1);
+						// HAL_UpdatePwmDuty(0, 1);
+		                pwm_disable(&light_pwm[REAR_LED_PWM]);
 					}
 					mLightManager->led_timercnt--;
 				}
@@ -356,11 +366,13 @@ static void SkyLed_Timeout_cb(void *timer)
 			
 		case SLOW_BLINK:
 			if(mLightManager->led_timercnt > 0){
-				if(m_step_cnt%25 == 1){
+				if(m_step_cnt%10 == 1){
 					if(mLightManager->led_timercnt%2 == 1){
 						HAL_UpdatePwmDuty(0, PWM_FREQUENCY);
+						pwm_enable(&light_pwm[REAR_LED_PWM]);
 					}else{
-						HAL_UpdatePwmDuty(0, 1);
+						// HAL_UpdatePwmDuty(0, 1);
+		                pwm_disable(&light_pwm[REAR_LED_PWM]);
 					}
 					mLightManager->led_timercnt--;
 				}
@@ -374,7 +386,7 @@ static void SkyLed_Timeout_cb(void *timer)
 			
 		case MODE_BLINK:
 			if(mLightManager->led_timercnt > 0){
-				if(m_step_cnt%10 == 1){
+				if(m_step_cnt%4 == 1){
 //                    APP_DBG_PRINTF("mLightManager->led_timercnt:%d\r\n", mLightManager->led_timercnt);
                     if(mLightManager->led_timercnt%2 == 1){
                         switch((uint8_t)mLightManager->light_newmode)
@@ -382,22 +394,30 @@ static void SkyLed_Timeout_cb(void *timer)
                             case REACT_MODE_M:
                             case UNREACT_MODE_M:
                                 HAL_UpdatePwmDuty(PWM_FREQUENCY, 0);
+				                pwm_enable(&light_pwm[FRONT_LED_PWM]);
+				                pwm_disable(&light_pwm[REAR_LED_PWM]);
                                 break;
                             
                             case REACT_MODE_S:
                             case UNREACT_MODE_S:
                                 HAL_UpdatePwmDuty(0, PWM_FREQUENCY);
+				                pwm_enable(&light_pwm[REAR_LED_PWM]);
+				                pwm_disable(&light_pwm[FRONT_LED_PWM]);
                                 break;
                             
                             case REACT_MODE_A:
                             case UNREACT_MODE_A:
                                 HAL_UpdatePwmDuty(PWM_FREQUENCY, PWM_FREQUENCY);
+				                pwm_enable(&light_pwm[FRONT_LED_PWM]);
+				                pwm_enable(&light_pwm[REAR_LED_PWM]);
                                 break;
                             default:
                                 break;
                         }
                     }else{
-                        HAL_UpdatePwmDuty(1, 1);
+                        // HAL_UpdatePwmDuty(1, 1);
+		                pwm_disable(&light_pwm[FRONT_LED_PWM]);
+		                pwm_disable(&light_pwm[REAR_LED_PWM]);
                     }
 					mLightManager->led_timercnt--;
 				}
@@ -416,7 +436,7 @@ static void SkyLed_Timeout_cb(void *timer)
                        || mLightManager->light_newmode == REACT_MODE_S\
                        || mLightManager->light_newmode == REACT_MODE_A)){	    // 感应模式，led_timercnt为亮灯时长（time*50）
 					mLightManager->led_mode = SHORT_BRIGHT;
-					mLightManager->led_timercnt = 50*5;
+					mLightManager->led_timercnt = 20*5; // 50*5;
 //                    APP_DBG_PRINTF("mLightManager->led_timercnt:%d\r\n", mLightManager->led_timercnt);
 				}
 			}
@@ -757,9 +777,9 @@ static void enable_pwm(void)
 
 void Start_LED_Timer(void)
 {
-    enable_pwm();
+   // enable_pwm();
 	if(LEDCtrl_timer == NULL){
-		LEDCtrl_timer = plt_timer_create("led", 20, true, 0, SkyLed_Timeout_cb); 
+		LEDCtrl_timer = plt_timer_create("ledtest", 50, true, 0, SkyLed_Timeout_cb); 
 		if(LEDCtrl_timer != NULL){
 //			APP_DBG_PRINTF("singal led mode:%d\r\n", mLightManager->led_mode);
 			Led_Relay_tmr_ctrl_dlps(false);

@@ -320,7 +320,7 @@ void driver_init(void)
 */
 void app_enter_dlps_config(void)
 {
-	DBG_DIRECT("En DLPS \r\n");
+	// DBG_DIRECT("En DLPS \r\n");
 		
 	SkyBleMesh_EnterDlps_cfg();
 }
@@ -336,7 +336,7 @@ void app_enter_dlps_config(void)
 */
 void app_exit_dlps_config(void)
 {
-	DBG_DIRECT("Exit DLPS\r\n");	
+	// DBG_DIRECT("Exit DLPS\r\n");	
 	
 	SkyBleMesh_ExitDlps_cfg();
 	

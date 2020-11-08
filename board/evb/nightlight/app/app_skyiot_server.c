@@ -10,12 +10,12 @@
 #include "app_skyiot_dlps.h"
 #include "soft_wdt.h"
 #include "skyadc.h"
-#define APP_DBG_PRINTF0  APP_PRINT_WARN0
-#define APP_DBG_PRINTF1  APP_PRINT_WARN1
-#define APP_DBG_PRINTF2  APP_PRINT_WARN2
-#define APP_DBG_PRINTF3  APP_PRINT_WARN3
-#define APP_DBG_PRINTF4  APP_PRINT_WARN4
-#define APP_DBG_PRINTF5  APP_PRINT_WARN5
+#define APP_DBG_PRINTF0  DBG_DIRECT // APP_PRINT_WARN0
+#define APP_DBG_PRINTF1  DBG_DIRECT // APP_PRINT_WARN1
+#define APP_DBG_PRINTF2  DBG_DIRECT // APP_PRINT_WARN2
+#define APP_DBG_PRINTF3  DBG_DIRECT // APP_PRINT_WARN3
+#define APP_DBG_PRINTF4  DBG_DIRECT // APP_PRINT_WARN4
+#define APP_DBG_PRINTF5  DBG_DIRECT // APP_PRINT_WARN5
 
 MESH_PROVISION_STATE_e mesh_provison_state = MESH_PROVISION_STATE_UNPROV;
 /*
@@ -1240,6 +1240,7 @@ void SkyBleMesh_ChangeScan_timer(uint8_t multi)
 		}
 	}
 }
+void SkyLed_Timeout_cb_handel(void *timer);
 
 void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 {
@@ -1288,6 +1289,10 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
         case BATTLOOP_TIMEOUT:
             SkyBleMesh_Batt_Detect();
             break;
+        case test_light_TIMEOUT:
+            SkyLed_Timeout_cb_handel(NULL);
+            break;
+		
 		default:
             break;
     }
@@ -1545,6 +1550,8 @@ static void Skykey_cotrol_light()
     if(mIotManager.mLightManager.light_oldmode == REACT_MODE_M\
        || mIotManager.mLightManager.light_oldmode == REACT_MODE_S\
        || mIotManager.mLightManager.light_oldmode == REACT_MODE_A){         // 感应模式->控制模式
+       
+		APP_DBG_PRINTF0("33333333333333\n");
         mIotManager.mLightManager.led_mode = MODE_BLINK;
         mIotManager.mLightManager.led_timercnt = 4;			
         Start_LED_Timer();

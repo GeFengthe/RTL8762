@@ -83,6 +83,7 @@ typedef enum
     UNPROV_TIMEOUT,
     PROV_SUCCESS_TIMEOUT,
     BATTLOOP_TIMEOUT,
+    test_light_TIMEOUT,
 } SW_TIMER_MSG_TYPE;
 
 typedef enum
