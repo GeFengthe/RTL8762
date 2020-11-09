@@ -17,7 +17,6 @@
 
 
 plt_timer_t LEDCtrl_timer = NULL;
-static uint16_t m_step_cnt = 0;
 
 // #define APP_DBG_PRINTF(fmt, ...)
 #define APP_DBG_PRINTF   DBG_DIRECT
@@ -122,6 +121,9 @@ void HAL_PwmForLight_Deinit(void)
 #ifdef REAR_LED_PWM
     pwm_enable_ctrl(&light_pwm[REAR_LED_PWM], false);
 #endif
+
+	RCC_PeriphClockCmd(APBPeriph_TIMER, APBPeriph_TIMER_CLOCK, DISABLE);
+
 }
 
 static uint8_t HAL_UpdatePwmDuty(uint8_t lightindex, uint16_t val)
@@ -144,6 +146,19 @@ static uint8_t HAL_UpdatePwmDuty(uint8_t lightindex, uint16_t val)
 ///////////////////////////////////////////////////////////////////////////
 #define LIGHT_BRIGHTNESS_PRECENT    (100)
 #define LIGHT_GRADUAL_TIMES         (20)
+
+
+typedef struct {	
+	LED_MODE_e    mode;
+    uint32_t  blinkcnt;
+	uint32_t  blinktime;
+}LightMonitor;
+static LightMonitor mLightMonitor={
+	UNKOWN,
+		0,
+		0,
+};
+
 void HAL_Lighting_Nightlight(uint8_t lightindex, uint16_t val)
 {   
 	uint16_t lightval;
@@ -207,14 +222,6 @@ bool HAL_Lighting_Init(SkyLightManager *manager)
 		
 	mLightManager = manager;
 	HAL_PwmForLight_Init();
-	if(mLightManager->light_newmode == UNREACT_MODE_M){
-		mLightManager->front_led |= LED1_FLAG_STATUS_N;
-	}else if(mLightManager->light_newmode == UNREACT_MODE_S){
-		mLightManager->rear_led |= LED2_FLAG_STATUS_N;
-	}else if(mLightManager->light_newmode == UNREACT_MODE_A){
-		mLightManager->front_led |= LED1_FLAG_STATUS_N;
-		mLightManager->rear_led |= LED2_FLAG_STATUS_N;
-	}
 
 	return true;	
 }
@@ -222,39 +229,53 @@ bool HAL_Lighting_Init(SkyLightManager *manager)
 void HAL_Light_Dlps_Control(bool isenter)
 {
 	if(isenter){
-        if(SkyBleMesh_Batt_Station() == BATT_NORMAL){
-            switch((uint8_t)mLightManager->light_newmode)
-            {
-                case RELEASE_MODE:
-                case REACT_MODE_M:
-                case REACT_MODE_S:
-                case REACT_MODE_A:
-                case UNREACT_MODE_N:
+        if(SkyBleMesh_Batt_Station() == BATT_NORMAL){	
+			HAL_PwmForLight_Deinit(); // qlj 新增
+			
+	        switch(mLightManager->mode){
+	            case NLIGHT_MANUAL_MOD:{
+					if( mLightManager->statu[FRONT_LED_PWM] == 1 ){
+                    	Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+					}else{
+                    	Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+					}
+					
+					if( mLightManager->statu[REAR_LED_PWM] == 1 ){
+                    	Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+					}else{
+                    	Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+					}	
+	                break;
+	            }			
+	            case NLIGHT_REACT_LED1_MOD:  // 感应模式，全灭
+	            case NLIGHT_REACT_LED2_MOD:
+	            case NLIGHT_REACT_LEDALL_MOD:{
                     Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
-                    Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
-                    break;
-                
-                case UNREACT_MODE_M:
-                    Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-                    Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
-                    break;
-                
-                case UNREACT_MODE_S:
-                    Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
-                    Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-                    break;
-                
-                case UNREACT_MODE_A:
-                    Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-                    Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_HIGH);
-                    break;
-            }
+                    Pad_Config(LED_REAR,  PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);	
+	                break;
+	            }
+				default:{
+					break;
+				}
+	        }		
         }else{
+        	// 电池预警，全灭
             Pad_Config(LED_FRONT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
-            Pad_Config(LED_REAR, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+            Pad_Config(LED_REAR,  PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
         }
-	}else{
-        HAL_PwmForLight_Init();
+		
+	}else{	
+	#if 1   // qlj 新增
+        Pad_Config(LED_FRONT, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+        Pad_Config(LED_REAR,  PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);		
+		RCC_PeriphClockCmd(APBPeriph_TIMER, APBPeriph_TIMER_CLOCK, ENABLE);
+	    pwm_enable_ctrl(&light_pwm[FRONT_LED_PWM], true);
+	    pwm_enable_ctrl(&light_pwm[REAR_LED_PWM], true);
+	#else
+		// qlj 增加 带参初始化
+	
+        // HAL_PwmForLight_Init();
+	#endif
 	}
 }
 
@@ -268,324 +289,137 @@ static void SkyLed_Timeout_cb(void *timer)
 }
 void SkyLed_Timeout_cb_handel(void *timer)
 {
-	switch((uint8_t)mLightManager->led_mode)
-	{
-		case FAST_BLINK:
-			if(mLightManager->led_timercnt > 0){
-				if(m_step_cnt%4 == 1){
-					if(mLightManager->led_timercnt%2 == 1){
+	if(mLightMonitor.blinkcnt){
+		switch(mLightMonitor.mode){	
+			case LED_MODE_FAST_BLINK:{				
+				mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
+				if(mLightMonitor.blinktime >= LED_FAST_BLINK_PERIOD){
+					if((mLightMonitor.blinkcnt&0x01) == 1){
 						HAL_Lighting_Nightlight(FRONT_LED_PWM,  0);
 						HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
 					}else{
 						HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
 						HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
 					}
-					mLightManager->led_timercnt--;
+					mLightMonitor.blinkcnt--;
+					mLightMonitor.blinktime = 0;
 				}
-			}else{
-				m_step_cnt = 0;
-                if(mLightManager->light_newmode == UNREACT_MODE_N ||
-                   mLightManager->light_newmode == UNREACT_MODE_M ||
-                   mLightManager->light_newmode == UNREACT_MODE_S ||
-                   mLightManager->light_newmode == UNREACT_MODE_A){
-                    control_mode_switch(true);
-                }
-				mLightManager->led_mode = UNKOWN;
-				Led_Relay_tmr_ctrl_dlps(true);
-				plt_timer_delete(LEDCtrl_timer, 0);
-			}
 			break;
-			
-		case SLOW_BLINK:
-			if(mLightManager->led_timercnt > 0){
-				if(m_step_cnt%10 == 1){
-					if(mLightManager->led_timercnt%2 == 1){
+			}
+			case LED_MODE_SLOW_BLINK:{
+				mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
+				if(mLightMonitor.blinktime >= LED_SLOW_BLINK_PERIOD){
+					if((mLightMonitor.blinkcnt&0x01) == 1){
 						HAL_Lighting_Nightlight(FRONT_LED_PWM,  0);
 						HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
 					}else{
 						HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
 						HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
 					}
-					mLightManager->led_timercnt--;
+					mLightMonitor.blinkcnt--;
+					mLightMonitor.blinktime = 0;
 				}
-			}else{
-				m_step_cnt = 0;
-				mLightManager->led_mode = UNKOWN;
-				Led_Relay_tmr_ctrl_dlps(true);
-				plt_timer_delete(LEDCtrl_timer, 0);
-			}
 			break;
-			
-		case MODE_BLINK:
-			if(mLightManager->led_timercnt > 0){
-				if(m_step_cnt%4 == 1){
-//                    APP_DBG_PRINTF("mLightManager->led_timercnt:%d\r\n", mLightManager->led_timercnt);
-                    if(mLightManager->led_timercnt%2 == 1){
-                        switch((uint8_t)mLightManager->light_newmode)
-                        {
-                            case REACT_MODE_M:
-                            case UNREACT_MODE_M:
-								HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
-								HAL_Lighting_Nightlight(REAR_LED_PWM,   0);
-                                break;
-                            
-                            case REACT_MODE_S:
-                            case UNREACT_MODE_S:
-								HAL_Lighting_Nightlight(FRONT_LED_PWM,  0);
-								HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
-                                break;
-                            
-                            case REACT_MODE_A:
-                            case UNREACT_MODE_A:
-								HAL_Lighting_ON();
-                                break;
-                            default:
-                                break;
-                        }
-                    }else{
-						HAL_Lighting_OFF();
-                    }
-					mLightManager->led_timercnt--;
+			}
+			case LED_MODE_MODE_BLINK:{
+				mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
+				if(mLightMonitor.blinktime >= LED_SLOW_BLINK_PERIOD){
+					if((mLightMonitor.blinkcnt&0x01) == 1){
+						if((mLightManager->mode == NLIGHT_MANUAL_MOD &&  mLightManager->statu[FRONT_LED_PWM] == 1)
+						   || mLightManager->mode == NLIGHT_REACT_LED1_MOD){
+						   // operat LED1
+							HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+							HAL_Lighting_Nightlight(REAR_LED_PWM, 0);
+						}else if((mLightManager->mode == NLIGHT_MANUAL_MOD &&  mLightManager->statu[REAR_LED_PWM] == 1)
+						   || mLightManager->mode == NLIGHT_REACT_LED2_MOD){
+						   // operat LED2
+							HAL_Lighting_Nightlight(FRONT_LED_PWM,  0);
+							HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+						}else if((mLightManager->mode == NLIGHT_MANUAL_MOD && mLightManager->statu[FRONT_LED_PWM] == 1 && mLightManager->statu[REAR_LED_PWM] == 1)
+						   || mLightManager->mode == NLIGHT_REACT_LEDALL_MOD){
+						   // operat LED2\LED1
+							HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+							HAL_Lighting_Nightlight(REAR_LED_PWM,  LIGHT_BRIGHTNESS_PRECENT);
+						}
+					}else{
+						HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
+						HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+					}
+					mLightMonitor.blinkcnt--;
+					mLightMonitor.blinktime = 0;
 				}
-			}else{
-				m_step_cnt = 0;
+			break;
+			}
+			case LED_MODE_DELAY_BRIGHT:{				
+				mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
+				if(mLightMonitor.blinktime >= LED_BRIGHT_TMR_PERIOD){
+					HAL_Lighting_OFF();
+					mLightMonitor.blinkcnt--;
+					mLightMonitor.blinktime = 0;
+				}
 
-				if((mLightManager->light_newmode == UNREACT_MODE_N\
-                   || mLightManager->light_newmode == UNREACT_MODE_M\
-                   || mLightManager->light_newmode == UNREACT_MODE_S\
-                   || mLightManager->light_newmode == UNREACT_MODE_A)){		    // 常亮模式，直接控制
-                    mLightManager->led_mode = UNKOWN;
-                    Led_Relay_tmr_ctrl_dlps(true);
-                    plt_timer_delete(LEDCtrl_timer, 0);
-                    
-				}else if((mLightManager->light_newmode == REACT_MODE_M\
-                       || mLightManager->light_newmode == REACT_MODE_S\
-                       || mLightManager->light_newmode == REACT_MODE_A)){	    // 感应模式，led_timercnt为亮灯时长（time*50）
-					mLightManager->led_mode = SHORT_BRIGHT;
-					mLightManager->led_timercnt = 20*5; // 50*5;
-//                    APP_DBG_PRINTF("mLightManager->led_timercnt:%d\r\n", mLightManager->led_timercnt);
+			break;
+			}
+			case LED_MODE_NORMAL_BRIGHT:{
+
+			break;
+			}
+			default:{
+			break;
+			}
+		}
+	}else{
+			
+			switch(mLightMonitor.mode){ 
+				case LED_MODE_FAST_BLINK:{
+					if((mLightManager->mode == NLIGHT_MANUAL_MOD){ // 手动模式，灯状态恢复
+						if(mLightManager->statu[FRONT_LED_PWM] == 1){
+							HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+						}
+						if(mLightManager->statu[REAR_LED_PWM] == 1){
+							HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+						}
+					}
+				break;
+				}
+				case LED_MODE_SLOW_BLINK:{
+					HAL_Lighting_OFF(); // 关闭，等待重启
+				break;
+				}
+				case LED_MODE_MODE_BLINK:{
+					if(mLightManager->mode == NLIGHT_MANUAL_MOD){ // 手动模式，灯状态恢复
+						if(mLightManager->statu[FRONT_LED_PWM] == 1){
+							HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+						}
+						if(mLightManager->statu[REAR_LED_PWM] == 1){
+							HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+						}
+					}else if(mLightManager->mode == NLIGHT_REACT_LED1_MOD
+						  || mLightManager->mode == NLIGHT_REACT_LED2_MOD
+						  || mLightManager->mode == NLIGHT_REACT_LEDALL_MOD){ // 感应模式亮灯延时	LED_DELAY_BRIGHT_TIME		转换到cnt上				
+						mLightMonitor.blinkcnt = LED_DELAY_BRIGHT_TIME/LED_BRIGHT_TMR_PERIOD;
+						mLightMonitor.blinktime = 0;
+						mLightMonitor.mode = LED_MODE_DELAY_BRIGHT;
+					}
+				break;
+				}
+				case LED_MODE_DELAY_BRIGHT:{			
+				break;
+				}
+				case LED_MODE_NORMAL_BRIGHT:{			
+				break;
+				}
+				default:{
+				break;
 				}
 			}
-			break;
-		
-		case SHORT_BRIGHT:
-			if(mLightManager->led_timercnt > 0){
-                mLightManager->led_timercnt--;
-            }else{
-                m_step_cnt = 0;
-				HAL_Lighting_OFF();
-				mLightManager->led_mode = UNKOWN;
-				Led_Relay_tmr_ctrl_dlps(true);
-				plt_timer_delete(LEDCtrl_timer, 0);
-            }
-			break;
-		
-		case LONG_BRIGHT:
-            m_step_cnt = 0;
-            mLightManager->led_mode = UNKOWN;
-            Led_Relay_tmr_ctrl_dlps(true);
-            plt_timer_delete(LEDCtrl_timer, 0);
-            break;
+	
 	}
-	m_step_cnt++;
-}
-
-
-void control_mode_switch(bool blink)
-{
-    if(blink){
-        switch((uint8_t)mLightManager->light_newmode)
-        {
-            case UNREACT_MODE_N:
-                HAL_Lighting_OFF();
-                break;
-            
-            case REACT_MODE_M:
-            case UNREACT_MODE_M:
-				HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
-				HAL_Lighting_Nightlight(REAR_LED_PWM, 0);
-                break;
-            
-            case REACT_MODE_S:
-            case UNREACT_MODE_S:
-				HAL_Lighting_Nightlight(FRONT_LED_PWM,  0);
-				HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
-                break;
-            
-            case REACT_MODE_A:        
-            case UNREACT_MODE_A:
-                HAL_Lighting_ON();
-                break;
-            
-            default:
-                break;
-        }    
-    }else{
-        if(mLightManager->light_newmode == mLightManager->light_oldmode && 
-           ((mLightManager->light_newmode == UNREACT_MODE_N\
-           || mLightManager->light_newmode == UNREACT_MODE_M\
-           || mLightManager->light_newmode == UNREACT_MODE_S\
-           || mLightManager->light_newmode == UNREACT_MODE_A))){
-            return;
-        }
-        
-        switch((uint8_t)mLightManager->light_newmode)
-        {
-            case REACT_MODE_M:
-				HAL_Gradual_Nightlight(true, true, false);
-                break;
-                
-            case REACT_MODE_S:
-				HAL_Gradual_Nightlight(true, false, true);
-                break;
-           
-           case REACT_MODE_A:  
-				HAL_Gradual_Nightlight(true, true, true);
-                break;
-        
-            case UNREACT_MODE_N:
-                if(mLightManager->led_timercnt > 0\
-                  || mLightManager->light_oldmode == UNREACT_MODE_M\
-                  || mLightManager->light_oldmode == UNREACT_MODE_S\
-                  || mLightManager->light_oldmode == UNREACT_MODE_A){
-                    if(mLightManager->led_timercnt > 0){
-                        m_step_cnt = 0;
-                        mLightManager->led_timercnt = 0;
-                        mLightManager->led_mode = UNKOWN;
-                        Led_Relay_tmr_ctrl_dlps(true);
-                        plt_timer_delete(LEDCtrl_timer, 0);
-                    }
-                    
-                    if(mLightManager->light_oldmode == REACT_MODE_M ||
-                       mLightManager->light_oldmode == UNREACT_MODE_M)
-                    {                    
-						HAL_Gradual_Nightlight(false, true, false);
-						HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
-                    }
-                    else if(mLightManager->light_oldmode == REACT_MODE_S ||
-                            mLightManager->light_oldmode == UNREACT_MODE_S)
-                    {
-						HAL_Gradual_Nightlight(false, false, true);
-						HAL_Lighting_Nightlight(REAR_LED_PWM, 0);
-                    }
-                    else if(mLightManager->light_oldmode == REACT_MODE_A ||
-                            mLightManager->light_oldmode == UNREACT_MODE_A)
-                    {
-						HAL_Gradual_Nightlight(false, true, true);
-						HAL_Lighting_OFF();
-                    }
-                }
-                break;
-            
-            
-            
-            case UNREACT_MODE_M:
-                if(mLightManager->led_timercnt > 0\
-                  || mLightManager->light_oldmode == UNREACT_MODE_M\
-                  || mLightManager->light_oldmode == UNREACT_MODE_S\
-                  || mLightManager->light_oldmode == UNREACT_MODE_A){
-                    if(mLightManager->led_timercnt > 0){
-                        m_step_cnt = 0;
-                        mLightManager->led_timercnt = 0;
-                        mLightManager->led_mode = UNKOWN;
-                        Led_Relay_tmr_ctrl_dlps(true);
-                        plt_timer_delete(LEDCtrl_timer, 0);
-                    }
-                    
-                    if(mLightManager->light_oldmode == REACT_MODE_M){
-                        return;
-                    }
-                    else if(mLightManager->light_oldmode == REACT_MODE_S ||
-                            mLightManager->light_oldmode == UNREACT_MODE_S)
-                    {
-						HAL_Gradual_Nightlight(false, true, true);
-						HAL_Lighting_Nightlight(REAR_LED_PWM, 0);
-                    }
-                    else if(mLightManager->light_oldmode == REACT_MODE_A ||
-                            mLightManager->light_oldmode == UNREACT_MODE_A)
-                    {
-						HAL_Gradual_Nightlight(false, false, true);
-						HAL_Lighting_Nightlight(REAR_LED_PWM, 0);
-                    }
-                }else{
-                	HAL_Gradual_Nightlight(false, true, false);
-                }
-                break;
-            
-            
-            
-            case UNREACT_MODE_S:
-               if(mLightManager->led_timercnt > 0\
-                  || mLightManager->light_oldmode == UNREACT_MODE_M\
-                  || mLightManager->light_oldmode == UNREACT_MODE_S\
-                  || mLightManager->light_oldmode == UNREACT_MODE_A){
-                    if(mLightManager->led_timercnt > 0){
-                        m_step_cnt = 0;
-                        mLightManager->led_timercnt = 0;
-                        mLightManager->led_mode = UNKOWN;
-                        Led_Relay_tmr_ctrl_dlps(true);
-                        plt_timer_delete(LEDCtrl_timer, 0);
-                    }
-                    
-                    if(mLightManager->light_oldmode == REACT_MODE_S){
-                        return;
-                    }
-                    else if(mLightManager->light_oldmode == REACT_MODE_M ||
-                            mLightManager->light_oldmode == UNREACT_MODE_M)
-                    {
-						HAL_Gradual_Nightlight(false, true, true);
-						HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
-                    }
-                    else if(mLightManager->light_oldmode == REACT_MODE_A ||
-                            mLightManager->light_oldmode == UNREACT_MODE_A)
-                    {
-						HAL_Gradual_Nightlight(false, true, false);
-						HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
-                    }
-                }else{
-						HAL_Gradual_Nightlight(false, false, true);
-                }
-                break;
-            
-            
-            
-            case UNREACT_MODE_A:
-               if(mLightManager->led_timercnt > 0\
-                  || mLightManager->light_oldmode == UNREACT_MODE_M\
-                  || mLightManager->light_oldmode == UNREACT_MODE_S\
-                  || mLightManager->light_oldmode == UNREACT_MODE_A){
-                    if(mLightManager->led_timercnt > 0){
-                        m_step_cnt = 0;
-                        mLightManager->led_timercnt = 0;
-                        mLightManager->led_mode = UNKOWN;
-                        Led_Relay_tmr_ctrl_dlps(true);
-                        plt_timer_delete(LEDCtrl_timer, 0);
-                    }
-                    
-                    if(mLightManager->light_oldmode == REACT_MODE_A){
-                        return;
-                    }
-                    else if(mLightManager->light_oldmode == REACT_MODE_M ||
-                            mLightManager->light_oldmode == UNREACT_MODE_M)
-                    {
-						HAL_Gradual_Nightlight(false, false, true);
-                    }
-                    else if(mLightManager->light_oldmode == REACT_MODE_S ||
-                            mLightManager->light_oldmode == UNREACT_MODE_S)
-                    {
-						HAL_Gradual_Nightlight(false, true, false);
-                    }
-                }else{
-						HAL_Gradual_Nightlight(false, true, true);
-                }
-                break;
-            
-            default:
-                break;
-        }    
-        
-    }
-    APP_DBG_PRINTF("TIM_GetPWMOutputStatus:%d, %d", TIM_GetPWMOutputStatus(TIM2), TIM_GetPWMOutputStatus(TIM3));// 读取当前定时器的PWM电平（高低）
+	if(mLightMonitor.mode == LED_MODE_UNKOWN && mLightMonitor.blinkcnt==0){		
+		Delete_LED_Timer();
+		mLightManager->mode = LED_MODE_UNKOWN;
+	}
+		
 }
 
 void Start_LED_Timer(void)
@@ -599,13 +433,62 @@ void Start_LED_Timer(void)
 	}else{
         m_step_cnt = 0;
     }
+	
+	mLightMonitor.blinktime = 0;
 }
-
 
 void Delete_LED_Timer(void)
 {
-    plt_timer_delete(LEDCtrl_timer, 0);
+	if(LEDCtrl_timer){
+   		plt_timer_delete(LEDCtrl_timer, 0);
+		LEDCtrl_timer = NULL;
+	}
     Led_Relay_tmr_ctrl_dlps(true);
+}
+
+
+void SkyLed_LightEffective_CTL(bool blink, LED_MODE_e blinkmode, uint16_t blinkcnt)
+{
+    if(blink){
+		mLightMonitor.mode      = blinkmode;
+		mLightMonitor.blinkcnt  = blinkcnt;
+		mLightMonitor.blinktime = 0;
+		Start_LED_Timer();
+    }else{        
+        switch(mLightManager->mode){
+            case NLIGHT_MANUAL_MOD:{
+				if( mLightManager->statu[FRONT_LED_PWM] == 1 ){
+					HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+				}else{
+					HAL_Lighting_Nightlight(FRONT_LED_PWM,  0);
+				}
+				
+				if( mLightManager->statu[REAR_LED_PWM] == 1 ){
+					HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+				}else{
+					HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+				}				
+                break;
+            }			
+            case NLIGHT_REACT_LED1_MOD:{
+				HAL_Gradual_Nightlight(true, true, false);			
+                break;
+            }	
+            case NLIGHT_REACT_LED2_MOD:{
+				HAL_Gradual_Nightlight(true, false, true);		
+                break;
+            }	
+            case NLIGHT_REACT_LEDALL_MOD:{
+				HAL_Gradual_Nightlight(true, true, true);			
+                break;
+            }
+			default:{
+				break;
+			}
+        }
+           
+    }
+   // APP_DBG_PRINTF("TIM_GetPWMOutputStatus:%d, %d", TIM_GetPWMOutputStatus(TIM2), TIM_GetPWMOutputStatus(TIM3)); // 读取当前定时器的PWM电平（高低）
 }
 
 

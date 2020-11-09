@@ -1021,10 +1021,8 @@ static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 		#endif
 	}else{
 		if(skybleprovsucesscnt == (SKYBLEPROVSUCCESS_MAXCNT+1)){			
-			#if USE_NLIGHT_FOR_SKYIOT
-			mIotManager.mLightManager.led_mode = FAST_BLINK;
-			mIotManager.mLightManager.led_timercnt = 10;			// 入网成功，闪烁5次（5*2）。
-			Start_LED_Timer();
+			#if USE_NLIGHT_FOR_SKYIOT		
+			SkyLed_LightEffective_CTL(true, LED_MODE_FAST_BLINK, 10); // 入网成功，闪烁5次（5*2）。
 			#endif	
 
 			// 闪灯结束后延时10s，触发配网成功事件。 
@@ -1213,10 +1211,7 @@ static void SkyFunction_Handle(uint32_t newtick)
             Sky_Light_Batt_detect();
             
             if(mIotManager.amb_status == 0x00 || mIotManager.amb_status == 0x03){       // 感应模式本地条件触发亮灯
-                control_mode_switch(false);                                                
-                mIotManager.mLightManager.led_mode = SHORT_BRIGHT;
-                mIotManager.mLightManager.led_timercnt = 50*mIotManager.mLightManager.led_time;
-                Start_LED_Timer();
+				SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, mIotManager.mLightManager.led_time/LED_BRIGHT_TMR_PERIOD); 
             }
         }else{
             if(mIotManager.amb_status == 0x00 || mIotManager.amb_status == 0x03){       // 重新加载时长
@@ -1552,9 +1547,7 @@ static void Skykey_cotrol_light()
        || mIotManager.mLightManager.light_oldmode == REACT_MODE_A){         // 感应模式->控制模式
        
 		APP_DBG_PRINTF0("33333333333333\n");
-        mIotManager.mLightManager.led_mode = MODE_BLINK;
-        mIotManager.mLightManager.led_timercnt = 4;			
-        Start_LED_Timer();
+		SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); 
     }else if(mIotManager.mLightManager.light_oldmode == UNREACT_MODE_N 
            || mIotManager.mLightManager.light_oldmode == UNREACT_MODE_M\
            || mIotManager.mLightManager.light_oldmode == UNREACT_MODE_S\
@@ -1572,16 +1565,15 @@ static void Skykey_updata_mode(LIGHT_MODE_e light_mode_n)
 {
     mIotManager.mLightManager.change_flag = 1;
 	mIotManager.mLightManager.light_oldmode = mIotManager.mLightManager.light_newmode;
-	mIotManager.mLightManager.light_newmode = light_mode_n;
-	mIotManager.mLightManager.led_mode = MODE_BLINK;
-	mIotManager.mLightManager.led_timercnt = 4;			        // 切换至感应模式，闪烁2次（2*2）。
+	mIotManager.mLightManager.light_newmode = light_mode_n;	     
     mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_N;
     mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_N;
     mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;
     mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
     mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
     HAL_OpenInf_Power(true);
-	Start_LED_Timer();
+
+	SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // 切换至感应模式，闪烁2次（2*2）。
 //	APP_DBG_PRINTF1("light_newmode2:%d\r\n", mIotManager.mLightManager.light_newmode);
 }
 
@@ -1712,10 +1704,8 @@ static void SkySwitch_Handle(uint8_t key_mode)
         
 		mIotManager.mLightManager.light_newmode = UNREACT_MODE_S;
 		mIotManager.mLightManager.led_time = LIGHT_DEFAULT_TIME;
-		mIotManager.amb_status = LIGHT_DEFAULT_WAY;
-		mIotManager.mLightManager.led_mode = SLOW_BLINK;
-		mIotManager.mLightManager.led_timercnt = 10;			// 重新入网，闪烁5次（5*2）。
-		Start_LED_Timer();		
+		mIotManager.amb_status = LIGHT_DEFAULT_WAY;		
+		SkyLed_LightEffective_CTL(true, LED_MODE_SLOW_BLINK, 10);  // 重新入网，闪烁5次（5*2）。
 		SkyBleMesh_unBind_complete();
 		if(mIotManager.process_state != 0x55)
 		{

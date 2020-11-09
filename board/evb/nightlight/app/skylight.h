@@ -51,40 +51,38 @@
 
 
 typedef enum{
-    UNKOWN_MODE = 0,    // UNKOWN_MODE
-	RELEASE_MODE = 1,	// The first release
-	REACT_MODE_M = 2,	// Master led
-	REACT_MODE_S = 3,	// Slaver led
-	REACT_MODE_A = 4,	// All led
-	UNREACT_MODE_N = 5,	// no led(unreact)
-	UNREACT_MODE_M = 6,	// Master led
-	UNREACT_MODE_S = 7,	// Slaver led
-	UNREACT_MODE_A = 8,	// All led
-}LIGHT_MODE_e;
+	NLIGHT_MANUAL_MOD = 0,    // 手动模式
+	NLIGHT_REACT_LED1_MOD,    // 主灯
+	NLIGHT_REACT_LED2_MOD,    // 副灯
+	NLIGHT_REACT_LEDALL_MOD,  // 主副灯
+}NLIGHT_MODE_e;
 	
+
+#define LED_BRIGHT_TMR_PERIOD   (50)  // ms
+#define LED_FAST_BLINK_PERIOD   (200)  // ms
+#define LED_SLOW_BLINK_PERIOD   (500)  // ms
+#define LED_MODE_BLINK_PERIOD   (200)  // ms
+#define LED_DELAY_BRIGHT_TIME   (5000)  // ms
 typedef enum{
-	UNKOWN,
-	FAST_BLINK,
-	SLOW_BLINK,
-	MODE_BLINK,
-	SHORT_BRIGHT,
-	LONG_BRIGHT,
+	LED_MODE_UNKOWN,
+	LED_MODE_FAST_BLINK,   // 配网成功
+	LED_MODE_SLOW_BLINK,   // 进入配网
+	LED_MODE_MODE_BLINK,   // 本地切换至感应模式
+	LED_MODE_DELAY_BRIGHT, // 延长亮灯时间
+	LED_MODE_NORMAL_BRIGHT,
 }LED_MODE_e;
+
 
 typedef struct {
 	//灯泡状态字段
 #if  (SKY_LIGHT_TYPE==SKY_LIGHT_NIGHT_TYPE)
-	uint8_t  front_led;
-//	uint8_t  frontled_c;// ctroal
-//	uint8_t  frontled_cs;
-//	uint8_t  frontled_ns;
-	uint8_t  rear_led;
-    uint8_t  change_flag;
-	LED_MODE_e    led_mode;
-	LIGHT_MODE_e  light_oldmode;
-	LIGHT_MODE_e  light_newmode;
-    uint32_t  led_timercnt;
-	uint32_t  led_time;
+	uint8_t  statu[ 2 ];  // TOTALPWMNUMBER
+	// uint8_t  manset[ 2 ];  // TOTALPWMNUMBER
+	uint8_t  batt;
+	uint8_t  inf;      // 人感
+	uint8_t  amb;      // 环境光
+	uint16_t bri_time; // 感应亮灯时长
+	NLIGHT_MODE_e mode;	
 #endif	
 }SkyLightManager;
 
@@ -96,8 +94,8 @@ void HAL_Lighting_ON( void );
 bool HAL_Lighting_Init(SkyLightManager *manager);
 void HAL_Light_Dlps_Control(bool isenter);
 void Start_LED_Timer(void);
-void control_mode_switch(bool blink);
 void Delete_LED_Timer(void);
+void SkyLed_LightEffective_CTL(bool blink, LED_MODE_e blinkmode, uint16_t blinkcnt);
 
 #endif
 
