@@ -23,7 +23,7 @@
 
 //endvalue = 20MHZ 
 //frequency = 20MHZ / PWM_FREQUENCY = 4KHZ
-#define PWM_FREQUENCY    			5000
+#define PWM_FREQUENCY    			(5000)
 #define PWM_DUTY_INIT				0
 
 
@@ -32,12 +32,13 @@
 #define LED_CLOSE					0
 
 
-#define LED1_FLAG_STATUS_N			(0x01)	// ä¸»ç¯å½“å‰çŠ¶æ€
-#define LED1_FLAG_COTROL			(0x02)	// ä¸»ç¯æ§åˆ¶æ ‡å¿—
-#define LED1_FLAG_STATUS_C          (0x04)	// ä¸»ç¯æ§åˆ¶çŠ¶æ€
-#define LED2_FLAG_STATUS_N			(0x01)	// å‰¯ç¯å½“å‰çŠ¶æ€
-#define LED2_FLAG_COTROL			(0x02) 	// å‰¯ç¯æ§åˆ¶æ ‡å¿—
-#define LED2_FLAG_STATUS_C 			(0x04)	// å‰¯ç¯æ§åˆ¶çŠ¶æ€
+#define LED1_FLAG_STATUS_N			(0x01)	// Ö÷µÆµ±Ç°×´Ì¬
+#define LED1_FLAG_COTROL			(0x02)	// Ö÷µÆ¿ØÖÆ±êÖ¾
+#define LED1_FLAG_STATUS_C          (0x04)	// Ö÷µÆ¿ØÖÆ×´Ì¬
+#define LED2_FLAG_STATUS_N			(0x01)	// ¸±µÆµ±Ç°×´Ì¬
+#define LED2_FLAG_COTROL			(0x02) 	// ¸±µÆ¿ØÖÆ±êÖ¾
+#define LED2_FLAG_STATUS_C 			(0x04)	// ¸±µÆ¿ØÖÆ×´Ì¬
+
 	
 #define BLEMESH_REPORT_FLAG_SW1 	(0x01)
 #define BLEMESH_REPORT_FLAG_SW2 	(0x02)
@@ -72,18 +73,7 @@ typedef enum{
 
 typedef struct {
 	//µÆÅİ×´Ì¬×Ö¶Î
-#if ((SKY_LIGHT_TYPE==SKY_LIGHT_BELT_TYPE)||(SKY_LIGHT_TYPE==SKY_LIGHT_BULB_TYPE))
-	uint8_t status; /* 0: off, 1: on */
-	int32_t bri;	/* ÈÕ¹âÄ£Ê½ÁÁ¶È */		
-	int32_t ctp;	/* ÈÕ¹âÄ£Ê½É«ÎÂ */
-#elif (SKY_LIGHT_TYPE==SKY_LIGHT_BULB_RGBWY_TYPE)
-	uint8_t status; /* 0: off, 1: on */
-	int32_t bri;	/* ÁÁ¶È */		
-	int32_t ctp;	/* ÈÕ¹âÄ£Ê½É«ÎÂ */
-	int32_t hue;	/* É«¶È */		
-	int32_t sat;	/* ±¥ºÍ¶È */
-	
-#elif (SKY_LIGHT_TYPE==SKY_LIGHT_NIGHT_TYPE)
+#if  (SKY_LIGHT_TYPE==SKY_LIGHT_NIGHT_TYPE)
 	uint8_t  front_led;
 //	uint8_t  frontled_c;// ctroal
 //	uint8_t  frontled_cs;
@@ -101,13 +91,8 @@ typedef struct {
 
 
 
-
-void HAL_Lighting_Color(int hue, int sat, int bri);
-void HAL_Lighting_Sunlight(int ctp, int ctp_bri);
 void HAL_Lighting_OFF(void);
 void HAL_Lighting_ON( void );
-void HAL_Lighting_Default(void);
-
 bool HAL_Lighting_Init(SkyLightManager *manager);
 void HAL_Light_Dlps_Control(bool isenter);
 void Start_LED_Timer(void);
