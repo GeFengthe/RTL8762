@@ -99,6 +99,16 @@ static void Driver_ADCPower_init(void)
 	GPIO_WriteBit(BATT_POWER_PIN, ADCPOWER_CLOSE);
 }
 
+uint8_t HAL_ReadAmbient_Power(void)
+{
+    uint8_t pwr = 0;
+	
+	if(GPIO_ReadOutputDataBit(ALS_POWER_PIN) == 1){
+		pwr = 1;
+	} 	
+	
+	return pwr; 
+}
 
 static void SkyAdc_Init(void)
 {

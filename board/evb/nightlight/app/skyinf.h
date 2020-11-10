@@ -13,7 +13,8 @@ typedef struct{
 
 
 extern void HAL_INF_Dlps_Control(bool isenter);
-extern uint8_t ReadInfStatu(void);
+extern uint8_t HAL_ReadInf_Statu(void);
+extern uint8_t HAL_ReadInf_Power(void);
 extern bool HAL_Inf_Init(SkyInfManager *manager);
 extern void HAL_OpenInf_Power(bool isallow);
 

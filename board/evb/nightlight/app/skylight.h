@@ -10,11 +10,7 @@
 #define USE_LIGHT_FOR_SKYIOT  1
 
 
-#define SKY_LIGHT_BELT_TYPE         1   
-#define SKY_LIGHT_BULB_TYPE         2   
-#define SKY_LIGHT_BULB_RGBWY_TYPE   3   
-#define SKY_LIGHT_NIGHT_TYPE		4
-
+#define SKY_LIGHT_NIGHT_TYPE		1
 #define SKY_LIGHT_TYPE   SKY_LIGHT_NIGHT_TYPE  
 
 
@@ -27,27 +23,27 @@
 #define PWM_DUTY_INIT				0
 
 
-#define LIGHT_DEFAULT_TIME			20
 #define LED_OPEN					1
 #define LED_CLOSE					0
 
 
-#define LED1_FLAG_STATUS_N			(0x01)	// 主灯当前状态
-#define LED1_FLAG_COTROL			(0x02)	// 主灯控制标志
-#define LED1_FLAG_STATUS_C          (0x04)	// 主灯控制状态
-#define LED2_FLAG_STATUS_N			(0x01)	// 副灯当前状态
-#define LED2_FLAG_COTROL			(0x02) 	// 副灯控制标志
-#define LED2_FLAG_STATUS_C 			(0x04)	// 副灯控制状态
-
-	
+// 移到 app_skyiot_server.h	
 #define BLEMESH_REPORT_FLAG_SW1 	(0x01)
 #define BLEMESH_REPORT_FLAG_SW2 	(0x02)
 #define BLEMESH_REPORT_FLAG_BAT 	(0x04)
-#define BLEMESH_REPORT_FLAG_INF0	(0x08)
+#define BLEMESH_REPORT_FLAG_INF 	(0x08)
 #define BLEMESH_REPORT_FLAG_AMB		(0x10)
 #define BLEMESH_REPORT_FLAG_MOD		(0x20)
 #define BLEMESH_REPORT_FLAG_TIM		(0x40)
-#define BLEMESH_REPORT_FLAG_INF1	(0x80)
+
+
+#define FRONT_LED_PWM		0
+#define REAR_LED_PWM		1
+#define TOTALPWMNUMBER     	2
+
+#define SKY_LED1_STATUS		0
+#define SKY_LED2_STATUS		1
+
 
 
 typedef enum{
@@ -64,7 +60,7 @@ typedef enum{
 #define LED_MODE_BLINK_PERIOD   (200)  // ms
 #define LED_DELAY_BRIGHT_TIME   (5000)  // ms
 typedef enum{
-	LED_MODE_UNKOWN,
+	LED_MODE_UNKOWN = 0,
 	LED_MODE_FAST_BLINK,   // 配网成功
 	LED_MODE_SLOW_BLINK,   // 进入配网
 	LED_MODE_MODE_BLINK,   // 本地切换至感应模式
@@ -73,21 +69,32 @@ typedef enum{
 }LED_MODE_e;
 
 
+#define LIGHT_DEFAULT_TIME			20
+#define SKYIOT_INF_HAVE_BODY     (0)
+#define SKYIOT_INF_NO_BODY       (1)
+#define SKYIOT_AMBIENT_DARK      (0)
+#define SKYIOT_AMBIENT_BRIGHT    (1)
+#define SKYIOT_AMBIENT_LIMITVOL	  (160)		    // 20lux limit val
+
+
 typedef struct {
 	//灯泡状态字段
 #if  (SKY_LIGHT_TYPE==SKY_LIGHT_NIGHT_TYPE)
 	uint8_t  statu[ 2 ];  // TOTALPWMNUMBER
 	// uint8_t  manset[ 2 ];  // TOTALPWMNUMBER
 	uint8_t  batt;
-	uint8_t  inf;      // 人感
-	uint8_t  amb;      // 环境光
-	uint16_t bri_time; // 感应亮灯时长
+	uint8_t  inf;      // 人感   0:有人 1:无人
+	uint8_t  amb;      // 环境光 0:环境暗时感应           1:环境亮时感应
+	uint32_t bri_time; // 感应亮灯时长
 	NLIGHT_MODE_e mode;	
+
+	uint8_t  ambstatu; // 当前环境光状态 0:当前环境暗              1:当前环境亮
 #endif	
 }SkyLightManager;
 
 
 
+bool HAL_Lighting_Output_Statu(void);
 
 void HAL_Lighting_OFF(void);
 void HAL_Lighting_ON( void );

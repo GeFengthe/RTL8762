@@ -22,9 +22,6 @@ plt_timer_t LEDCtrl_timer = NULL;
 #define APP_DBG_PRINTF   DBG_DIRECT
 
 #if 1
-#define FRONT_LED_PWM		0
-#define REAR_LED_PWM		1
-#define TOTALPWMNUMBER     	2
 
 #define PIN_INVALID       0xff
 typedef struct
@@ -33,12 +30,13 @@ typedef struct
     uint8_t pin_func;
     TIM_TypeDef *tim_id;
     uint16_t duty_cycle;
+	bool tmrenable;
 } light_t;
 
 static light_t light_pwm[TOTALPWMNUMBER] =
 {
-    {LED_FRONT, timer_pwm3, TIM3, PWM_DUTY_INIT},
-    {LED_REAR, timer_pwm2, TIM2, PWM_DUTY_INIT},
+    {LED_FRONT, timer_pwm3, TIM3, PWM_DUTY_INIT, false},
+    {LED_REAR, timer_pwm2, TIM2, PWM_DUTY_INIT, false},
 };
 
 static SkyLightManager *mLightManager=NULL;
@@ -74,7 +72,7 @@ static void Pwm_Pin_Tmr_Config(const light_t *light)
     
 }
 
-static void pwm_enable_ctrl(const light_t *light, bool isenable)
+static void pwm_enable_ctrl(light_t *light, bool isenable)
 {
     if (PIN_INVALID == light->pin_num) {
         return ;
@@ -83,9 +81,11 @@ static void pwm_enable_ctrl(const light_t *light, bool isenable)
 	if(isenable == true){
 	    /* ENABLE PWM output */
 	    TIM_Cmd(light->tim_id, ENABLE);
+		light->tmrenable = true;
 	}else{
 	    /* DISENABLE PWM output */
 	    TIM_Cmd(light->tim_id, DISABLE);
+		light->tmrenable = false;
 	}
 }
 
@@ -143,6 +143,18 @@ static uint8_t HAL_UpdatePwmDuty(uint8_t lightindex, uint16_t val)
 	return 0;
 }
 
+bool HAL_Lighting_Output_Statu(void)
+{
+	bool haveoutput = true;
+	
+	if(light_pwm[FRONT_LED_PWM].tmrenable == false && light_pwm[REAR_LED_PWM].tmrenable == false){
+		haveoutput = false;
+	}
+
+	return haveoutput;
+}
+
+
 ///////////////////////////////////////////////////////////////////////////
 #define LIGHT_BRIGHTNESS_PRECENT    (100)
 #define LIGHT_GRADUAL_TIMES         (20)
@@ -154,7 +166,7 @@ typedef struct {
 	uint32_t  blinktime;
 }LightMonitor;
 static LightMonitor mLightMonitor={
-	UNKOWN,
+	LED_MODE_UNKOWN,
 		0,
 		0,
 };
@@ -372,7 +384,7 @@ void SkyLed_Timeout_cb_handel(void *timer)
 			
 			switch(mLightMonitor.mode){ 
 				case LED_MODE_FAST_BLINK:{
-					if((mLightManager->mode == NLIGHT_MANUAL_MOD){ // 手动模式，灯状态恢复
+					if(mLightManager->mode == NLIGHT_MANUAL_MOD){ // 手动模式，灯状态恢复
 						if(mLightManager->statu[FRONT_LED_PWM] == 1){
 							HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
 						}
@@ -380,10 +392,12 @@ void SkyLed_Timeout_cb_handel(void *timer)
 							HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
 						}
 					}
+					mLightMonitor.mode = LED_MODE_UNKOWN;
 				break;
 				}
 				case LED_MODE_SLOW_BLINK:{
 					HAL_Lighting_OFF(); // 关闭，等待重启
+					mLightMonitor.mode = LED_MODE_UNKOWN;
 				break;
 				}
 				case LED_MODE_MODE_BLINK:{
@@ -403,10 +417,9 @@ void SkyLed_Timeout_cb_handel(void *timer)
 					}
 				break;
 				}
-				case LED_MODE_DELAY_BRIGHT:{			
-				break;
-				}
-				case LED_MODE_NORMAL_BRIGHT:{			
+				case LED_MODE_DELAY_BRIGHT:
+				case LED_MODE_NORMAL_BRIGHT:{						
+					mLightMonitor.mode = LED_MODE_UNKOWN;
 				break;
 				}
 				default:{
@@ -417,7 +430,6 @@ void SkyLed_Timeout_cb_handel(void *timer)
 	}
 	if(mLightMonitor.mode == LED_MODE_UNKOWN && mLightMonitor.blinkcnt==0){		
 		Delete_LED_Timer();
-		mLightManager->mode = LED_MODE_UNKOWN;
 	}
 		
 }
@@ -430,10 +442,7 @@ void Start_LED_Timer(void)
 			Led_Relay_tmr_ctrl_dlps(false);
 			plt_timer_start(LEDCtrl_timer, 0);
 		}
-	}else{
-        m_step_cnt = 0;
-    }
-	
+	}
 	mLightMonitor.blinktime = 0;
 }
 

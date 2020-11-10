@@ -43,15 +43,28 @@ static void HAL_GpioForInf_Init(void)
 }
 
 
-uint8_t ReadInfStatu(void)
+uint8_t HAL_ReadInf_Statu(void)
 {
-    uint8_t inf = 0;
+    uint8_t inf = 1;
 	
 	if(GPIO_ReadInputDataBit(INFSEN_DETECT_PIN) == 1){
-		inf |= (1<<0);
+		inf = 0;
 	} 	
-	return inf; 
+	
+	return inf;  // 逻辑反的
 }
+
+uint8_t HAL_ReadInf_Power(void)
+{
+    uint8_t pwr = 0;
+	
+	if(GPIO_ReadOutputDataBit(INFSEN_POWER_PIN) == 1){
+		pwr = 1;
+	} 	
+	
+	return pwr; 
+}
+
 
 
 void HAL_OpenInf_Power(bool isallow)

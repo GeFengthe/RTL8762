@@ -160,14 +160,29 @@ typedef struct {
 		uint8_t amb_seq;
 		uint8_t mod_seq;
 		uint8_t tim_seq;
+		uint8_t bat_seq;
+		uint8_t inf_seq;
         uint8_t batt_rank;
         SkyInfManager    mInfManger;
 		SkySwitchManager mSwitchManager;
 		SkyLightManager  mLightManager;
+
 	#endif
 	 uint32_t report_flag;	 // 按位对应设备的控制属性,置位即发
 }SkyBleMeshIotManager;
 	
+typedef struct {
+
+	#if USE_NLIGHT_FOR_SKYIOT
+	uint8_t  statu[ 2 ];  // TOTALPWMNUMBER
+	uint8_t  amb;      // 环境光 0:环境暗时感应           1:环境亮时感应
+	uint32_t bri_time; // 感应亮灯时长
+	NLIGHT_MODE_e mode;	
+	#endif
+
+	uint8_t unuse;
+}SkyBleMeshSaveParams;
+static SkyBleMeshSaveParams mIotSaveParams;
 
 /*
  * VARIABLES
@@ -1149,78 +1164,66 @@ static void SkyBleMesh_ChangeScan_Timeout_cb(void *ptimer)
 static void SkyCheck_Change(uint32_t newtick)
 {
 	static uint32_t oldtick=0;
-	if(HAL_CalculateTickDiff(oldtick, newtick) >= WRITE_DEFAULT_TIME){ 
-        if(mIotManager.mLightManager.change_flag){
-            mIotManager.mLightManager.change_flag = 0;
-            SkyBleMesh_WriteConfig();	
-        }
+	if(HAL_CalculateTickDiff(oldtick, newtick) >= WRITE_DEFAULT_TIME){
+		if(	mIotSaveParams.statu[SKY_LED1_STATUS] != mIotManager.mLightManager.statu[SKY_LED1_STATUS]
+			|| mIotSaveParams.statu[SKY_LED2_STATUS] != mIotManager.mLightManager.statu[SKY_LED2_STATUS]
+			|| mIotSaveParams.amb      != mIotManager.mLightManager.amb
+			|| mIotSaveParams.bri_time != mIotManager.mLightManager.bri_time
+			|| mIotSaveParams.mode     != mIotManager.mLightManager.mode){
+
+			SkyBleMesh_WriteConfig();
+
+			mIotSaveParams.statu[SKY_LED1_STATUS] = mIotManager.mLightManager.statu[SKY_LED1_STATUS];
+			mIotSaveParams.statu[SKY_LED2_STATUS] = mIotManager.mLightManager.statu[SKY_LED2_STATUS];
+			mIotSaveParams.amb		= mIotManager.mLightManager.amb;
+			mIotSaveParams.bri_time = mIotManager.mLightManager.bri_time;
+			mIotSaveParams.mode 	= mIotManager.mLightManager.mode;	
+		}
+		
         oldtick = newtick;
     }
 }
 
-
-static void Sky_Light_Batt_detect(void)
-{
-    uint16_t bat_dat = 0;
-    uint16_t lp_dat = 0;
-    HAL_SkyAdc_Sample(&bat_dat, &lp_dat);
-    APP_DBG_PRINTF2("bat_dat:%d, lp_dat:%d\r\n", bat_dat, lp_dat);
-    if(lp_dat > NIGHT_LIMIT_VOL){
-        mIotManager.amb_status |= LIGHT_DAYTIME;
-    }else{
-        mIotManager.amb_status &= ~LIGHT_DAYTIME;
-    }
-}
-
-
-
 static void SkyFunction_Handle(uint32_t newtick)
-{
+{		
+	// 环境光、电池电压采集
+    uint16_t batt_val=0, lightsense = 0;
+    HAL_SkyAdc_Sample(&batt_val, &lightsense);
+	APP_DBG_PRINTF3("batt_val:%d, lp_dat:%d\r\n", batt_val, lightsense);	
+	if((HAL_Lighting_Output_Statu() == false) && (HAL_ReadAmbient_Power() == 1 )){
+		// 电源打开、灯光没有输出，认为采集的光感是正确的。
+	    if(lightsense > (SKYIOT_AMBIENT_LIMITVOL+10)){
+	        mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_BRIGHT;
+	    }else if(lightsense < (SKYIOT_AMBIENT_LIMITVOL-10)){
+	        mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_DARK;
+	    }
+	}
 
-    mIotManager.mInfManger.inf_status_new = ReadInfStatu();
-    if(mIotManager.mInfManger.inf_status_old != mIotManager.mInfManger.inf_status_new\
-       &&(mIotManager.mLightManager.light_newmode == REACT_MODE_M\
-       || mIotManager.mLightManager.light_newmode == REACT_MODE_S\
-       || mIotManager.mLightManager.light_newmode == REACT_MODE_A)\
-       && mIotManager.mLightManager.led_timercnt == 0){
-        if(mIotManager.mInfManger.inf_status_new == 1){
-            mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_INF1;
-            mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF0;
-        }else{
-            mIotManager.report_flag &= ~BLEMESH_REPORT_FLAG_INF0;
-            mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF1;
-        }
-        mIotManager.mInfManger.inf_status_old = mIotManager.mInfManger.inf_status_new;
-    }
-    
-    if(mIotManager.mInfManger.inf_status_new == 1){
-        if(mIotManager.mLightManager.light_newmode == UNREACT_MODE_N\
-           || mIotManager.mLightManager.light_newmode == UNREACT_MODE_M\
-           || mIotManager.mLightManager.light_newmode == UNREACT_MODE_S\
-           || mIotManager.mLightManager.light_newmode == UNREACT_MODE_A){
-            APP_DBG_PRINTF0("inf error");
-            return;
-        }
-        
-        if(mIotManager.mLightManager.led_mode == MODE_BLINK){
-            APP_DBG_PRINTF0("led mode link");
-            return;
-        }
-        
-        if(mIotManager.mLightManager.led_timercnt == 0){	
-            Sky_Light_Batt_detect();
-            
-            if(mIotManager.amb_status == 0x00 || mIotManager.amb_status == 0x03){       // 感应模式本地条件触发亮灯
-				SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, mIotManager.mLightManager.led_time/LED_BRIGHT_TMR_PERIOD); 
-            }
-        }else{
-            if(mIotManager.amb_status == 0x00 || mIotManager.amb_status == 0x03){       // 重新加载时长
-                mIotManager.mLightManager.led_mode = SHORT_BRIGHT;
-                APP_DBG_PRINTF0("Reload time\r\n");
-                mIotManager.mLightManager.led_timercnt = 50*mIotManager.mLightManager.led_time;
-            }
-        }
-    }
+
+
+	// 人感电源打开，检测人感变化就上报，独立于小夜灯本身
+	if(HAL_ReadInf_Power() == 1){
+		uint8_t infstatu = HAL_ReadInf_Statu();
+		// qlj 应该不需要加 感应模式 判断
+		if(mIotManager.mLightManager.inf != infstatu){
+			mIotManager.mLightManager.inf = infstatu;
+			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF;
+		}
+	}
+
+
+
+	// 感应模式亮灯时间处理
+	if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD ){
+		if(mIotManager.mLightManager.inf == SKYIOT_INF_HAVE_BODY){
+			if((mIotManager.mLightManager.amb==SKYIOT_AMBIENT_DARK && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_DARK)
+			 ||(mIotManager.mLightManager.amb==SKYIOT_AMBIENT_BRIGHT && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_BRIGHT)){
+			    // 感应模式、有人、环境光前提匹配当前环境光.可以连续加载
+				SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, mIotManager.mLightManager.bri_time/LED_BRIGHT_TMR_PERIOD); 
+			}
+		}
+	}
+	
 }
 
 void SkyBleMesh_ChangeScan_timer(uint8_t multi)
@@ -1371,6 +1374,10 @@ extern int SkyBleMesh_WriteConfig(void)
 	utils_md5_init(context);									   /* init context for 1st pass */
 	utils_md5_starts(context); 								   /* setup context for 1st pass */
 
+	memcpy(buffer + offset, &(mIotManager.release_flag), 1);
+	offset += 1;
+	utils_md5_update(context, (unsigned char*)&(mIotManager.release_flag), 1);
+	
 	memcpy(buffer + offset, &(mIotManager.process_state), 1);
 	offset += 1;
 	utils_md5_update(context, (unsigned char*)&(mIotManager.process_state), 1);
@@ -1378,27 +1385,27 @@ extern int SkyBleMesh_WriteConfig(void)
 	memcpy(buffer + offset, mIotManager.mac_address, MAC_ADDRESS_LEN);
 	offset += MAC_ADDRESS_LEN;
 	utils_md5_update(context, (unsigned char*)mIotManager.mac_address, MAC_ADDRESS_LEN);
-
 	
 	memcpy(buffer + offset, mIotManager.device_uuid, BT_MESH_UUID_SIZE);
 	offset += BT_MESH_UUID_SIZE;
 	utils_md5_update(context, (unsigned char*)mIotManager.device_uuid, BT_MESH_UUID_SIZE);
+		
+	memcpy(buffer + offset, (mIotManager.mLightManager.statu), 2);
+	offset += 2;
+	utils_md5_update(context, (unsigned char*)(mIotManager.mLightManager.statu), 2);
 	
-	memcpy(buffer + offset, &(mIotManager.amb_status), 1);
+	memcpy(buffer + offset, &(mIotManager.mLightManager.amb), 1);
 	offset += 1;
-	utils_md5_update(context, (unsigned char*)&(mIotManager.amb_status), 1);
+	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.amb), 1);
 	
-	memcpy(buffer + offset, &(mIotManager.release_flag), 1);
+	memcpy(buffer + offset, &(mIotManager.mLightManager.mode), 1);
 	offset += 1;
-	utils_md5_update(context, (unsigned char*)&(mIotManager.release_flag), 1);
-	
-	memcpy(buffer + offset, &(mIotManager.mLightManager.led_time), 4);
+	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.mode), 1);
+		
+	memcpy(buffer + offset, &(mIotManager.mLightManager.bri_time), 4);
 	offset += 4;
-	utils_md5_update(context, (uint8_t *)&mIotManager.mLightManager.led_time, 4);
-	
-	memcpy(buffer + offset, &(mIotManager.mLightManager.light_newmode), 1);
-	offset += 1;
-	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.light_newmode), 1);
+	utils_md5_update(context, (uint8_t *)&mIotManager.mLightManager.bri_time, 4);
+
 	
 	utils_md5_finish(context, mIotManager.critical_md5);	
 	os_mem_free(context);
@@ -1444,7 +1451,11 @@ static int SkyBleMesh_ReadConfig(void)
 		return -1;
 	}
 	
-	//
+	// 出厂值
+	memcpy(&(mIotManager.release_flag), buffer + offset, 1);	
+	offset += 1;
+	utils_md5_update(context, (unsigned char*)&(mIotManager.release_flag), 1);
+	// 进配网标志
 	memcpy(&(mIotManager.process_state), buffer + offset, 1);	
 	offset += 1;
 	utils_md5_update(context, (unsigned char*)&(mIotManager.process_state), 1);
@@ -1456,22 +1467,24 @@ static int SkyBleMesh_ReadConfig(void)
 	memcpy(mIotManager.device_uuid, buffer + offset, BT_MESH_UUID_SIZE);	
 	offset += BT_MESH_UUID_SIZE;
 	utils_md5_update(context, (unsigned char*)mIotManager.device_uuid, BT_MESH_UUID_SIZE);
+	
 	//
-	memcpy(&(mIotManager.amb_status), buffer + offset, 1);	
+	memcpy(mIotManager.mLightManager.statu, buffer + offset, 2);	
+	offset += 2;
+	utils_md5_update(context, (unsigned char*)mIotManager.mLightManager.statu, 2);
+	//
+	memcpy(&(mIotManager.mLightManager.amb), buffer + offset, 1);	
 	offset += 1;
-	utils_md5_update(context, (unsigned char*)&(mIotManager.amb_status), 1);
+	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.amb), 1);
 	//
-	memcpy(&(mIotManager.release_flag), buffer + offset, 1);	
+	memcpy(&(mIotManager.mLightManager.mode), buffer + offset, 1);	
 	offset += 1;
-	utils_md5_update(context, (unsigned char*)&(mIotManager.release_flag), 1);
+	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.mode), 1);
 	//
-	memcpy(&(mIotManager.mLightManager.led_time), buffer + offset, 4);	
+	memcpy(&(mIotManager.mLightManager.bri_time), buffer + offset, 4);	
 	offset += 4;
-	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.led_time), 4);
-	//
-	memcpy(&(mIotManager.mLightManager.light_newmode), buffer + offset, 1);	
-	offset += 1;
-	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.light_newmode), 1);
+	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.bri_time), 4);
+
 	// ...	
 		
 	utils_md5_finish(context, md5);  
@@ -1493,166 +1506,114 @@ static int SkyBleMesh_ReadConfig(void)
 */
 static void SkyiotManager_Default_Config(void)
 {
-	mIotManager.mLightManager.rear_led |= LED2_FLAG_STATUS_N;
-	mIotManager.mLightManager.light_newmode = UNREACT_MODE_S;
-	mIotManager.mLightManager.led_time = LIGHT_DEFAULT_TIME;
-	mIotManager.amb_status = LIGHT_DEFAULT_WAY;
+	mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
+	mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 1;
+	mIotManager.mLightManager.mode     = NLIGHT_MANUAL_MOD;
+	mIotManager.mLightManager.bri_time = LIGHT_DEFAULT_TIME;
+	mIotManager.mLightManager.amb      = LIGHT_DEFAULT_WAY;
+	
+	mIotManager.mLightManager.inf      = SKYIOT_INF_NO_BODY;
+	mIotManager.mLightManager.batt     = 100;
 }
 
-static void Skykey_cotrol_light()
-{
-    mIotManager.mLightManager.change_flag = 1;
-	if(mIotManager.mLightManager.front_led & LED1_FLAG_COTROL){				// 控制前灯（主灯）
-		mIotManager.mLightManager.front_led &= ~LED1_FLAG_COTROL;
-		
-		if(mIotManager.mLightManager.front_led & LED1_FLAG_STATUS_C){
-			mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_C;
-			mIotManager.mLightManager.front_led |= LED1_FLAG_STATUS_N;
-		}else{
-			mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_N;
-		}
-		
-        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;
-	}
-	
-	if(mIotManager.mLightManager.rear_led & LED2_FLAG_COTROL){				// 控制后灯（副灯）
-		mIotManager.mLightManager.rear_led &= ~LED2_FLAG_COTROL;
-		
-		if(mIotManager.mLightManager.rear_led & LED2_FLAG_STATUS_C){
-			mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_C;
-			mIotManager.mLightManager.rear_led |= LED2_FLAG_STATUS_N;
-		}else{
-			mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_N;
-		}
-		
-        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
-	}
-	
-	/* 模式切换前，记录上一次的模式 */
-	mIotManager.mLightManager.light_oldmode = mIotManager.mLightManager.light_newmode;
-	
-	if((mIotManager.mLightManager.front_led & LED1_FLAG_STATUS_N) && 
-	   (mIotManager.mLightManager.rear_led & LED2_FLAG_STATUS_N)){
-		mIotManager.mLightManager.light_newmode = UNREACT_MODE_A;
-	}else if(mIotManager.mLightManager.front_led & LED1_FLAG_STATUS_N){
-		mIotManager.mLightManager.light_newmode = UNREACT_MODE_M;
-	}else if(mIotManager.mLightManager.rear_led & LED2_FLAG_STATUS_N){
-		mIotManager.mLightManager.light_newmode = UNREACT_MODE_S;
-	}else{
-		mIotManager.mLightManager.light_newmode = UNREACT_MODE_N;
-	}
-	
-    if(mIotManager.mLightManager.light_oldmode == REACT_MODE_M\
-       || mIotManager.mLightManager.light_oldmode == REACT_MODE_S\
-       || mIotManager.mLightManager.light_oldmode == REACT_MODE_A){         // 感应模式->控制模式
-       
-		APP_DBG_PRINTF0("33333333333333\n");
-		SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); 
-    }else if(mIotManager.mLightManager.light_oldmode == UNREACT_MODE_N 
-           || mIotManager.mLightManager.light_oldmode == UNREACT_MODE_M\
-           || mIotManager.mLightManager.light_oldmode == UNREACT_MODE_S\
-           || mIotManager.mLightManager.light_oldmode == UNREACT_MODE_A){   // 控制模式->控制模式
-        control_mode_switch(false);                                     
-    }
-    HAL_OpenInf_Power(false);
-	
-    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 
-//	APP_DBG_PRINTF1("light_newmode1:%d\r\n", mIotManager.mLightManager.light_newmode);
-}
-
-
-static void Skykey_updata_mode(LIGHT_MODE_e light_mode_n)
-{
-    mIotManager.mLightManager.change_flag = 1;
-	mIotManager.mLightManager.light_oldmode = mIotManager.mLightManager.light_newmode;
-	mIotManager.mLightManager.light_newmode = light_mode_n;	     
-    mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_N;
-    mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_N;
-    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;
-    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
-    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
-    HAL_OpenInf_Power(true);
-
-	SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // 切换至感应模式，闪烁2次（2*2）。
-//	APP_DBG_PRINTF1("light_newmode2:%d\r\n", mIotManager.mLightManager.light_newmode);
-}
-
-static void SkySwitch_Handle(uint8_t key_mode)
+static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 {
 	if(key_mode > KEY_LONGPRESS_MODE){
 		return;
 	}
-    
-    if(mIotManager.mLightManager.led_mode == FAST_BLINK ||
-       mIotManager.mLightManager.led_mode == SLOW_BLINK){
+	
+	if(key_mode != KEY_SHORTPRESS_MODE && mIotManager.release_flag == LED_FIRST_RELEASE){
 		return;
 	}
-       
-    if(mIotManager.mLightManager.light_newmode == UNKOWN_MODE){
+	
+    if(mIotManager.batt_rank != BATT_NORMAL){               // 电压低于正常值，不允许配网
+        APP_DBG_PRINTF0("low batt");
         return;
     }
-	
-	if(key_mode == KEY_SINGLE_MODE){
-        if(mIotManager.mLightManager.light_newmode == RELEASE_MODE){
-            return;
-        }
-        
-		switch((uint8_t)mIotManager.mLightManager.light_newmode)
+
+	// qlj 应该不需要处理
+   // if(mIotManager.mLightManager.led_mode == FAST_BLINK ||
+   //    mIotManager.mLightManager.led_mode == SLOW_BLINK){
+   //	return;
+	// }
+       	
+	if(key_mode == KEY_SINGLE_MODE){        
+		switch(mIotManager.mLightManager.mode)
 		{
-			case REACT_MODE_M:
-				mIotManager.mLightManager.front_led |= LED1_FLAG_COTROL;
-				mIotManager.mLightManager.front_led |= LED1_FLAG_STATUS_C;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_COTROL;
-				mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_C;
+			case NLIGHT_MANUAL_MOD:{
+				if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // 副灯常亮-->主灯常亮
+					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 1;
+					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
+
+				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 0){  // 主灯常亮-->主副灯常亮
+					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 1;
+					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 1;
+
+				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // 主副灯常亮-->主副灯全灭
+					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
+					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
+
+				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] ==0){  // 主副灯全灭-->副灯常亮
+					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
+					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 1;
+
+				}else{
+					// 防错 全灭
+				}
+
+				if(isprov == true){					
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
+				}
 				break;
-			
-			case REACT_MODE_S:
-				mIotManager.mLightManager.front_led |= LED1_FLAG_COTROL;
-				mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_C;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_COTROL;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_STATUS_C;
+			}
+			case NLIGHT_REACT_LED1_MOD:{
+				mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 1;
+				mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
+				mIotManager.mLightManager.mode = NLIGHT_MANUAL_MOD;
+				
+				if(isprov == true){					
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;	
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
+				}
 				break;
-			
-			case REACT_MODE_A:
-				mIotManager.mLightManager.front_led |= LED1_FLAG_COTROL;
-				mIotManager.mLightManager.front_led |= LED1_FLAG_STATUS_C;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_COTROL;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_STATUS_C;
+			}
+			case NLIGHT_REACT_LED2_MOD:{
+				mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
+				mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 1;
+				mIotManager.mLightManager.mode = NLIGHT_MANUAL_MOD;
+				
+				if(isprov == true){					
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;	
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
+				}
 				break;
-			
-			case UNREACT_MODE_N:
-				mIotManager.mLightManager.front_led |= LED1_FLAG_COTROL;
-				mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_C;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_COTROL;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_STATUS_C;
+			}
+			case NLIGHT_REACT_LEDALL_MOD:{
+				mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 1;
+				mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 1;
+				mIotManager.mLightManager.mode = NLIGHT_MANUAL_MOD;
+
+				if(isprov == true){					
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;	
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
+				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
+				}
+
 				break;
-			
-			case UNREACT_MODE_M:
-				mIotManager.mLightManager.front_led |= LED1_FLAG_COTROL;
-				mIotManager.mLightManager.front_led |= LED1_FLAG_STATUS_C;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_COTROL;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_STATUS_C;
+			}
+			default:{
 				break;
-			
-			case UNREACT_MODE_S:
-				mIotManager.mLightManager.front_led |= LED1_FLAG_COTROL;
-				mIotManager.mLightManager.front_led |= LED1_FLAG_STATUS_C;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_COTROL;
-				mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_C;	
-				break;
-			
-			case UNREACT_MODE_A:
-				mIotManager.mLightManager.front_led |= LED1_FLAG_COTROL;
-				mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_C;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_COTROL;
-				mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_C;
-				break;
-			
-			default:
-				break;
+			}
 		} 
-        Skykey_cotrol_light();
-        
+		SkyLed_LightEffective_CTL(false, 0, 0);
+		    
         if(mIotManager.process_state == 0x55){
             mIotManager.process_state = 0xff;
             SkyBleMesh_WriteConfig();	
@@ -1660,55 +1621,79 @@ static void SkySwitch_Handle(uint8_t key_mode)
         }	
 		
 	}else if(key_mode == KEY_SHORTPRESS_MODE){
-        
-		switch((uint8_t)mIotManager.mLightManager.light_newmode)
-		{
-			case RELEASE_MODE:
-				mIotManager.mLightManager.front_led |= LED1_FLAG_COTROL;
-				mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_C;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_COTROL;
-				mIotManager.mLightManager.rear_led |= LED2_FLAG_STATUS_C;	
-				mIotManager.release_flag &= ~LED_FIRST_RELEASE;
-				Skykey_cotrol_light();
-				SkyBleMesh_WriteConfig();
-				break;
-				
+        if(mIotManager.release_flag == LED_FIRST_RELEASE){		
+			mIotManager.release_flag = 0;
+			SkyBleMesh_WriteConfig();
+		
+			mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
+			mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 1;
+			mIotManager.mLightManager.mode = NLIGHT_MANUAL_MOD;
 			
-			case UNREACT_MODE_M:
-			case UNREACT_MODE_S:
-			case UNREACT_MODE_A:{
-				uint8_t new_mode = mIotManager.mLightManager.light_newmode - 4;
-				Skykey_updata_mode((LIGHT_MODE_e)new_mode);
+			if(isprov == true){ 				
+				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 
+				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1; 	
+				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 			}
-				break;
-			default:
-//				APP_DBG_PRINTF0("KEY_SHORTPRESS_MODE Nosupport switch led_mode\r\n");
-				break;
+			
+			SkyLed_LightEffective_CTL(false, 0, 0);			
+		}else{			
+			if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
+			 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // 副灯常亮-->副灯感应
+				mIotManager.mLightManager.mode = NLIGHT_REACT_LED2_MOD;
+				
+				mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
+				if(isprov == true){ 				
+					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 	
+					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
+				}
+			
+			}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
+			 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 0){  // 主灯常亮-->主灯感应
+				mIotManager.mLightManager.mode = NLIGHT_REACT_LED1_MOD;
+				
+				mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
+				if(isprov == true){ 				
+					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 
+					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1; 
+				}
+			
+			}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
+			 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // 主副灯常亮-->主副灯感应
+				mIotManager.mLightManager.mode = NLIGHT_REACT_LEDALL_MOD;
+					
+				mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
+				mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
+				if(isprov == true){ 				
+					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 
+					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1; 	
+					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
+				}
+			
+			}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
+			 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] ==0){	// 主副灯全灭-->无
+			
+			}else{
+				// 防错
+			}
+
+			if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD){
+				HAL_OpenInf_Power(true);
+				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // 切换至感应模式，闪烁2次（2*2）。	
+			}
+
 		}
-        
+		        
         if(mIotManager.process_state == 0x55){
             mIotManager.process_state = 0xff;
             SkyBleMesh_WriteConfig();	
             SkyBleMesh_Reset_timer();
         }	
 		
-	}else if(key_mode == KEY_LONGPRESS_MODE){
-        if(mIotManager.mLightManager.light_newmode == RELEASE_MODE){
-            return;
-        }
-        
-        if(mIotManager.batt_rank != BATT_NORMAL){               // 电压低于正常值，不允许配网
-            APP_DBG_PRINTF0("low batt");
-            return;
-        }
-        
-		mIotManager.mLightManager.light_newmode = UNREACT_MODE_S;
-		mIotManager.mLightManager.led_time = LIGHT_DEFAULT_TIME;
-		mIotManager.amb_status = LIGHT_DEFAULT_WAY;		
+	}else if(key_mode == KEY_LONGPRESS_MODE){  
+		SkyiotManager_Default_Config();	
 		SkyLed_LightEffective_CTL(true, LED_MODE_SLOW_BLINK, 10);  // 重新入网，闪烁5次（5*2）。
 		SkyBleMesh_unBind_complete();
-		if(mIotManager.process_state != 0x55)
-		{
+		if(mIotManager.process_state != 0x55){
 			mIotManager.process_state = 0x55;
 			SkyBleMesh_WriteConfig();
 		}
@@ -1716,92 +1701,6 @@ static void SkySwitch_Handle(uint8_t key_mode)
 	}		
 }
 
-
-static void Skyapp_cotrol_light(void)
-{
-    mIotManager.mLightManager.change_flag = 1;
-	if(mIotManager.mLightManager.front_led & LED1_FLAG_COTROL){				// 控制前灯（主灯）
-		mIotManager.mLightManager.front_led &= ~LED1_FLAG_COTROL;				
-		if(mIotManager.mLightManager.front_led & LED1_FLAG_STATUS_C){
-			mIotManager.mLightManager.front_led |= LED1_FLAG_STATUS_N;
-		}else{
-			mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_N;
-		}
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;
-		
-	}else if(mIotManager.mLightManager.rear_led & LED2_FLAG_COTROL){		// 控制后灯（副灯）
-		mIotManager.mLightManager.rear_led &= ~LED2_FLAG_COTROL;				
-		if(mIotManager.mLightManager.rear_led & LED2_FLAG_STATUS_C){
-			mIotManager.mLightManager.rear_led |= LED2_FLAG_STATUS_N;
-		}else{
-			mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_N;
-		}
-		mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
-	}
-	
-	mIotManager.mLightManager.light_oldmode = mIotManager.mLightManager.light_newmode;
-	
-	if((mIotManager.mLightManager.front_led & LED1_FLAG_STATUS_N) && 
-	   (mIotManager.mLightManager.rear_led & LED2_FLAG_STATUS_N)){
-		mIotManager.mLightManager.light_newmode = UNREACT_MODE_A;
-	}else if(mIotManager.mLightManager.front_led & LED1_FLAG_STATUS_N){
-		mIotManager.mLightManager.light_newmode = UNREACT_MODE_M;
-	}else if(mIotManager.mLightManager.rear_led & LED2_FLAG_STATUS_N){
-		mIotManager.mLightManager.light_newmode = UNREACT_MODE_S;
-	}else{
-		mIotManager.mLightManager.light_newmode = UNREACT_MODE_N;
-	}
-    HAL_OpenInf_Power(false);
-
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 
-    control_mode_switch(false);
-//	APP_DBG_PRINTF1("light_newmode3:%d\r\n", mIotManager.mLightManager.light_newmode);
-}
-
-
-static void Skyapp_updata_mode(uint8_t light_mode_n)
-{
-    mIotManager.mLightManager.change_flag = 1;
-	mIotManager.mLightManager.light_oldmode = mIotManager.mLightManager.light_newmode;
-    if(light_mode_n == APP_UNREACT_MODE_N){
-        mIotManager.mLightManager.light_newmode = UNREACT_MODE_N;
-    }else if(light_mode_n == APP_REACT_MODE_M){
-        mIotManager.mLightManager.light_newmode = REACT_MODE_M;
-    }else if(light_mode_n == APP_REACT_MODE_S){
-        mIotManager.mLightManager.light_newmode = REACT_MODE_S;
-    }else if(light_mode_n == APP_REACT_MODE_A){
-        mIotManager.mLightManager.light_newmode = REACT_MODE_A;
-    }else if(light_mode_n == 0x5A){
-        SkyBleMesh_unBind_complete();
-        mIotManager.process_state = 0xFF;
-        mIotManager.release_flag = LED_FIRST_RELEASE;
-        SkyBleMesh_WriteConfig();
-		SkyBleMesh_Reset_timer();
-        APP_DBG_PRINTF0("Write First Release Flag");
-    }
-    
-    if((mIotManager.mLightManager.light_newmode == REACT_MODE_M\
-        || mIotManager.mLightManager.light_newmode == REACT_MODE_S\
-        || mIotManager.mLightManager.light_newmode == REACT_MODE_A) &&\
-       (mIotManager.mLightManager.light_oldmode == UNREACT_MODE_M\
-        || mIotManager.mLightManager.light_oldmode == UNREACT_MODE_S\
-        || mIotManager.mLightManager.light_oldmode == UNREACT_MODE_A)){
-        HAL_Lighting_OFF();
-        HAL_OpenInf_Power(true); 
-    }
-    
-    if(mIotManager.mLightManager.led_timercnt != 0){
-        mIotManager.mLightManager.led_timercnt = 0;
-        HAL_Lighting_OFF();
-    }
-        
-    mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_N;
-    mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_N;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;
-    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
-    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
-//	APP_DBG_PRINTF1("light_newmode4:%d\r\n", mIotManager.mLightManager.light_newmode);
-}
 
 /*
 ** main functions
@@ -1873,45 +1772,72 @@ static void Main_Event_Handle(void)
 					// 根据参数，对设备控制  
 #if USE_NLIGHT_FOR_SKYIOT
 					if(event.prop_ID == ATTR_CLUSTER_ID_SW1){				// APP控制主灯
+						mIotManager.mLightManager.statu[SKY_LED1_STATUS] = event.prop_value;
 						mIotManager.sw1_seq = event.seqence_num;
-						mIotManager.mLightManager.front_led |= LED1_FLAG_COTROL;
-						if(event.prop_value == LED_CLOSE){
-							mIotManager.mLightManager.front_led &= ~LED1_FLAG_STATUS_C;
-						}else if(event.prop_value == LED_OPEN){
-							mIotManager.mLightManager.front_led |= LED1_FLAG_STATUS_C;
+						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW1, mIotManager.mLightManager.statu[SKY_LED1_STATUS], mIotManager.sw1_seq);	
+						mIotManager.sw1_seq = 0;
+
+						if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD){
+							mIotManager.mLightManager.mode = NLIGHT_MANUAL_MOD;
+							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;
 						}
-						Skyapp_cotrol_light();
+						SkyLed_LightEffective_CTL(false, 0 , 0);
+						// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;
 						
 					}else if(event.prop_ID == ATTR_CLUSTER_ID_SW2){			// APP控制副灯
+						mIotManager.mLightManager.statu[SKY_LED2_STATUS] = event.prop_value;
 						mIotManager.sw2_seq = event.seqence_num;
-						mIotManager.mLightManager.rear_led |= LED2_FLAG_COTROL;
-						if(event.prop_value == LED_CLOSE){
-							mIotManager.mLightManager.rear_led &= ~LED2_FLAG_STATUS_C;
-						}else if(event.prop_value == LED_OPEN){
-							mIotManager.mLightManager.rear_led |= LED2_FLAG_STATUS_C;
+						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, mIotManager.mLightManager.statu[SKY_LED2_STATUS], mIotManager.sw2_seq);	
+						mIotManager.sw2_seq = 0;
+
+						if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD){
+							mIotManager.mLightManager.mode = NLIGHT_MANUAL_MOD;
+							mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;
 						}
-						Skyapp_cotrol_light();
+						SkyLed_LightEffective_CTL(false, 0 , 0);
+						// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 						
 					}else if(event.prop_ID == ATTR_CLUSTER_ID_TIM){			// APP修改灯光时长
-                        mIotManager.mLightManager.change_flag = 1;
-						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_TIM;
+						mIotManager.mLightManager.bri_time = event.prop_value;
 						mIotManager.tim_seq = event.seqence_num;
-						mIotManager.mLightManager.led_time = event.prop_value;
+						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_TIM, mIotManager.mLightManager.bri_time, mIotManager.tim_seq);	
+						mIotManager.tim_seq = 0;
+						// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_TIM;
 						
 					}else if(event.prop_ID == ATTR_CLUSTER_ID_AMB){			// APP修改环境光策略
-                        mIotManager.mLightManager.change_flag = 1;
-						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_AMB;
+						mIotManager.mLightManager.amb = event.prop_value;
 						mIotManager.amb_seq = event.seqence_num;
-						
-						if(event.prop_value == LIGHT_DEFAULT_WAY){
-							mIotManager.amb_status &= ~(1<<0);
-						}else{
-							mIotManager.amb_status |= (1<<0);
+						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_TIM, mIotManager.mLightManager.amb, mIotManager.amb_seq);	
+						mIotManager.amb_seq = 0;
+						// mIotManager.report_flag |= ATTR_CLUSTER_ID_AMB;
+												
+					}else if(event.prop_ID == ATTR_CLUSTER_ID_MOD){			// APP切换至感应模式						
+						if(mIotManager.mLightManager.mode == NLIGHT_MANUAL_MOD && event.prop_value != NLIGHT_MANUAL_MOD){
+							// HAL_Lighting_OFF();
+							HAL_OpenInf_Power(true); 
 						}
-						
-					}else if(event.prop_ID == ATTR_CLUSTER_ID_MOD){			// APP切换至感应模式
+						mIotManager.mLightManager.mode = event.prop_value;
 						mIotManager.mod_seq = event.seqence_num;
-						Skyapp_updata_mode(event.prop_value);
+						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_MOD, mIotManager.mLightManager.mode, mIotManager.mod_seq);
+						mIotManager.mod_seq = 0;	
+						// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;
+						
+						if(mIotManager.mLightManager.mode == NLIGHT_MANUAL_MOD){							
+							SkyLed_LightEffective_CTL(false, 0 , 0);
+						}else{
+							HAL_Lighting_OFF(); // APP切换无渐变 直接关
+							
+							if(mIotManager.mLightManager.statu[SKY_LED1_STATUS] != 0){
+								mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
+								mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;
+							}
+							
+							if(mIotManager.mLightManager.statu[SKY_LED2_STATUS] != 0){
+								mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
+								mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
+							}
+							
+						}						
 					}
 #endif
 				}	
@@ -1942,7 +1868,7 @@ static void Main_Event_Handle(void)
 	
 #if USE_NLIGHT_FOR_SKYIOT
 	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
-		SkySwitch_Handle(mIotManager.mSwitchManager.keymode);
+		SkySwitch_Handle(mIotManager.mSwitchManager.keymode, true);
 		mIotManager.mSwitchManager.keymode = 0;
 		mIotManager.mSwitchManager.keyval = 0;
 	}
@@ -1954,7 +1880,7 @@ static void Main_WithoutNet_Handle(void)
 	
 #if USE_NLIGHT_FOR_SKYIOT
 	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
-		SkySwitch_Handle(mIotManager.mSwitchManager.keymode);
+		SkySwitch_Handle(mIotManager.mSwitchManager.keymode, false);
 		mIotManager.mSwitchManager.keymode = 0;
 		mIotManager.mSwitchManager.keyval = 0;
 	}		
@@ -2032,71 +1958,46 @@ static void Main_Upload_State(void)
 {
 	if (mIotManager.alive_status == 1){	
 #if USE_NLIGHT_FOR_SKYIOT
-		uint32_t upload_data = 0;
-		
+
 		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_SW1){							// 主灯状态发生改变：网关控制或本地切换至手动控制模式
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_SW1;
-			if(mIotManager.mLightManager.front_led & LED1_FLAG_STATUS_N){
-				upload_data = 1;
-			}else{
-				upload_data = 0;
-			}
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW1, upload_data, mIotManager.sw1_seq);	
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW1, mIotManager.mLightManager.statu[SKY_LED1_STATUS], mIotManager.sw1_seq);	
 			mIotManager.sw1_seq = 0;
 		}
 		
 		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_SW2){							// 副灯状态发生改变：网关控制或本地切换至手动控制模式
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_SW2;
-			if(mIotManager.mLightManager.rear_led & LED2_FLAG_STATUS_N){
-				upload_data = 1;
-			}else{
-				upload_data = 0;
-			}
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, upload_data, mIotManager.sw2_seq);	
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, mIotManager.mLightManager.statu[SKY_LED2_STATUS], mIotManager.sw2_seq);	
 			mIotManager.sw2_seq = 0;
 		}
 		
 		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_BAT){							// 入网主动上传，或阶段性上传
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_BAT;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_BAT, mIotManager.batt_per, 0);	
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_BAT, mIotManager.mLightManager.batt, mIotManager.bat_seq);	
+			mIotManager.bat_seq = 0;
 		}
 		
-        if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_INF0){							// 有人
-			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_INF0;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_INF, 0, 0);	
+        if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_INF){							// 人体感应
+			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_INF;
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_INF, mIotManager.mLightManager.inf, mIotManager.inf_seq);	
+			mIotManager.inf_seq = 0;
 		}
 		
-		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_INF1){							// 无人
-			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_INF1;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_INF, 1, 0);	
-		}
-		
-		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_AMB){							// 光照策略发生改变：网关控制
+		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_AMB){							// 光照策略发生改变：目前只设置
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_AMB;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_AMB, mIotManager.amb_status&0x01, mIotManager.amb_seq);	
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_AMB, mIotManager.mLightManager.amb, mIotManager.amb_seq);	
 			mIotManager.amb_seq = 0;
 		}
 		
 		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_MOD){							// 模式发生切换：本地和网关都会触发
-			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_MOD;
-            if(mIotManager.mLightManager.light_newmode == UNREACT_MODE_N\
-               || mIotManager.mLightManager.light_newmode == UNREACT_MODE_M\
-               || mIotManager.mLightManager.light_newmode == UNREACT_MODE_S\
-               || mIotManager.mLightManager.light_newmode == UNREACT_MODE_A){
-				SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_MOD, APP_UNREACT_MODE_N, mIotManager.mod_seq);	
-			}else if(mIotManager.mLightManager.light_newmode == REACT_MODE_M){
-				SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_MOD, APP_REACT_MODE_M, mIotManager.mod_seq);	
-			}else if(mIotManager.mLightManager.light_newmode == REACT_MODE_S){
-				SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_MOD, APP_REACT_MODE_S, mIotManager.mod_seq);	
-			}else if(mIotManager.mLightManager.light_newmode == REACT_MODE_A){
-				SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_MOD, APP_REACT_MODE_A, mIotManager.mod_seq);	
-			}
+			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_MOD;			
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_AMB, mIotManager.mLightManager.mode, mIotManager.mod_seq);	
 			mIotManager.mod_seq = 0;
 		}
 		
 		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_TIM){							// 亮灯时间发生改变：网关控制
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_TIM;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_TIM, mIotManager.mLightManager.led_time, mIotManager.tim_seq);	
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_TIM, mIotManager.mLightManager.bri_time, mIotManager.tim_seq);	
 			mIotManager.tim_seq = 0;
 		}
 		#endif
@@ -2188,8 +2089,7 @@ extern void SkyBleMesh_MainLoop(void)
             mIotManager.reppack_len = 0;
         }
         
-        if(mIotManager.batt_rank == BATT_WARING\
-           && mIotManager.mLightManager.led_timercnt == 0){      
+        if(mIotManager.batt_rank == BATT_WARING){      
             return;
         }
         
@@ -2306,9 +2206,6 @@ extern uint8_t SkyBleMesh_App_Init(void)
 				
     } else {
         APP_DBG_PRINTF0("SkyBleMesh_ReadConfig read succ\n");
-		if(mIotManager.release_flag & LED_FIRST_RELEASE){
-            mIotManager.mLightManager.light_newmode = RELEASE_MODE;
-        }
     }
 	
     for(int i =0 ;i < 16;i++){
@@ -2326,8 +2223,8 @@ extern uint8_t SkyBleMesh_App_Init(void)
 #if USE_NLIGHT_FOR_SKYIOT 
 	mIotManager.amb_seq = 0;
 	mIotManager.sw1_seq = 0;
-	mIotManager.mod_seq = 0;
 	mIotManager.sw2_seq = 0;
+	mIotManager.mod_seq = 0;
 	mIotManager.tim_seq = 0;
 #endif
 	BleMesh_Packet_Init();
@@ -2337,12 +2234,16 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	HAL_Lighting_Init(&mIotManager.mLightManager);
     HAL_Inf_Init(&mIotManager.mInfManger);
     Sky_ADC_POWER_Init();
-    if(mIotManager.mLightManager.light_newmode == REACT_MODE_M\
-       || mIotManager.mLightManager.light_newmode == REACT_MODE_S\
-       || mIotManager.mLightManager.light_newmode == REACT_MODE_A)
-    {
+    if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD) {
         HAL_OpenInf_Power(true);
     }
+
+	// use save
+	mIotSaveParams.statu[SKY_LED1_STATUS] = mIotManager.mLightManager.statu[SKY_LED1_STATUS];
+	mIotSaveParams.statu[SKY_LED2_STATUS] = mIotManager.mLightManager.statu[SKY_LED2_STATUS];
+	mIotSaveParams.amb      = mIotManager.mLightManager.amb;
+	mIotSaveParams.bri_time = mIotManager.mLightManager.bri_time;
+	mIotSaveParams.mode     = mIotManager.mLightManager.mode;	
 	#endif
 
 	// SkyBleMesh_MainLoop_timer(); // called in app_task
