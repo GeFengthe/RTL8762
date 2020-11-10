@@ -82,7 +82,6 @@ typedef enum
     ENTER_DLPS_TIMEOUT,
     UNPROV_TIMEOUT,
     PROV_SUCCESS_TIMEOUT,
-    BATTLOOP_TIMEOUT,
     test_light_TIMEOUT,
 } SW_TIMER_MSG_TYPE;
 
@@ -119,7 +118,7 @@ extern void SkyBleMesh_StopScanSwitch_tmr(void);
 extern void SkyBleMesh_StartScanSwitch_tmr(void);
 extern void SkyBleMesh_MainLoop(void);
 extern uint8_t SkyBleMesh_App_Init(void);
-extern uint8_t SkyBleMesh_Batt_Detect(void);
+extern void SkyBleMesh_Batt_Detect(void);
 extern uint8_t SkyBleMesh_Batt_Station(void);
 
 

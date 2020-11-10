@@ -15,7 +15,6 @@
 #define INFPOWER_OPEN               ((BitAction)1)
 #define INFPOWER_CLOSE              ((BitAction)0)
 
-static SkyInfManager *mInfManager = NULL;
 
 static void HAL_GpioForInf_Init(void)
 {
@@ -77,15 +76,10 @@ void HAL_OpenInf_Power(bool isallow)
 }
 
 
-bool HAL_Inf_Init(SkyInfManager *manager)
+bool HAL_Inf_Init(void)
 {
-	if( manager == NULL){
-		return false;
-	}
-		
-	mInfManager = manager;
 	HAL_GpioForInf_Init();
-    mInfManager->inf_status_new = 0;
+	
     return 0;
 }
 
@@ -115,8 +109,6 @@ void HAL_INF_Dlps_Control(bool isenter)
 //            APP_DBG_PRINTF("inf\r\n");
             Pad_ClearWakeupINTPendingBit(INFSEN_DETECT);
             System_WakeUpPinDisable(INFSEN_DETECT);	
-            mInfManager->inf_status_new = 1;
-            mInfManager->inf_status_old = 0;
         }
 	}
 }

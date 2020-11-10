@@ -195,8 +195,7 @@ static void Scan_Keyboard_Function(void)
 static bool IsSwitchInited = false;
 void HAL_Switch_HandleTimer(void *timer)
 {
-	if(IsSwitchInited == false\
-       || SkyBleMesh_Batt_Station() != BATT_NORMAL){
+	if(IsSwitchInited == false || SkyBleMesh_Batt_Station() != BATT_NORMAL){
 		return;
 	}
 		

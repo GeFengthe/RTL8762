@@ -27,7 +27,6 @@ extern DLPS_CTRL_STATU_T DlpsCtrlStatu_t;
 
 extern void SkyBleMesh_EnterDlps_TmrCnt_Handle(void);
 extern void SkyBleMesh_EnterDlps_timer(void);
-extern void SkyBleMesh_BattLoop_timer(void);
 extern bool switch_check_dlps_statu(void);
 
 extern void switch_io_ctrl_dlps(bool allowenter);

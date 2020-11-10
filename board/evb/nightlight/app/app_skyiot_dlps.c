@@ -70,9 +70,8 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
 	// ble 
 	beacon_stop();  
-    uint8_t batt_station = SkyBleMesh_Batt_Station();
-	if(SkyBleMesh_IsProvision_Sate() == false\
-       || batt_station == BATT_WARING){     // unprov  未配网或低电量休眠不SCAN
+	
+	if(SkyBleMesh_IsProvision_Sate() == false || SkyBleMesh_Batt_Station() == BATT_WARING){     // unprov  未配网或低电量休眠不SCAN
 		gap_sched_scan(false);   // gap layer scan
 	}else{	
 	}
@@ -96,8 +95,7 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	// debug uart
 //    Pad_ControlSelectValue(P3_0, PAD_PINMUX_MODE);
 //    Pad_ControlSelectValue(P3_1, PAD_PINMUX_MODE);
-	uint8_t batt_station = SkyBleMesh_Batt_Station();
-    
+
 	// switch
 	HAL_SwitchKey_Dlps_Control(false);
 	// light
@@ -106,8 +104,7 @@ void SkyBleMesh_ExitDlps_cfg(void)
     HAL_Adc_Dlps_Control(false);
 	
 	// ble
-	if(SkyBleMesh_IsProvision_Sate()\
-       && batt_station == BATT_NORMAL){ // provisioned且电量正常
+	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisioned且电量正常
 		beacon_start(); // 配网才会打开，这个要验证下。 未配网不广播。
 	}	
 	

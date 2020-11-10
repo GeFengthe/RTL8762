@@ -283,7 +283,8 @@ void driver_init(void)
 	OS_WDTInit();
 	#endif
 	
-	 uint8_t batt_station = SkyBleMesh_Batt_Detect();
+	 SkyBleMesh_Batt_Detect();
+	 uint8_t batt_station = SkyBleMesh_Batt_Station();
 	// 要在 mesh_stack_init后获取，后面整理下
     mesh_node_state_t node_state = mesh_node_state_restore();
     if (node_state == UNPROV_DEVICE){
