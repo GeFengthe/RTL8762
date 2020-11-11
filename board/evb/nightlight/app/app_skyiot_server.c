@@ -1183,91 +1183,97 @@ static void SkyCheck_Save_Params(uint32_t newtick)
 
 static uint8_t Hal_Check_Influence(uint32_t newtick)
 {
-	// 50ms called
 	uint8_t infstatu = 0xff;
 	uint8_t retinf = 0xff; // invalid
 	static uint8_t infcnt = 0;  
-	static uint8_t calledcnt = 0, calledcnt2 = 0;  
+	static uint8_t  calledcnt2 = 0;  
+	static uint32_t oldtick=0; 
 
 	if(HAL_ReadInf_Power() == 1){		
 		infstatu = HAL_ReadInf_Statu();		
 		if(infstatu == SKYIOT_INF_HAVE_BODY){
 			infcnt++;
 		}
-			
-		if(++calledcnt >= 20){
-			if(infcnt >= 5){           // 1s内5个信号
+
+		if( HAL_CalculateTickDiff(oldtick, newtick) >= 1000){
+			if(infcnt >= 2){           // 1s内2个信号
 				retinf = SKYIOT_INF_HAVE_BODY;
 				infcnt = 0;
 				calledcnt2 = 0;
+				APP_DBG_PRINTF3("222222222222222222222222222222222");
 			}else if(infcnt == 0){
-				calledcnt2 += calledcnt;
-				if(calledcnt2 >= 100){ // 5s内0个信号
+				calledcnt2++;
+				if(calledcnt2 >= 5){ // 5s内0个信号
 					retinf = SKYIOT_INF_NO_BODY;
 					calledcnt2 = 0;
+				APP_DBG_PRINTF3("1111111111111111111111111111111111");
 				}
 			}else{
 				infcnt = 0;
 				calledcnt2 = 0;
 			}
 			
-			calledcnt = 0;
+			oldtick = newtick;
 		}
 		
 	}else{
 		infcnt = 0;
-		calledcnt = 0;
+		oldtick = newtick;
 		calledcnt2 = 0;
 
 	}
 	if(infwakeupflag  == true){
 		infcnt = 0;
-		calledcnt = 0;
 		calledcnt2 = 0;
+		oldtick = newtick;
 		
 		retinf = SKYIOT_INF_HAVE_BODY;
 
 		infwakeupflag = false;
+		
+				APP_DBG_PRINTF3("33333333333333333333333");
 	}
+	
 	
 	return retinf;
 }
 
 static void SkyFunction_Handle(uint32_t newtick)
 {		
-	static uint8_t adccnt=0;
-if(++adccnt >= 100)	{
-	// 环境光、电池电压采集
-    uint16_t batt_val=0, lightsense = 0;
-    HAL_SkyAdc_Sample(&batt_val, &lightsense);
-	APP_DBG_PRINTF3("batt_val:%d, lp_dat:%d\r\n", batt_val, lightsense);	
-	if((HAL_Lighting_Output_Statu() == false) && (HAL_ReadAmbient_Power() == 1 )){
-		// 电源打开、灯光没有输出，认为采集的光感是正确的。
-	    if(lightsense > (SKYIOT_AMBIENT_LIMITVOL+10)){
-	        mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_BRIGHT;
-	    }else if(lightsense < (SKYIOT_AMBIENT_LIMITVOL-10)){
-	        mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_DARK;
-	    }
+	static uint8_t adccnt=0; // 100*50ms
+	if(++adccnt >= 100)	{  
+		// 环境光、电池电压采集
+		uint16_t batt_val=0, lightsense = 0;
+		HAL_SkyAdc_Sample(&batt_val, &lightsense);	
+		if(HAL_Lighting_Output_Statu() == false){
+			// 灯光没有输出，认为采集的光感是正确的。
+			if(lightsense > (SKYIOT_AMBIENT_LIMITVOL+100)){
+				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_BRIGHT;
+			}else if(lightsense < (SKYIOT_AMBIENT_LIMITVOL-10)){
+				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_DARK;
+			}
+		}
+		batt_val *= 5;
+		if(mIotManager.batt_rank == BATT_NORMAL){   
+			if(batt_val <= BATT_WARIN_RANK){
+				mIotManager.batt_rank = BATT_WARING;
+				SkyBleMesh_unBind_complete();       
+				APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 3.1V \n");
+			}
+		}else{
+			if(batt_val > (BATT_WARIN_RANK+100)){ // 电压大于预警值100mv，解除预警
+				mIotManager.batt_rank = BATT_NORMAL;
+			}
+		}
+		adccnt = 0;
+
+		APP_DBG_PRINTF3("batt_val:%d, lp_dat:%d\r\n", batt_val, lightsense);
+		APP_DBG_PRINTF3("aaaaaaaaa %d %d %d %d\r\n", mIotManager.mLightManager.amb, mIotManager.mLightManager.ambstatu ,mIotManager.mLightManager.mode, mIotManager.mLightManager.inf);	
 	}
-	batt_val *= 5;
-    if(mIotManager.batt_rank == BATT_NORMAL){   
-        if(batt_val <= BATT_WARIN_RANK){
-            mIotManager.batt_rank = BATT_WARING;
-            SkyBleMesh_unBind_complete();       
-            APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 3.1V \n");
-        }
-    }else{
-        if(batt_val > (BATT_WARIN_RANK+100)){ // 电压大于预警值100mv，解除预警
-            mIotManager.batt_rank = BATT_NORMAL;
-        }
-    }
-	adccnt = 0;
+	if(adccnt == 90)	{
+		HAL_Set_Ambient_Power(1); // 提前打开电源准备ADC采集
+	}	
 
-
-	
-	APP_DBG_PRINTF3("aaaaaaaaa %d %d %d\r\n", mIotManager.mLightManager.amb, mIotManager.mLightManager.ambstatu ,mIotManager.mLightManager.mode);	
-}
-	
 	#if 1
 	// 人感电源打开，检测人感变化就上报，独立于小夜灯本身
 	uint8_t infstatu = Hal_Check_Influence(newtick);
@@ -1277,7 +1283,7 @@ if(++adccnt >= 100)	{
 			if(mIotManager.mLightManager.inf != infstatu){
 				mIotManager.mLightManager.inf = infstatu;
 				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF;
-			APP_DBG_PRINTF0(" mIotManager.report_flag %d \n", mIotManager.report_flag);
+			    APP_DBG_PRINTF0(" mIotManager.report_flag %d  %d\n", mIotManager.report_flag, mIotManager.mLightManager.inf);
 			}
 		}
 	}

@@ -30,9 +30,7 @@
 #define BATT_DETECT					P2_4			// Battery Detect(Adc)
 #define ALS_DETECT					P2_5			// Ambient Light Sensor Detect(Adc)
 #define ALS_POWER					P3_2			// Ambient Light Sensor Power(IO--O)
-#define BATT_POWER					P0_6			// Battery Detect Power(IO--O)	
 #define ALS_POWER_PIN 				GPIO_GetPin(ALS_POWER)
-#define BATT_POWER_PIN 				GPIO_GetPin(BATT_POWER)
 #define ADCPOWER_OPEN               ((BitAction)1)
 #define ADCPOWER_CLOSE              ((BitAction)0)
 
@@ -75,10 +73,6 @@ static void Board_ADCPower_init(void)
     Pad_Config(ALS_POWER, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE,
                PAD_OUT_LOW);
 	Pinmux_Config(ALS_POWER, DWGPIO);
-	
-	Pad_Config(BATT_POWER, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE,
-               PAD_OUT_LOW);
-	Pinmux_Config(BATT_POWER, DWGPIO);
 }
 
 static void Driver_ADCPower_init(void)
@@ -90,13 +84,12 @@ static void Driver_ADCPower_init(void)
 	
 	// GPIO---Output Init
     GPIO_StructInit(&GPIO_InitStruct);
-    GPIO_InitStruct.GPIO_Pin    = ALS_POWER_PIN | BATT_POWER_PIN; 
+    GPIO_InitStruct.GPIO_Pin    = ALS_POWER_PIN; 
     GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
     
     GPIO_WriteBit(ALS_POWER_PIN, ADCPOWER_CLOSE);
-	GPIO_WriteBit(BATT_POWER_PIN, ADCPOWER_CLOSE);
 }
 
 uint8_t HAL_ReadAmbient_Power(void)
@@ -108,6 +101,15 @@ uint8_t HAL_ReadAmbient_Power(void)
 	} 	
 	
 	return pwr; 
+}
+
+void HAL_Set_Ambient_Power(uint8_t val)
+{
+	if(val){
+		GPIO_WriteBit(ALS_POWER_PIN, ADCPOWER_OPEN);
+	}else{
+		GPIO_WriteBit(ALS_POWER_PIN, ADCPOWER_CLOSE);
+	}
 }
 
 static void SkyAdc_Init(void)
@@ -161,7 +163,6 @@ void HAL_SkyAdc_Sample(uint16_t *bat_dat, uint16_t *lp_dat)
 	uint16_t lp_data[8];
 	
 	GPIO_WriteBit(ALS_POWER_PIN, ADCPOWER_OPEN);
-	GPIO_WriteBit(BATT_POWER_PIN, ADCPOWER_OPEN);
 	for(int i=0;i<8;i++)
 	{
 		ADC_ErrorStatus ErrorStatus;
@@ -183,7 +184,6 @@ void HAL_SkyAdc_Sample(uint16_t *bat_dat, uint16_t *lp_dat)
         lp_data[i] = calc_avg(vol, 1, 8);
 	}
 	GPIO_WriteBit(ALS_POWER_PIN, ADCPOWER_CLOSE);
-	GPIO_WriteBit(BATT_POWER_PIN, ADCPOWER_CLOSE);
 	
 	*bat_dat = calc_avg(batt_data, 0, 8);
 	*lp_dat = calc_avg(lp_data, 1, 8);
@@ -207,19 +207,5 @@ void HAL_Adc_Dlps_Control(bool isenter)
     }else{
         Pad_Config(ALS_POWER, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);	
     }
-    
-    val = GPIO_ReadOutputDataBit(BATT_POWER_PIN);
-	if(val){
-		outval = PAD_OUT_HIGH;
-	}else{
-		outval = PAD_OUT_LOW;
-	}
-    
-    if(isenter){
-        Pad_Config(BATT_POWER, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
-    }else{
-        Pad_Config(BATT_POWER, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
-    }
-    
-}
+ }
 

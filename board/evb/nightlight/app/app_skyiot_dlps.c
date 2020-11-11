@@ -20,6 +20,32 @@
 DLPS_CTRL_STATU_T DlpsCtrlStatu_t={(DLPS_JUST_SYSINIT_OK|DLPS_JUST_WAITING_TMR)};
 static plt_timer_t skybleenterdlps_timer=NULL;
 
+
+static plt_timer_t skyblewakeup_timer=NULL;
+
+
+static void SkyBleMesh_Wakeup_Timeout_cb(void *timer)
+{
+}
+
+static void SkyBleMesh_StopWakeup_tmr(void)
+{	
+	if(skyblewakeup_timer){
+		plt_timer_delete(skyblewakeup_timer, 0);
+		skyblewakeup_timer = NULL;
+	}
+}
+static void SkyBleMesh_StartWakeup_tmr(void)
+{	
+	if(skyblewakeup_timer == NULL){		
+		skyblewakeup_timer = plt_timer_create("WAKEUP", 280, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
+		if (skyblewakeup_timer != NULL){
+			plt_timer_start(skyblewakeup_timer, 0);
+		}
+	}
+}
+
+
 void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 {
 	if(SkyBleMesh_Is_No_ReportMsg() == true){
@@ -77,6 +103,7 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 	
 	if(SkyBleMesh_IsProvision_Sate() == false || SkyBleMesh_Batt_Station() == BATT_WARING){     // unprov  未配网或低电量休眠不SCAN
 		gap_sched_scan(false);   // gap layer scan
+		SkyBleMesh_StartWakeup_tmr();
 	}else{	
 	}
 		
@@ -118,6 +145,8 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);
+	
+	SkyBleMesh_StopWakeup_tmr();
 
 	// APP_DBG_PRINTF(" SkyBleMesh_ExitDlps_cfg");
 
