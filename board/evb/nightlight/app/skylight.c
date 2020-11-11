@@ -61,14 +61,16 @@ static void Pwm_Pin_Tmr_Config(const light_t *light)
     /*<! PWM output freqency = 20M/(TIM_PWM_High_Count + TIM_PWM_Low_Count) */
     /*<! PWM duty cycle = TIM_PWM_High_Count/(TIM_PWM_High_Count + TIM_PWM_Low_Count) */
 	
-    TIM_InitStruct.TIM_PWM_High_Count = PWM_DUTY_INIT;
-    TIM_InitStruct.TIM_PWM_Low_Count  = PWM_FREQUENCY;   
+    TIM_InitStruct.TIM_PWM_High_Count =  light->duty_cycle; // PWM_DUTY_INIT;
+    TIM_InitStruct.TIM_PWM_Low_Count  =  PWM_FREQUENCY - light->duty_cycle; // PWM_FREQUENCY;   
 
     TIM_InitStruct.TIM_Mode = TIM_Mode_UserDefine;
     TIM_InitStruct.TIM_SOURCE_DIV = TIM_CLOCK_DIVIDER_2;
     TIM_TimeBaseInit(light->tim_id, &TIM_InitStruct);
     /* Enable PWM output */
-    // TIM_Cmd(light->tim_id, ENABLE);
+	if(TIM_InitStruct.TIM_PWM_High_Count != PWM_DUTY_INIT){
+    	TIM_Cmd(light->tim_id, ENABLE);
+	}
     
 }
 
@@ -122,13 +124,13 @@ void HAL_PwmForLight_Deinit(void)
     pwm_enable_ctrl(&light_pwm[REAR_LED_PWM], false);
 #endif
 
-	RCC_PeriphClockCmd(APBPeriph_TIMER, APBPeriph_TIMER_CLOCK, DISABLE);
+	// RCC_PeriphClockCmd(APBPeriph_TIMER, APBPeriph_TIMER_CLOCK, DISABLE);
 
 }
 
 static uint8_t HAL_UpdatePwmDuty(uint8_t lightindex, uint16_t val)
 {
-	if(lightindex!=FRONT_LED_PWM || lightindex!=REAR_LED_PWM){
+	if(lightindex!=FRONT_LED_PWM && lightindex!=REAR_LED_PWM){
 		return 1;
 	}
 	
@@ -137,6 +139,8 @@ static uint8_t HAL_UpdatePwmDuty(uint8_t lightindex, uint16_t val)
 		pwm_duty_cycle(&light_pwm[lightindex]);
     	pwm_enable_ctrl(&light_pwm[lightindex], true);
 	}else{
+		light_pwm[lightindex].duty_cycle = 0;
+		pwm_duty_cycle(&light_pwm[lightindex]);
     	pwm_enable_ctrl(&light_pwm[lightindex], false);
 	}
 
@@ -155,6 +159,7 @@ bool HAL_Lighting_Output_Statu(void)
 }
 
 
+
 ///////////////////////////////////////////////////////////////////////////
 #define LIGHT_BRIGHTNESS_PRECENT    (100)
 #define LIGHT_GRADUAL_TIMES         (20)
@@ -171,6 +176,16 @@ static LightMonitor mLightMonitor={
 		0,
 };
 
+bool HAL_Lighting_Influence_End(void)
+{
+	bool isend = false;
+	
+	if(mLightMonitor.blinkcnt==0 && mLightMonitor.blinktime==0 ){
+		isend = true;
+	}
+
+	return isend;
+}
 void HAL_Lighting_Nightlight(uint8_t lightindex, uint16_t val)
 {   
 	uint16_t lightval;
@@ -179,7 +194,7 @@ void HAL_Lighting_Nightlight(uint8_t lightindex, uint16_t val)
 		return;
 	}
 	
-	if(val>100 || (lightindex!=FRONT_LED_PWM || lightindex!=REAR_LED_PWM)){
+	if(val>LIGHT_BRIGHTNESS_PRECENT || (lightindex!=FRONT_LED_PWM && lightindex!=REAR_LED_PWM)){
 		return;
 	}
 
@@ -215,7 +230,7 @@ void HAL_Gradual_Nightlight(bool firstoff, bool front, bool rear)
 		os_delay(2);
 	}
 	for(;times<=LIGHT_GRADUAL_TIMES;times++){
-		lightval = PWM_FREQUENCY * times * (LIGHT_BRIGHTNESS_PRECENT / LIGHT_GRADUAL_TIMES);
+		lightval = times * (LIGHT_BRIGHTNESS_PRECENT / LIGHT_GRADUAL_TIMES);
 		if(front==true){
 			HAL_Lighting_Nightlight(FRONT_LED_PWM, lightval);
 		}
@@ -242,7 +257,7 @@ void HAL_Light_Dlps_Control(bool isenter)
 {
 	if(isenter){
         if(SkyBleMesh_Batt_Station() == BATT_NORMAL){	
-			HAL_PwmForLight_Deinit(); // qlj 新增
+			// HAL_PwmForLight_Deinit(); // qlj 新增
 			
 	        switch(mLightManager->mode){
 	            case NLIGHT_MANUAL_MOD:{
@@ -277,16 +292,20 @@ void HAL_Light_Dlps_Control(bool isenter)
         }
 		
 	}else{	
-	#if 1   // qlj 新增
+	APP_DBG_PRINTF(" HAL_Light_Dlps_Control0 %d %d\n",light_pwm[FRONT_LED_PWM].duty_cycle ,light_pwm[REAR_LED_PWM].duty_cycle);
+	#if 0   // qlj 新增
         Pad_Config(LED_FRONT, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
         Pad_Config(LED_REAR,  PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);		
 		RCC_PeriphClockCmd(APBPeriph_TIMER, APBPeriph_TIMER_CLOCK, ENABLE);
 	    pwm_enable_ctrl(&light_pwm[FRONT_LED_PWM], true);
 	    pwm_enable_ctrl(&light_pwm[REAR_LED_PWM], true);
 	#else
-		// qlj 增加 带参初始化
-	
-        // HAL_PwmForLight_Init();
+		if(mLightManager->mode!=NLIGHT_MANUAL_MOD){
+			light_pwm[FRONT_LED_PWM].duty_cycle = PWM_FREQUENCY;
+			light_pwm[REAR_LED_PWM].duty_cycle = PWM_FREQUENCY;
+		}
+        HAL_PwmForLight_Init();
+			
 	#endif
 	}
 }
@@ -365,7 +384,6 @@ void SkyLed_Timeout_cb_handel(void *timer)
 			case LED_MODE_DELAY_BRIGHT:{				
 				mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
 				if(mLightMonitor.blinktime >= LED_BRIGHT_TMR_PERIOD){
-					HAL_Lighting_OFF();
 					mLightMonitor.blinkcnt--;
 					mLightMonitor.blinktime = 0;
 				}
@@ -384,40 +402,58 @@ void SkyLed_Timeout_cb_handel(void *timer)
 			
 			switch(mLightMonitor.mode){ 
 				case LED_MODE_FAST_BLINK:{
-					if(mLightManager->mode == NLIGHT_MANUAL_MOD){ // 手动模式，灯状态恢复
-						if(mLightManager->statu[FRONT_LED_PWM] == 1){
-							HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+					mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
+					if(mLightMonitor.blinktime >= LED_FAST_BLINK_PERIOD){
+						if(mLightManager->mode == NLIGHT_MANUAL_MOD){ // 手动模式，灯状态恢复
+							if(mLightManager->statu[FRONT_LED_PWM] == 1){
+								HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+							}
+							if(mLightManager->statu[REAR_LED_PWM] == 1){
+								HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+							}
 						}
-						if(mLightManager->statu[REAR_LED_PWM] == 1){
-							HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
-						}
+						mLightMonitor.mode = LED_MODE_UNKOWN;
+						mLightMonitor.blinktime = 0;
 					}
-					mLightMonitor.mode = LED_MODE_UNKOWN;
 				break;
 				}
 				case LED_MODE_SLOW_BLINK:{
-					HAL_Lighting_OFF(); // 关闭，等待重启
-					mLightMonitor.mode = LED_MODE_UNKOWN;
-				break;
-				}
-				case LED_MODE_MODE_BLINK:{
-					if(mLightManager->mode == NLIGHT_MANUAL_MOD){ // 手动模式，灯状态恢复
-						if(mLightManager->statu[FRONT_LED_PWM] == 1){
-							HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
-						}
-						if(mLightManager->statu[REAR_LED_PWM] == 1){
-							HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
-						}
-					}else if(mLightManager->mode == NLIGHT_REACT_LED1_MOD
-						  || mLightManager->mode == NLIGHT_REACT_LED2_MOD
-						  || mLightManager->mode == NLIGHT_REACT_LEDALL_MOD){ // 感应模式亮灯延时	LED_DELAY_BRIGHT_TIME		转换到cnt上				
-						mLightMonitor.blinkcnt = LED_DELAY_BRIGHT_TIME/LED_BRIGHT_TMR_PERIOD;
+					mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
+					if(mLightMonitor.blinktime >= LED_SLOW_BLINK_PERIOD){
+						HAL_Lighting_OFF(); // 关闭，等待重启
+						mLightMonitor.mode = LED_MODE_UNKOWN;
 						mLightMonitor.blinktime = 0;
-						mLightMonitor.mode = LED_MODE_DELAY_BRIGHT;
 					}
 				break;
 				}
-				case LED_MODE_DELAY_BRIGHT:
+				case LED_MODE_MODE_BLINK:{
+					mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
+					if(mLightMonitor.blinktime >= LED_SLOW_BLINK_PERIOD){
+						if(mLightManager->mode == NLIGHT_MANUAL_MOD){ // 手动模式，灯状态恢复
+							if(mLightManager->statu[FRONT_LED_PWM] == 1){
+								HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+							}
+							if(mLightManager->statu[REAR_LED_PWM] == 1){
+								HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+							}
+						}else if(mLightManager->mode == NLIGHT_REACT_LED1_MOD
+							  || mLightManager->mode == NLIGHT_REACT_LED2_MOD
+							  || mLightManager->mode == NLIGHT_REACT_LEDALL_MOD){ // 感应模式亮灯延时	LED_DELAY_BRIGHT_TIME		转换到cnt上				
+							mLightMonitor.blinkcnt = LED_DELAY_BRIGHT_TIME/LED_BRIGHT_TMR_PERIOD;
+							mLightMonitor.blinktime = 0;
+							mLightMonitor.mode = LED_MODE_DELAY_BRIGHT;
+						}
+						mLightMonitor.blinktime = 0;
+					}
+				break;
+				}
+				case LED_MODE_DELAY_BRIGHT:{
+					HAL_Lighting_OFF();		
+					mLightMonitor.blinktime = 0;
+					mLightMonitor.mode = LED_MODE_UNKOWN;
+					APP_DBG_PRINTF(" end light \n");
+				break;
+				}
 				case LED_MODE_NORMAL_BRIGHT:{						
 					mLightMonitor.mode = LED_MODE_UNKOWN;
 				break;

@@ -95,7 +95,7 @@ typedef struct {
 
 
 bool HAL_Lighting_Output_Statu(void);
-
+bool HAL_Lighting_Influence_End(void);
 void HAL_Lighting_OFF(void);
 void HAL_Lighting_ON( void );
 bool HAL_Lighting_Init(SkyLightManager *manager);

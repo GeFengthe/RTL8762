@@ -11,7 +11,11 @@
 #include "app_skyiot_dlps.h"
 #include "app_skyiot_server.h"
 #include "skyadc.h"
+#include "trace.h"
 
+
+// #define APP_DBG_PRINTF(fmt, ...)
+#define APP_DBG_PRINTF   DBG_DIRECT
 
 DLPS_CTRL_STATU_T DlpsCtrlStatu_t={(DLPS_JUST_SYSINIT_OK|DLPS_JUST_WAITING_TMR)};
 static plt_timer_t skybleenterdlps_timer=NULL;
@@ -82,6 +86,7 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 
 void SkyBleMesh_EnterDlps_cfg(void)
 {	
+	APP_DBG_PRINTF(" SkyBleMesh_EnterDlps_cfg");
 	// switch1
 	HAL_SwitchKey_Dlps_Control(true);	
 	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
@@ -113,6 +118,8 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);
+
+	APP_DBG_PRINTF(" SkyBleMesh_ExitDlps_cfg");
 
 }
 bool switch_check_dlps_statu(void)
