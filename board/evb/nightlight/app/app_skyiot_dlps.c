@@ -86,7 +86,7 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 
 void SkyBleMesh_EnterDlps_cfg(void)
 {	
-	APP_DBG_PRINTF(" SkyBleMesh_EnterDlps_cfg");
+	// APP_DBG_PRINTF(" SkyBleMesh_EnterDlps_cfg");
 	// switch1
 	HAL_SwitchKey_Dlps_Control(true);	
 	// light 维持IO电平，视电路和单前状态标志而定，如绿板LOW是亮灯。
@@ -119,7 +119,7 @@ void SkyBleMesh_ExitDlps_cfg(void)
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);
 
-	APP_DBG_PRINTF(" SkyBleMesh_ExitDlps_cfg");
+	// APP_DBG_PRINTF(" SkyBleMesh_ExitDlps_cfg");
 
 }
 bool switch_check_dlps_statu(void)

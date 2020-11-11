@@ -292,7 +292,11 @@ void HAL_Light_Dlps_Control(bool isenter)
         }
 		
 	}else{	
-	APP_DBG_PRINTF(" HAL_Light_Dlps_Control0 %d %d\n",light_pwm[FRONT_LED_PWM].duty_cycle ,light_pwm[REAR_LED_PWM].duty_cycle);
+	static uint8_t tmpcnt=0;
+	if(++tmpcnt >= 20){
+	APP_DBG_PRINTF(" HAL_Light_Dlps_Control0 %d %d %d %d\n",light_pwm[FRONT_LED_PWM].duty_cycle ,light_pwm[REAR_LED_PWM].duty_cycle, mLightManager->statu[FRONT_LED_PWM] , mLightManager->statu[REAR_LED_PWM]);
+		tmpcnt = 0;
+	}
 	#if 0   // qlj 新增
         Pad_Config(LED_FRONT, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
         Pad_Config(LED_REAR,  PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);		
@@ -300,10 +304,10 @@ void HAL_Light_Dlps_Control(bool isenter)
 	    pwm_enable_ctrl(&light_pwm[FRONT_LED_PWM], true);
 	    pwm_enable_ctrl(&light_pwm[REAR_LED_PWM], true);
 	#else
-		if(mLightManager->mode!=NLIGHT_MANUAL_MOD){
-			light_pwm[FRONT_LED_PWM].duty_cycle = PWM_FREQUENCY;
-			light_pwm[REAR_LED_PWM].duty_cycle = PWM_FREQUENCY;
-		}
+		// if(mLightManager->mode!=NLIGHT_MANUAL_MOD){
+		//	light_pwm[FRONT_LED_PWM].duty_cycle = PWM_FREQUENCY;
+		//	light_pwm[REAR_LED_PWM].duty_cycle = PWM_FREQUENCY;
+		// }
         HAL_PwmForLight_Init();
 			
 	#endif
@@ -419,8 +423,10 @@ void SkyLed_Timeout_cb_handel(void *timer)
 				}
 				case LED_MODE_SLOW_BLINK:{
 					mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
-					if(mLightMonitor.blinktime >= LED_SLOW_BLINK_PERIOD){
-						HAL_Lighting_OFF(); // 关闭，等待重启
+					if(mLightMonitor.blinktime >= LED_SLOW_BLINK_PERIOD){						
+						HAL_Lighting_Nightlight(FRONT_LED_PWM,  0);
+						HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT); // 与快闪后低功耗的亮灯匹配，等待重启
+						
 						mLightMonitor.mode = LED_MODE_UNKOWN;
 						mLightMonitor.blinktime = 0;
 					}
@@ -515,6 +521,7 @@ void SkyLed_LightEffective_CTL(bool blink, LED_MODE_e blinkmode, uint16_t blinkc
 				}				
                 break;
             }			
+			// 感应模式下，渐变后常亮，注意最终状态再渐变后明确
             case NLIGHT_REACT_LED1_MOD:{
 				HAL_Gradual_Nightlight(true, true, false);			
                 break;

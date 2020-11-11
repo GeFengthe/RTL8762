@@ -83,7 +83,7 @@ bool HAL_Inf_Init(void)
     return 0;
 }
 
-
+bool infwakeupflag=false;  // qlj 需要整理
 void HAL_INF_Dlps_Control(bool isenter)
 {
     PAD_OUTPUT_VAL outval;
@@ -102,13 +102,16 @@ void HAL_INF_Dlps_Control(bool isenter)
 //            APP_DBG_PRINTF("keep inf power\r\n");
 			System_WakeUpPinEnable(INFSEN_DETECT, PAD_WAKEUP_POL_HIGH, 0);
         }
+		infwakeupflag = false;
 	}else{
 		Pad_Config(INFSEN_POWER, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);	
         Pad_Config(INFSEN_DETECT, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
         if(System_WakeUpInterruptValue(INFSEN_DETECT) == 1){	
-//            APP_DBG_PRINTF("inf\r\n");
+           // APP_DBG_PRINTF("inf\r\n");
             Pad_ClearWakeupINTPendingBit(INFSEN_DETECT);
             System_WakeUpPinDisable(INFSEN_DETECT);	
+
+			infwakeupflag = true;
         }
 	}
 }

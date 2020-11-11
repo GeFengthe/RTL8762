@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 
+extern bool infwakeupflag;
 
 
 extern void HAL_INF_Dlps_Control(bool isenter);

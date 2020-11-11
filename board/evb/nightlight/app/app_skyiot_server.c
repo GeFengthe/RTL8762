@@ -1214,6 +1214,20 @@ static uint8_t Hal_Check_Influence(uint32_t newtick)
 			calledcnt = 0;
 		}
 		
+	}else{
+		infcnt = 0;
+		calledcnt = 0;
+		calledcnt2 = 0;
+
+	}
+	if(infwakeupflag  == true){
+		infcnt = 0;
+		calledcnt = 0;
+		calledcnt2 = 0;
+		
+		retinf = SKYIOT_INF_HAVE_BODY;
+
+		infwakeupflag = false;
 	}
 	
 	return retinf;
@@ -1221,10 +1235,10 @@ static uint8_t Hal_Check_Influence(uint32_t newtick)
 
 static void SkyFunction_Handle(uint32_t newtick)
 {		
-	
-	
+	static uint8_t adccnt=0;
+if(++adccnt >= 100)	{
 	// 环境光、电池电压采集
-/*    uint16_t batt_val=0, lightsense = 0;
+    uint16_t batt_val=0, lightsense = 0;
     HAL_SkyAdc_Sample(&batt_val, &lightsense);
 	APP_DBG_PRINTF3("batt_val:%d, lp_dat:%d\r\n", batt_val, lightsense);	
 	if((HAL_Lighting_Output_Statu() == false) && (HAL_ReadAmbient_Power() == 1 )){
@@ -1247,7 +1261,12 @@ static void SkyFunction_Handle(uint32_t newtick)
             mIotManager.batt_rank = BATT_NORMAL;
         }
     }
-*/ mIotManager.batt_rank = BATT_NORMAL;
+	adccnt = 0;
+
+
+	
+	APP_DBG_PRINTF3("aaaaaaaaa %d %d %d\r\n", mIotManager.mLightManager.amb, mIotManager.mLightManager.ambstatu ,mIotManager.mLightManager.mode);	
+}
 	
 	#if 1
 	// 人感电源打开，检测人感变化就上报，独立于小夜灯本身
@@ -1258,6 +1277,7 @@ static void SkyFunction_Handle(uint32_t newtick)
 			if(mIotManager.mLightManager.inf != infstatu){
 				mIotManager.mLightManager.inf = infstatu;
 				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF;
+			APP_DBG_PRINTF0(" mIotManager.report_flag %d \n", mIotManager.report_flag);
 			}
 		}
 	}
@@ -1268,7 +1288,7 @@ static void SkyFunction_Handle(uint32_t newtick)
 			if((mIotManager.mLightManager.amb==SKYIOT_AMBIENT_DARK && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_DARK)
 			 ||(mIotManager.mLightManager.amb==SKYIOT_AMBIENT_BRIGHT && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_BRIGHT)){
 			 	if(HAL_Lighting_Influence_End() == true){					
-					SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0); // qlj 需要改
+					SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0); // 
 					APP_DBG_PRINTF0(" start light \n");
 				}
 			    // 感应模式、有人、环境光前提匹配当前环境光.可以连续加载
@@ -1776,6 +1796,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 		
 	}else if(key_mode == KEY_LONGPRESS_MODE){  
 		SkyiotManager_Default_Config();	
+		// SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0);  // 明确闪烁后的状态
 		SkyLed_LightEffective_CTL(true, LED_MODE_SLOW_BLINK, 10);  // 重新入网，闪烁5次（5*2）。
 		SkyBleMesh_unBind_complete();
 		if(mIotManager.process_state != 0x55){
@@ -2304,7 +2325,9 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
 	mIotManager.reppack_len = 0;
 		
-#if USE_NLIGHT_FOR_SKYIOT 
+	BleMesh_Packet_Init();
+	
+	#if USE_NLIGHT_FOR_SKYIOT 
 	mIotManager.amb_seq = 0;
 	mIotManager.sw1_seq = 0;
 	mIotManager.sw2_seq = 0;
@@ -2312,17 +2335,17 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	mIotManager.tim_seq = 0;
 	mIotManager.inf_seq = 0;
 	mIotManager.bat_seq = 0;
-#endif
-	BleMesh_Packet_Init();
 	
-	#if USE_NLIGHT_FOR_SKYIOT
 	HAL_Switch_Init(&mIotManager.mSwitchManager);
 	HAL_Lighting_Init(&mIotManager.mLightManager);
     HAL_Inf_Init();
     Sky_ADC_POWER_Init();
     if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD) {
         HAL_OpenInf_Power(true);
-    }
+		HAL_Lighting_OFF();                                   // 感应模式开机灭灯
+    }else{
+		SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0); // 手动模式开机亮灯
+	}
 
 	// use save
 	mIotSaveParams.statu[SKY_LED1_STATUS] = mIotManager.mLightManager.statu[SKY_LED1_STATUS];
@@ -2330,6 +2353,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	mIotSaveParams.amb      = mIotManager.mLightManager.amb;
 	mIotSaveParams.bri_time = mIotManager.mLightManager.bri_time;
 	mIotSaveParams.mode     = mIotManager.mLightManager.mode;	
+	
 	#endif
 
 	// SkyBleMesh_MainLoop_timer(); // called in app_task
