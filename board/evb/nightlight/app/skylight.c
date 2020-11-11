@@ -241,6 +241,44 @@ void HAL_Gradual_Nightlight(bool firstoff, bool front, bool rear)
 	}
 }
 
+void HAL_Manual_Gradual_Nightlight(uint8_t frontdest, uint8_t reardest)
+{   
+	uint8_t times = 0;
+	uint8_t frontsrc=LIGHT_BRIGHTNESS_PRECENT, reardsrc=LIGHT_BRIGHTNESS_PRECENT;
+	uint8_t frontval, reardval;
+		
+	if(mLightManager==NULL){
+		return;
+	}
+
+	if( light_pwm[FRONT_LED_PWM].duty_cycle == 0){
+		frontsrc = 0;
+	}
+	if( light_pwm[REAR_LED_PWM].duty_cycle == 0){
+		reardsrc = 0;
+	}
+
+	for(times=0;times<=LIGHT_GRADUAL_TIMES;times++){
+		if(frontsrc != frontdest){
+			if(frontsrc > frontdest){
+				frontval = (LIGHT_GRADUAL_TIMES-times) * (LIGHT_BRIGHTNESS_PRECENT / LIGHT_GRADUAL_TIMES);
+			}else{
+				frontval = times * (LIGHT_BRIGHTNESS_PRECENT / LIGHT_GRADUAL_TIMES);
+			}
+			HAL_Lighting_Nightlight(FRONT_LED_PWM, frontval);
+		}
+		if(reardsrc != reardest){
+			if(reardsrc > reardest){
+				reardval = (LIGHT_GRADUAL_TIMES-times) * (LIGHT_BRIGHTNESS_PRECENT / LIGHT_GRADUAL_TIMES);
+			}else{
+				reardval = times * (LIGHT_BRIGHTNESS_PRECENT / LIGHT_GRADUAL_TIMES);
+			}
+			HAL_Lighting_Nightlight(REAR_LED_PWM, reardval);
+		}
+		os_delay(2);
+	}
+}
+
 bool HAL_Lighting_Init(SkyLightManager *manager)
 {
 	if( manager == NULL){
@@ -360,12 +398,12 @@ void SkyLed_Timeout_cb_handel(void *timer)
 				mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
 				if(mLightMonitor.blinktime >= LED_SLOW_BLINK_PERIOD){
 					if((mLightMonitor.blinkcnt&0x01) == 1){
-						if((mLightManager->mode == NLIGHT_MANUAL_MOD &&  mLightManager->statu[FRONT_LED_PWM] == 1)
+						if((mLightManager->mode == NLIGHT_MANUAL_MOD &&  mLightManager->statu[FRONT_LED_PWM] == 1 && mLightManager->statu[REAR_LED_PWM] == 0)
 						   || mLightManager->mode == NLIGHT_REACT_LED1_MOD){
 						   // operat LED1
 							HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
 							HAL_Lighting_Nightlight(REAR_LED_PWM, 0);
-						}else if((mLightManager->mode == NLIGHT_MANUAL_MOD &&  mLightManager->statu[REAR_LED_PWM] == 1)
+						}else if((mLightManager->mode == NLIGHT_MANUAL_MOD && mLightManager->statu[FRONT_LED_PWM] == 0 && mLightManager->statu[REAR_LED_PWM] == 1)
 						   || mLightManager->mode == NLIGHT_REACT_LED2_MOD){
 						   // operat LED2
 							HAL_Lighting_Nightlight(FRONT_LED_PWM,  0);
@@ -434,7 +472,7 @@ void SkyLed_Timeout_cb_handel(void *timer)
 				}
 				case LED_MODE_MODE_BLINK:{
 					mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
-					if(mLightMonitor.blinktime >= LED_SLOW_BLINK_PERIOD){
+					if(mLightMonitor.blinktime >= LED_FAST_BLINK_PERIOD){
 						if(mLightManager->mode == NLIGHT_MANUAL_MOD){ // 手动模式，灯状态恢复
 							if(mLightManager->statu[FRONT_LED_PWM] == 1){
 								HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
@@ -500,6 +538,8 @@ void Delete_LED_Timer(void)
 
 void SkyLed_LightEffective_CTL(bool blink, LED_MODE_e blinkmode, uint16_t blinkcnt)
 {
+	uint8_t frontval, reardval;
+
     if(blink){
 		mLightMonitor.mode      = blinkmode;
 		mLightMonitor.blinkcnt  = blinkcnt;
@@ -508,6 +548,7 @@ void SkyLed_LightEffective_CTL(bool blink, LED_MODE_e blinkmode, uint16_t blinkc
     }else{        
         switch(mLightManager->mode){
             case NLIGHT_MANUAL_MOD:{
+				#if 0
 				if( mLightManager->statu[FRONT_LED_PWM] == 1 ){
 					HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
 				}else{
@@ -518,7 +559,22 @@ void SkyLed_LightEffective_CTL(bool blink, LED_MODE_e blinkmode, uint16_t blinkc
 					HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
 				}else{
 					HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+				}		
+				
+				#else
+				if( mLightManager->statu[FRONT_LED_PWM] == 1 ){
+					frontval = LIGHT_BRIGHTNESS_PRECENT;
+				}else{
+					frontval = 0;
 				}				
+				if( mLightManager->statu[REAR_LED_PWM] == 1 ){
+					reardval = LIGHT_BRIGHTNESS_PRECENT;
+				}else{
+					reardval = 0;
+				}
+				HAL_Manual_Gradual_Nightlight(frontval, reardval);				
+				#endif
+				
                 break;
             }			
 			// 感应模式下，渐变后常亮，注意最终状态再渐变后明确

@@ -1274,7 +1274,6 @@ static void SkyFunction_Handle(uint32_t newtick)
 		HAL_Set_Ambient_Power(1); // 提前打开电源准备ADC采集
 	}	
 
-	#if 1
 	// 人感电源打开，检测人感变化就上报，独立于小夜灯本身
 	uint8_t infstatu = Hal_Check_Influence(newtick);
 	if(infstatu == SKYIOT_INF_NO_BODY || infstatu == SKYIOT_INF_HAVE_BODY){
@@ -1303,39 +1302,6 @@ static void SkyFunction_Handle(uint32_t newtick)
 			}
 		}
 	}
-	#else
-	// 人感电源打开，检测人感变化就上报，独立于小夜灯本身
-	uint8_t infstatu=SKYIOT_INF_NO_BODY;
-	if(HAL_ReadInf_Power() == 1){
-		infstatu = HAL_ReadInf_Statu();
-		if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD ){
-			if(HAL_Lighting_Influence_End() == true){  // qlj 后面调整这种方式
-				// 感应结束，灯灭了，再触发和更新属性
-				if(mIotManager.mLightManager.inf != infstatu){
-					mIotManager.mLightManager.inf = infstatu;
-					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF;
-					SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0); // qlj 需要改
-				}
-			}
-		}else{
-			HAL_OpenInf_Power(false);
-		}
-	}
-
-
-
-	// 感应模式亮灯时间处理
-	if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD ){
-		if(infstatu == SKYIOT_INF_HAVE_BODY){
-			if((mIotManager.mLightManager.amb==SKYIOT_AMBIENT_DARK && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_DARK)
-			 ||(mIotManager.mLightManager.amb==SKYIOT_AMBIENT_BRIGHT && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_BRIGHT)){
-			    // 感应模式、有人、环境光前提匹配当前环境光.可以连续加载
-				SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, (mIotManager.mLightManager.bri_time*1000)/LED_BRIGHT_TMR_PERIOD); 
-			}
-		}
-	}
-
-	#endif
 	
 }
 
@@ -1679,6 +1645,8 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 				}
+				
+				SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0);
 				break;
 			}
 			case NLIGHT_REACT_LED1_MOD:{
@@ -1691,6 +1659,8 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 				}
+				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // 切换至感应模式，闪烁2次（2*2）。
+				
 				break;
 			}
 			case NLIGHT_REACT_LED2_MOD:{
@@ -1703,6 +1673,8 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 				}
+				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // 切换至感应模式，闪烁2次（2*2）。	
+				
 				break;
 			}
 			case NLIGHT_REACT_LEDALL_MOD:{
@@ -1715,6 +1687,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 				}
+				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // 切换至感应模式，闪烁2次（2*2）。	
 
 				break;
 			}
@@ -1723,7 +1696,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 			}
 		} 
 		HAL_OpenInf_Power(false);
-		SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0);
+		// SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0);
 		    
         if(mIotManager.process_state == 0x55){
             mIotManager.process_state = 0xff;
