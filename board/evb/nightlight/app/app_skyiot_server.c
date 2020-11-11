@@ -1598,7 +1598,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 		return;
 	}
 	
-	if(key_mode != KEY_SHORTPRESS_MODE && mIotManager.release_flag == LED_FIRST_RELEASE){
+	if(key_mode != KEY_SHORTPRESS_MODE && mIotManager.release_flag == SKYIOT_FIRST_RELEASE){
 		return;
 	}
 	
@@ -1705,7 +1705,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
         }	
 		
 	}else if(key_mode == KEY_SHORTPRESS_MODE){
-        if(mIotManager.release_flag == LED_FIRST_RELEASE){		
+        if(mIotManager.release_flag == SKYIOT_FIRST_RELEASE){		
 			mIotManager.release_flag = 0;
 			SkyBleMesh_WriteConfig();
 		
@@ -2285,8 +2285,18 @@ extern uint8_t SkyBleMesh_App_Init(void)
 		#endif			
 			
 		mIotManager.process_state = 0xFF;
+		if(retgetmac==false){
+			SkyBleMesh_unBind_complete();
+			mIotManager.release_flag = SKYIOT_FIRST_RELEASE;
+
+		}
 		SkyiotManager_Default_Config();  // 设备默认配置 并 控制
 		SkyBleMesh_WriteConfig();        // 保存参数
+		
+		if(retgetmac==false){
+			APP_DBG_PRINTF1("Write First Release Flag");
+			SkyBleMesh_Reset_timer();
+		}
 				
     } else {
         APP_DBG_PRINTF0("SkyBleMesh_ReadConfig read succ\n");
@@ -2323,7 +2333,14 @@ extern uint8_t SkyBleMesh_App_Init(void)
         HAL_OpenInf_Power(true);
 		HAL_Lighting_OFF();                                   // 感应模式开机灭灯
     }else{
-		SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0); // 手动模式开机亮灯
+		if(mIotManager.release_flag == SKYIOT_FIRST_RELEASE){
+			mIotManager.mLightManager.statu[SKY_LED1_STATUS]=0;
+			mIotManager.mLightManager.statu[SKY_LED2_STATUS]=0;
+			mIotManager.mLightManager.mode=NLIGHT_MANUAL_MOD;
+			HAL_Lighting_OFF();
+		}else{
+			SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0); // 手动模式开机亮灯
+		}
 	}
 
 	// use save

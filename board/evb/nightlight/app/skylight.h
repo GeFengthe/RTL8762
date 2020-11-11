@@ -76,6 +76,8 @@ typedef enum{
 #define SKYIOT_AMBIENT_BRIGHT    (1)
 #define SKYIOT_AMBIENT_LIMITVOL	  (160)		    // 20lux limit val
 
+#define SKYIOT_FIRST_RELEASE	(0x5A)          // 出厂标志
+
 
 typedef struct {
 	//灯泡状态字段

@@ -130,7 +130,11 @@ void app_main_task(void *p_param)
 	SkyBleMesh_MainLoop_timer();	
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);
-    DBG_DIRECT("PRODUCT_VERSION: %s\r\n", PRODUCT_VERSION);
+    DBG_DIRECT("----------------compiler DATE: %s ------------------------------\r\n", __DATE__);
+    DBG_DIRECT("----------------compiler TIME: %s ---------------------------------\r\n", __TIME__);
+	DBG_DIRECT("-------------brand: %d ---model: %s ---ver: %s ------------------\r\n",PRODUCT_BRAND, PRODUCT_MODEL,PRODUCT_VERSION);
+	// DBG_DIRECT("-------------brand: %d ---model: %s ---ver: %d.%d.%02d ------------------\r\n",PRODUCT_BRAND, PRODUCT_MODEL,PRODUCT_FIRST_VERSION, PRODUCT_SECOND_VERSION, PRODUCT_THIRD_VERSION);
+    
     while (true)
     {
 		#if USE_SOFT_WATCHDOG

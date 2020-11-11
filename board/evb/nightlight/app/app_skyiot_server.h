@@ -61,7 +61,6 @@ typedef enum
 #define NIGHT_LIMIT_VOL					160		    // 20lux limit val
 #define LIGHT_DEFAULT_WAY				(0x00)	    // 光暗时灯亮
 #define LED_NORMAL_VER                  2           // LED正常版本
-#define LED_FIRST_RELEASE				1           // 出厂标志
 #define LIGHT_DAYTIME                   (0x02)      // 白天
 #define ENV_DETECT_TIME                 (1*60*1000) // 默认1min检测一次环境
 #define WRITE_DEFAULT_TIME              (5*1000)   	// 默认每5s据状态写flash
