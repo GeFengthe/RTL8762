@@ -164,6 +164,7 @@ typedef struct {
 
 		uint8_t release_flag;
         uint8_t batt_rank;
+		uint8_t sigadc_flag; // 1:需要一次ADC采样       0:无效
 
 	#endif
 	 uint32_t report_flag;	 // 按位对应设备的控制属性,置位即发
@@ -1157,30 +1158,6 @@ static void SkyBleMesh_ChangeScan_Timeout_cb(void *ptimer)
     app_send_msg_to_apptask(&unprov_timeout_msg);
 }
 
-
-static void SkyBleMesh_Save_Params(uint32_t newtick)
-{
-	static uint32_t oldtick=0;
-	if(HAL_CalculateTickDiff(oldtick, newtick) >= WRITE_DEFAULT_TIME){
-		if(	mIotSaveParams.statu[SKY_LED1_STATUS] != mIotManager.mLightManager.statu[SKY_LED1_STATUS]
-			|| mIotSaveParams.statu[SKY_LED2_STATUS] != mIotManager.mLightManager.statu[SKY_LED2_STATUS]
-			|| mIotSaveParams.amb      != mIotManager.mLightManager.amb
-			|| mIotSaveParams.bri_time != mIotManager.mLightManager.bri_time
-			|| mIotSaveParams.mode     != mIotManager.mLightManager.mode){
-
-			SkyBleMesh_WriteConfig();
-
-			mIotSaveParams.statu[SKY_LED1_STATUS] = mIotManager.mLightManager.statu[SKY_LED1_STATUS];
-			mIotSaveParams.statu[SKY_LED2_STATUS] = mIotManager.mLightManager.statu[SKY_LED2_STATUS];
-			mIotSaveParams.amb		= mIotManager.mLightManager.amb;
-			mIotSaveParams.bri_time = mIotManager.mLightManager.bri_time;
-			mIotSaveParams.mode 	= mIotManager.mLightManager.mode;	
-		}
-		
-        oldtick = newtick;
-    }
-}
-
 static uint8_t Hal_Check_Influence(uint32_t newtick)
 {
 	uint8_t infstatu = 0xff;
@@ -1249,13 +1226,20 @@ static void SkyFunction_Handle(uint32_t newtick)
 
 
 	static uint32_t oldtick=0;	
-	if(HAL_CalculateTickDiff(oldtick, newtick) >= 1000){
-		if(HAL_ReadAmbient_Power() == 1){			
-			SkyBleMesh_Batterval_Lightsense();
-			
-        	oldtick = newtick;
+	static uint8_t delaycnt=0;
+	if(HAL_CalculateTickDiff(oldtick, newtick) >= 300000 || mIotManager.sigadc_flag == 1){// 300000 ms = 5min
+		if(HAL_ReadAmbient_Power() == 1){	
+			if(++delaycnt >= 4){
+				SkyBleMesh_Batterval_Lightsense();
+				
+	        	oldtick = newtick;
+				delaycnt = 0;
+				
+				mIotManager.sigadc_flag = 0;
+			}
 		}else{
 			HAL_Set_Ambient_Power(1); // 提前打开电源准备ADC采集
+			delaycnt = 0;
 		}
 		
     }
@@ -1263,6 +1247,7 @@ static void SkyFunction_Handle(uint32_t newtick)
 
 	// 人感电源打开，检测人感变化就上报，独立于小夜灯本身
 	uint8_t infstatu = Hal_Check_Influence(newtick);
+	static uint8_t meminfstatu=SKYIOT_INF_NO_BODY;
 	if(infstatu == SKYIOT_INF_NO_BODY || infstatu == SKYIOT_INF_HAVE_BODY){
 		if((mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD) && (HAL_Lighting_Influence_End() == true)){  
 			// 感应结束，灯灭了，再触发和更新属性
@@ -1286,7 +1271,33 @@ static void SkyFunction_Handle(uint32_t newtick)
 			    // 感应模式、有人、环境光前提匹配当前环境光.可以连续加载
 				SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, (mIotManager.mLightManager.bri_time*1000)/LED_BRIGHT_TMR_PERIOD); 
 				APP_DBG_PRINTF0(" continue light %d\n",(mIotManager.mLightManager.bri_time*1000)/LED_BRIGHT_TMR_PERIOD);
+				
+				meminfstatu = SKYIOT_INF_NO_BODY; // 报过就清掉
+			}else{
+				if(HAL_ReadAmbient_Power() == 0){	
+					meminfstatu = infstatu;
+					HAL_Set_Ambient_Power(1); // 提前打开电源准备ADC采集
+					mIotManager.sigadc_flag = 1;
+				}
 			}
+		}
+		
+		if(meminfstatu == SKYIOT_INF_HAVE_BODY && mIotManager.sigadc_flag == 0){
+
+			SkyBleMesh_Batterval_Lightsense();
+			
+			if((mIotManager.mLightManager.amb==SKYIOT_AMBIENT_DARK && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_DARK)
+			 ||(mIotManager.mLightManager.amb==SKYIOT_AMBIENT_BRIGHT && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_BRIGHT)){
+				if(HAL_Lighting_Influence_End() == true){					
+					SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0); // 
+					APP_DBG_PRINTF0(" start light \n");
+				}
+				// 感应模式、有人、环境光前提匹配当前环境光.可以连续加载
+				SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, (mIotManager.mLightManager.bri_time*1000)/LED_BRIGHT_TMR_PERIOD); 
+				APP_DBG_PRINTF0(" continue light %d\n",(mIotManager.mLightManager.bri_time*1000)/LED_BRIGHT_TMR_PERIOD);
+			}
+
+			meminfstatu = SKYIOT_INF_NO_BODY;
 		}
 	}
 	
@@ -1410,7 +1421,30 @@ static void SkyBleMesh_Reset_timer(void)
 
 #endif
 
+static void SkyBleMesh_Save_Params(uint32_t newtick)
+{
+	static uint32_t oldtick=0;
+	if(HAL_CalculateTickDiff(oldtick, newtick) >= WRITE_DEFAULT_TIME){
+		if(	mIotSaveParams.statu[SKY_LED1_STATUS] != mIotManager.mLightManager.statu[SKY_LED1_STATUS]
+			|| mIotSaveParams.statu[SKY_LED2_STATUS] != mIotManager.mLightManager.statu[SKY_LED2_STATUS]
+			|| mIotSaveParams.amb      != mIotManager.mLightManager.amb
+			|| mIotSaveParams.bri_time != mIotManager.mLightManager.bri_time
+			|| mIotSaveParams.mode     != mIotManager.mLightManager.mode){
 
+			SkyBleMesh_WriteConfig();
+			
+			APP_DBG_PRINTF0("SkyBleMesh_Save_Params \n"); 
+
+			mIotSaveParams.statu[SKY_LED1_STATUS] = mIotManager.mLightManager.statu[SKY_LED1_STATUS];
+			mIotSaveParams.statu[SKY_LED2_STATUS] = mIotManager.mLightManager.statu[SKY_LED2_STATUS];
+			mIotSaveParams.amb		= mIotManager.mLightManager.amb;
+			mIotSaveParams.bri_time = mIotManager.mLightManager.bri_time;
+			mIotSaveParams.mode 	= mIotManager.mLightManager.mode;	
+		}
+		
+        oldtick = newtick;
+    }
+}
 
 
 /*
@@ -1893,6 +1927,9 @@ static void Main_Event_Handle(void)
 						// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_TIM;
 						
 					}else if(event.prop_ID == ATTR_CLUSTER_ID_AMB){			// APP修改环境光策略
+						if(mIotManager.mLightManager.amb != event.prop_value){
+							mIotManager.sigadc_flag = 1;
+						}
 						mIotManager.mLightManager.amb = event.prop_value;
 						mIotManager.amb_seq = event.seqence_num;
 						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_TIM, mIotManager.mLightManager.amb, mIotManager.amb_seq);	
