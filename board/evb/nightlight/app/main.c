@@ -283,9 +283,7 @@ void driver_init(void)
 	OS_WDTInit();
 	#endif
 	
-	 HAL_Set_Ambient_Power(1); // 提前打开电源准备ADC采集
-	 os_delay(50);
-	 SkyBleMesh_Batterval_Lightsense();
+	 SkyBleMesh_Batterval_Lightsense(true);
 	
 	 uint8_t batt_station = SkyBleMesh_Batt_Station();
 	// 要在 mesh_stack_init后获取，后面整理下

@@ -1177,13 +1177,13 @@ static uint8_t Hal_Check_Influence(uint32_t newtick)
 				retinf = SKYIOT_INF_HAVE_BODY;
 				infcnt = 0;
 				calledcnt2 = 0;
-				APP_DBG_PRINTF3("222222222222222222222222222222222");
+				APP_DBG_PRINTF3("%s SKYIOT_INF_HAVE_BODY", __func__);
 			}else if(infcnt == 0){
 				calledcnt2++;
 				if(calledcnt2 >= 5){ // 5s内0个信号
 					retinf = SKYIOT_INF_NO_BODY;
 					calledcnt2 = 0;
-				APP_DBG_PRINTF3("1111111111111111111111111111111111");
+				APP_DBG_PRINTF3("%s SKYIOT_INF_NO_BODY", __func__);
 				}
 			}else{
 				infcnt = 0;
@@ -1207,8 +1207,7 @@ static uint8_t Hal_Check_Influence(uint32_t newtick)
 		retinf = SKYIOT_INF_HAVE_BODY;
 
 		infwakeupflag = false;
-		
-				APP_DBG_PRINTF3("33333333333333333333333");
+		APP_DBG_PRINTF3("%s infwakeupflag %d", __func__, infwakeupflag);
 	}
 	
 	
@@ -1230,7 +1229,7 @@ static void SkyFunction_Handle(uint32_t newtick)
 	if(HAL_CalculateTickDiff(oldtick, newtick) >= 300000 || mIotManager.sigadc_flag == 1){// 300000 ms = 5min
 		if(HAL_ReadAmbient_Power() == 1){	
 			if(++delaycnt >= 4){
-				SkyBleMesh_Batterval_Lightsense();
+				SkyBleMesh_Batterval_Lightsense(false);
 				
 	        	oldtick = newtick;
 				delaycnt = 0;
@@ -1283,9 +1282,7 @@ static void SkyFunction_Handle(uint32_t newtick)
 		}
 		
 		if(meminfstatu == SKYIOT_INF_HAVE_BODY && mIotManager.sigadc_flag == 0){
-
-			SkyBleMesh_Batterval_Lightsense();
-			
+		
 			if((mIotManager.mLightManager.amb==SKYIOT_AMBIENT_DARK && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_DARK)
 			 ||(mIotManager.mLightManager.amb==SKYIOT_AMBIENT_BRIGHT && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_BRIGHT)){
 				if(HAL_Lighting_Influence_End() == true){					
@@ -2184,7 +2181,8 @@ extern void SkyBleMesh_MainLoop(void)
 	if(IsSkyAppInited==false){
 		return;
 	}
-	
+
+	static uint32_t battadctick=0;
 	uint32_t newtick = HAL_GetTickCount();
 	SkyBleMesh_Save_Params(newtick);
 	
@@ -2215,12 +2213,16 @@ extern void SkyBleMesh_MainLoop(void)
             mIotManager.reppack_len = 0;
         }
         
-        if(mIotManager.batt_rank == BATT_WARING){      
-            return;
-        }
+        if(mIotManager.batt_rank == BATT_WARING){   
+			if(HAL_CalculateTickDiff(battadctick, newtick) >= 30000 ){// 30000 ms 
+	            SkyBleMesh_Batterval_Lightsense(true);		
+				battadctick = newtick;
+			}
+        }else{
+			Main_WithoutNet_Handle();
+			SkyFunction_Handle(newtick);		
+		}
         
-		Main_WithoutNet_Handle();
-        SkyFunction_Handle(newtick);
         
 	}
 	
@@ -2385,14 +2387,14 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	return 0; 
 }
 	
-extern void SkyBleMesh_Batterval_Lightsense(void)
+extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 {
 	uint16_t batt_val=0, lightsense = 0;
 	
 	// if(HAL_ReadAmbient_Power() == 1){			
 		// 环境光、电池电压采集
-		HAL_SkyAdc_Sample(&batt_val, &lightsense);	
-		if(HAL_Lighting_Output_Statu() == false){
+		HAL_SkyAdc_Sample(&batt_val, &lightsense );	
+		if(onlybatt == false && HAL_Lighting_Output_Statu() == false){
 			// 灯光没有输出，认为采集的光感是正确的。
 			if(lightsense > (SKYIOT_AMBIENT_LIMITVOL+100)){
 				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_BRIGHT;
@@ -2402,13 +2404,18 @@ extern void SkyBleMesh_Batterval_Lightsense(void)
 		}
 		batt_val *= 5;	  // 100k/(390k+100k)
 		if(mIotManager.batt_rank == BATT_NORMAL){	
-			if(batt_val <= BATT_WARIN_RANK){
+			if(batt_val <= BATT_WARIN_RANK-50){
 				mIotManager.batt_rank = BATT_WARING;
-				SkyBleMesh_unBind_complete();		
+				SkyBleMesh_unBind_complete();	
+				mIotManager.mLightManager.statu[SKY_LED1_STATUS]=0;
+				mIotManager.mLightManager.statu[SKY_LED2_STATUS]=0;
+				mIotManager.mLightManager.mode=NLIGHT_MANUAL_MOD;
+				HAL_Lighting_OFF();
+				
 				APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 3.1V \n");
 			}
 		}else{
-			if(batt_val > (BATT_WARIN_RANK+100)){ // 电压大于预警值100mv，解除预警
+			if(batt_val > (BATT_WARIN_RANK+150)){ // 电压大于预警值150mv，解除预警
 				mIotManager.batt_rank = BATT_NORMAL;
 			}
 		}

@@ -117,7 +117,7 @@ extern void SkyBleMesh_StopScanSwitch_tmr(void);
 extern void SkyBleMesh_StartScanSwitch_tmr(void);
 extern void SkyBleMesh_MainLoop(void);
 extern uint8_t SkyBleMesh_App_Init(void);
-extern void SkyBleMesh_Batterval_Lightsense(void);
+extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt);
 extern uint8_t SkyBleMesh_Batt_Station(void);
 
 
