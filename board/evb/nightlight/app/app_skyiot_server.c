@@ -1092,6 +1092,7 @@ extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate)
 			break;
 	}
 }
+
 extern bool SkyBleMesh_IsProvision_Sate(void)
 {
 	bool ret=false;
@@ -1291,7 +1292,6 @@ static void SkyFunction_Handle(uint32_t newtick)
 				}
 				// 感应模式、有人、环境光前提匹配当前环境光.可以连续加载
 				SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, (mIotManager.mLightManager.bri_time*1000)/LED_BRIGHT_TMR_PERIOD); 
-				APP_DBG_PRINTF0(" continue light %d\n",(mIotManager.mLightManager.bri_time*1000)/LED_BRIGHT_TMR_PERIOD);
 			}
 
 			meminfstatu = SKYIOT_INF_NO_BODY;
@@ -1374,6 +1374,7 @@ extern void SkyBleMesh_unBind_complete(void)
     APP_DBG_PRINTF0("******************* SkyMesh_unBind_complete **************************\r\n");    
 
 	mesh_node_clear(); // 恢复重配网
+	SkyBleMesh_Provision_State(MESH_PROVISION_STATE_UNPROV);
 	
 	beacon_stop();  	
 	gap_sched_scan(false);   
@@ -1598,7 +1599,7 @@ static int SkyBleMesh_ReadConfig(void)
 /*
 ** 设备默认配置 并 控制
 */
-static void SkyiotManager_Default_Config(void)
+static void SkyiotManager_Default_Config(bool sychsaveparam)
 {
 	mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
 	mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 1;
@@ -1608,6 +1609,14 @@ static void SkyiotManager_Default_Config(void)
 	
 	mIotManager.mLightManager.inf      = SKYIOT_INF_NO_BODY;
 	mIotManager.mLightManager.batt     = 100;
+	
+	if(sychsaveparam == true){		
+		mIotSaveParams.statu[SKY_LED1_STATUS] = mIotManager.mLightManager.statu[SKY_LED1_STATUS];
+		mIotSaveParams.statu[SKY_LED2_STATUS] = mIotManager.mLightManager.statu[SKY_LED2_STATUS];
+		mIotSaveParams.amb		= mIotManager.mLightManager.amb;
+		mIotSaveParams.bri_time = mIotManager.mLightManager.bri_time;
+		mIotSaveParams.mode 	= mIotManager.mLightManager.mode;	
+	}
 }
 
 static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
@@ -1792,10 +1801,10 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
         }	
 		
 	}else if(key_mode == KEY_LONGPRESS_MODE){  
-		SkyiotManager_Default_Config();	
+		SkyiotManager_Default_Config(true);	
+		SkyBleMesh_unBind_complete();
 		// SkyLed_LightEffective_CTL(false, LED_MODE_UNKOWN, 0);  // 明确闪烁后的状态
 		SkyLed_LightEffective_CTL(true, LED_MODE_SLOW_BLINK, 10);  // 重新入网，闪烁5次（5*2）。
-		SkyBleMesh_unBind_complete();
 		if(mIotManager.process_state != 0x55){
 			mIotManager.process_state = 0x55;
 			SkyBleMesh_WriteConfig();
@@ -2316,7 +2325,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 			mIotManager.release_flag = SKYIOT_FIRST_RELEASE;
 
 		}
-		SkyiotManager_Default_Config();  // 设备默认配置 并 控制
+		SkyiotManager_Default_Config(true);  // 设备默认配置 并 控制
 		SkyBleMesh_WriteConfig();        // 保存参数
 		
 		if(retgetmac==false){
@@ -2357,6 +2366,8 @@ extern uint8_t SkyBleMesh_App_Init(void)
     Sky_ADC_POWER_Init();
     if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD) {
         HAL_OpenInf_Power(true);
+		mIotManager.mLightManager.statu[SKY_LED1_STATUS]=0;
+		mIotManager.mLightManager.statu[SKY_LED2_STATUS]=0;
 		HAL_Lighting_OFF();                                   // 感应模式开机灭灯
     }else{
 		if(mIotManager.release_flag == SKYIOT_FIRST_RELEASE){

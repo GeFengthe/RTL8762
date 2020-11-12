@@ -169,6 +169,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>lightval</ItemText>
         </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>mIotManager</ItemText>
+        </Ww>
       </WatchWindow1>
       <MemoryWindow1>
         <Mm>
