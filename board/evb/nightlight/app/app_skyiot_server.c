@@ -69,7 +69,7 @@ uint8_t  ackattrsval=0;
 #define TX_ATTR_VAL_POS     7
 
 #define MAX_TX_BUF_LEN 			(MAX_BLEMESH_PACKET_LEN)    // 每个发送缓存最大32字节
-#define MAX_RE_TX_CNT 			(1) // (3)     // 最大重发次数          // 待网关作应答了再改到重发3次
+#define MAX_RE_TX_CNT 			(2) // (3)     // 最大重发次数          // 待网关作应答了再改到重发3次
 #define MAX_ACK_TIMEOUT 		(4000)  // 最大应答超时ms
 #define MAX_TX_BUF_DEEP 		(20)    // 最大10个发送缓存
 static uint16_t maxacktimout =  MAX_ACK_TIMEOUT;
@@ -1158,7 +1158,7 @@ static void SkyBleMesh_ChangeScan_Timeout_cb(void *ptimer)
 }
 
 
-static void SkyCheck_Save_Params(uint32_t newtick)
+static void SkyBleMesh_Save_Params(uint32_t newtick)
 {
 	static uint32_t oldtick=0;
 	if(HAL_CalculateTickDiff(oldtick, newtick) >= WRITE_DEFAULT_TIME){
@@ -1242,37 +1242,24 @@ static void SkyFunction_Handle(uint32_t newtick)
 {		
 	static uint8_t adccnt=0; // 100*50ms
 	if(++adccnt >= 100)	{  
-		// 环境光、电池电压采集
-		uint16_t batt_val=0, lightsense = 0;
-		HAL_SkyAdc_Sample(&batt_val, &lightsense);	
-		if(HAL_Lighting_Output_Statu() == false){
-			// 灯光没有输出，认为采集的光感是正确的。
-			if(lightsense > (SKYIOT_AMBIENT_LIMITVOL+100)){
-				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_BRIGHT;
-			}else if(lightsense < (SKYIOT_AMBIENT_LIMITVOL-10)){
-				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_DARK;
-			}
-		}
-		batt_val *= 5;
-		if(mIotManager.batt_rank == BATT_NORMAL){   
-			if(batt_val <= BATT_WARIN_RANK){
-				mIotManager.batt_rank = BATT_WARING;
-				SkyBleMesh_unBind_complete();       
-				APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 3.1V \n");
-			}
-		}else{
-			if(batt_val > (BATT_WARIN_RANK+100)){ // 电压大于预警值100mv，解除预警
-				mIotManager.batt_rank = BATT_NORMAL;
-			}
-		}
 		adccnt = 0;
 
-		APP_DBG_PRINTF3("batt_val:%d, lp_dat:%d\r\n", batt_val, lightsense);
 		APP_DBG_PRINTF3("aaaaaaaaa %d %d %d %d\r\n", mIotManager.mLightManager.amb, mIotManager.mLightManager.ambstatu ,mIotManager.mLightManager.mode, mIotManager.mLightManager.inf);	
 	}
-	if(adccnt == 90)	{
-		HAL_Set_Ambient_Power(1); // 提前打开电源准备ADC采集
-	}	
+
+
+	static uint32_t oldtick=0;	
+	if(HAL_CalculateTickDiff(oldtick, newtick) >= 1000){
+		if(HAL_ReadAmbient_Power() == 1){			
+			SkyBleMesh_Batterval_Lightsense();
+			
+        	oldtick = newtick;
+		}else{
+			HAL_Set_Ambient_Power(1); // 提前打开电源准备ADC采集
+		}
+		
+    }
+	
 
 	// 人感电源打开，检测人感变化就上报，独立于小夜灯本身
 	uint8_t infstatu = Hal_Check_Influence(newtick);
@@ -1830,8 +1817,8 @@ static void Main_Event_Handle(void)
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;
-			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_TIM;
-			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_AMB;
+			// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_TIM;
+			// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_AMB;
 			// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF;
 		#endif
 		}
@@ -1957,7 +1944,7 @@ static void Main_Event_Handle(void)
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD;
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_TIM;
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_AMB;
-					// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF;
+					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF;
 #endif
 				}		
 				break;
@@ -2162,7 +2149,7 @@ extern void SkyBleMesh_MainLoop(void)
 	}
 	
 	uint32_t newtick = HAL_GetTickCount();
-	SkyCheck_Save_Params(newtick);
+	SkyBleMesh_Save_Params(newtick);
 	
 	bool isprov = SkyBleMesh_IsProvision_Sate();
 	if(isprov){
@@ -2360,35 +2347,40 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	
 	return 0; 
 }
-
-extern void SkyBleMesh_Batt_Detect(void)
-{
-	// 环境光、电池电压采集
-    uint16_t batt_val=0, lightsense = 0;
-    HAL_SkyAdc_Sample(&batt_val, &lightsense);
-	APP_DBG_PRINTF3("batt_val:%d, lp_dat:%d\r\n", batt_val, lightsense);	
-	if((HAL_Lighting_Output_Statu() == false) && (HAL_ReadAmbient_Power() == 1 )){
-		// 电源打开、灯光没有输出，认为采集的光感是正确的。
-	    if(lightsense > (SKYIOT_AMBIENT_LIMITVOL+10)){
-	        mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_BRIGHT;
-	    }else if(lightsense < (SKYIOT_AMBIENT_LIMITVOL-10)){
-	        mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_DARK;
-	    }
-	}
-	batt_val *= 5;
-    if(mIotManager.batt_rank == BATT_NORMAL){   
-        if(batt_val <= BATT_WARIN_RANK){
-            mIotManager.batt_rank = BATT_WARING;
-            SkyBleMesh_unBind_complete();       
-            APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 3.1V \n");
-        }
-    }else{
-        if(batt_val > (BATT_WARIN_RANK+100)){ // 电压大于预警值100mv，解除预警
-            mIotManager.batt_rank = BATT_NORMAL;
-        }
-    }
 	
+extern void SkyBleMesh_Batterval_Lightsense(void)
+{
+	uint16_t batt_val=0, lightsense = 0;
+	
+	// if(HAL_ReadAmbient_Power() == 1){			
+		// 环境光、电池电压采集
+		HAL_SkyAdc_Sample(&batt_val, &lightsense);	
+		if(HAL_Lighting_Output_Statu() == false){
+			// 灯光没有输出，认为采集的光感是正确的。
+			if(lightsense > (SKYIOT_AMBIENT_LIMITVOL+100)){
+				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_BRIGHT;
+			}else if(lightsense < (SKYIOT_AMBIENT_LIMITVOL-10)){
+				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_DARK;
+			}
+		}
+		batt_val *= 5;	  // 100k/(390k+100k)
+		if(mIotManager.batt_rank == BATT_NORMAL){	
+			if(batt_val <= BATT_WARIN_RANK){
+				mIotManager.batt_rank = BATT_WARING;
+				SkyBleMesh_unBind_complete();		
+				APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 3.1V \n");
+			}
+		}else{
+			if(batt_val > (BATT_WARIN_RANK+100)){ // 电压大于预警值100mv，解除预警
+				mIotManager.batt_rank = BATT_NORMAL;
+			}
+		}
+		
+		APP_DBG_PRINTF3("batt_val:%d, lp_dat:%d\r\n", batt_val, lightsense);
+	// }
+
 }
+
 
 extern uint8_t SkyBleMesh_Batt_Station(void)
 {

@@ -29,7 +29,7 @@
 #define PRODUCT_TYPE    				(118)		// TODO 修改为小夜灯:118
 #define PRODUCT_MODEL   				("LCAM01") 	// LCAM01	
 #define PRODUCT_BRAND   				(11)	    // swaiot
-#define PRODUCT_VERSION 				("1.0.05")
+#define PRODUCT_VERSION 				("1.0.06")
 #endif
 
 // #define MESH_ADV_NAME_LEN (30)
@@ -117,7 +117,7 @@ extern void SkyBleMesh_StopScanSwitch_tmr(void);
 extern void SkyBleMesh_StartScanSwitch_tmr(void);
 extern void SkyBleMesh_MainLoop(void);
 extern uint8_t SkyBleMesh_App_Init(void);
-extern void SkyBleMesh_Batt_Detect(void);
+extern void SkyBleMesh_Batterval_Lightsense(void);
 extern uint8_t SkyBleMesh_Batt_Station(void);
 
 
