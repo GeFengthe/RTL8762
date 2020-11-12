@@ -104,7 +104,8 @@ bool HAL_Lighting_Init(SkyLightManager *manager);
 void HAL_Light_Dlps_Control(bool isenter);
 void Start_LED_Timer(void);
 void Delete_LED_Timer(void);
-void SkyLed_LightEffective_CTL(bool blink, LED_MODE_e blinkmode, uint16_t blinkcnt);
+void SkyLed_LightEffective_CTL(bool blink, uint32_t mode, uint16_t blinkcnt);
+
 
 #endif
 

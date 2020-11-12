@@ -536,64 +536,80 @@ void Delete_LED_Timer(void)
 }
 
 
-void SkyLed_LightEffective_CTL(bool blink, LED_MODE_e blinkmode, uint16_t blinkcnt)
+void SkyLed_LightEffective_CTL(bool blink, uint32_t mode, uint16_t blinkcnt)
 {
 	uint8_t frontval, reardval;
 
     if(blink){
-		mLightMonitor.mode      = blinkmode;
+		mLightMonitor.mode      = (LED_MODE_e)mode;
 		mLightMonitor.blinkcnt  = blinkcnt;
 		mLightMonitor.blinktime = 0;
 		Start_LED_Timer();
     }else{        
-        switch(mLightManager->mode){
-            case NLIGHT_MANUAL_MOD:{
-				#if 0
-				if( mLightManager->statu[FRONT_LED_PWM] == 1 ){
-					HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
-				}else{
-					HAL_Lighting_Nightlight(FRONT_LED_PWM,  0);
+		if((uint8_t)mode == 0){
+			switch(mLightManager->mode){
+	            case NLIGHT_MANUAL_MOD:{
+					#if 0
+					if( mLightManager->statu[FRONT_LED_PWM] == 1 ){
+						HAL_Lighting_Nightlight(FRONT_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+					}else{
+						HAL_Lighting_Nightlight(FRONT_LED_PWM,  0);
+					}
+					
+					if( mLightManager->statu[REAR_LED_PWM] == 1 ){
+						HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
+					}else{
+						HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+					}		
+					
+					#else
+					if( mLightManager->statu[FRONT_LED_PWM] == 1 ){
+						frontval = LIGHT_BRIGHTNESS_PRECENT;
+					}else{
+						frontval = 0;
+					}				
+					if( mLightManager->statu[REAR_LED_PWM] == 1 ){
+						reardval = LIGHT_BRIGHTNESS_PRECENT;
+					}else{
+						reardval = 0;
+					}
+					HAL_Manual_Gradual_Nightlight(frontval, reardval);				
+					#endif
+					
+	                break;
+	            }			
+				// 感应模式下，渐变后常亮，注意最终状态再渐变后明确
+	            case NLIGHT_REACT_LED1_MOD:{
+					HAL_Gradual_Nightlight(true, true, false);			
+	                break;
+	            }	
+	            case NLIGHT_REACT_LED2_MOD:{
+					HAL_Gradual_Nightlight(true, false, true);		
+	                break;
+	            }	
+	            case NLIGHT_REACT_LEDALL_MOD:{
+					HAL_Gradual_Nightlight(true, true, true);			
+	                break;
+	            }
+				default:{
+					break;
 				}
+	        }
+        }else if((uint8_t)mode == 1){
 				
-				if( mLightManager->statu[REAR_LED_PWM] == 1 ){
-					HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
-				}else{
-					HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
-				}		
-				
-				#else
-				if( mLightManager->statu[FRONT_LED_PWM] == 1 ){
+				if( mLightManager->mode==NLIGHT_REACT_LED1_MOD || mLightManager->mode==NLIGHT_REACT_LEDALL_MOD  ){
 					frontval = LIGHT_BRIGHTNESS_PRECENT;
 				}else{
 					frontval = 0;
 				}				
-				if( mLightManager->statu[REAR_LED_PWM] == 1 ){
+				if( mLightManager->mode==NLIGHT_REACT_LED2_MOD || mLightManager->mode==NLIGHT_REACT_LEDALL_MOD  ){
 					reardval = LIGHT_BRIGHTNESS_PRECENT;
 				}else{
 					reardval = 0;
 				}
-				HAL_Manual_Gradual_Nightlight(frontval, reardval);				
-				#endif
-				
-                break;
-            }			
-			// 感应模式下，渐变后常亮，注意最终状态再渐变后明确
-            case NLIGHT_REACT_LED1_MOD:{
-				HAL_Gradual_Nightlight(true, true, false);			
-                break;
-            }	
-            case NLIGHT_REACT_LED2_MOD:{
-				HAL_Gradual_Nightlight(true, false, true);		
-                break;
-            }	
-            case NLIGHT_REACT_LEDALL_MOD:{
-				HAL_Gradual_Nightlight(true, true, true);			
-                break;
-            }
-			default:{
-				break;
-			}
-        }
+				HAL_Manual_Gradual_Nightlight(frontval, reardval);	
+
+		}
            
     }
    // APP_DBG_PRINTF("TIM_GetPWMOutputStatus:%d, %d", TIM_GetPWMOutputStatus(TIM2), TIM_GetPWMOutputStatus(TIM3)); // 读取当前定时器的PWM电平（高低）
