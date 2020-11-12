@@ -405,7 +405,7 @@ void SkyLed_Timeout_cb_handel(void *timer)
 			}
 			case LED_MODE_MODE_BLINK:{
 				mLightMonitor.blinktime += LED_BRIGHT_TMR_PERIOD;
-				if(mLightMonitor.blinktime >= LED_SLOW_BLINK_PERIOD){
+				if(mLightMonitor.blinktime >= LED_FAST_BLINK_PERIOD){
 					if((mLightMonitor.blinkcnt&0x01) == 1){
 						if((mLightManager->mode == NLIGHT_MANUAL_MOD &&  mLightManager->statu[FRONT_LED_PWM] == 1 && mLightManager->statu[REAR_LED_PWM] == 0)
 						   || mLightManager->mode == NLIGHT_REACT_LED1_MOD){

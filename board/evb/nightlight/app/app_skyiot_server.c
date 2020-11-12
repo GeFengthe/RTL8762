@@ -1262,6 +1262,7 @@ static void SkyFunction_Handle(uint32_t newtick)
 	// 感应模式亮灯时间处理
 	if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD ){
 		if(infstatu == SKYIOT_INF_HAVE_BODY){
+			#if 0
 			if((mIotManager.mLightManager.amb==SKYIOT_AMBIENT_DARK && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_DARK)
 			 ||(mIotManager.mLightManager.amb==SKYIOT_AMBIENT_BRIGHT && mIotManager.mLightManager.ambstatu==SKYIOT_AMBIENT_BRIGHT)){
 			 	if(HAL_Lighting_Influence_End() == true){					
@@ -1280,6 +1281,14 @@ static void SkyFunction_Handle(uint32_t newtick)
 					mIotManager.sigadc_flag = 1;
 				}
 			}
+			#else
+				if(meminfstatu == SKYIOT_INF_NO_BODY){	
+					APP_DBG_PRINTF0(" start2 %d %d\n",mIotManager.mLightManager.amb, mIotManager.mLightManager.ambstatu);
+					meminfstatu = infstatu;
+					HAL_Set_Ambient_Power(1); // 提前打开电源准备ADC采集
+					mIotManager.sigadc_flag = 1;
+				}
+			#endif
 		}
 		
 		if(meminfstatu == SKYIOT_INF_HAVE_BODY && mIotManager.sigadc_flag == 0){
@@ -1935,7 +1944,7 @@ static void Main_Event_Handle(void)
 						}
 						mIotManager.mLightManager.amb = event.prop_value;
 						mIotManager.amb_seq = event.seqence_num;
-						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_TIM, mIotManager.mLightManager.amb, mIotManager.amb_seq);	
+						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_AMB, mIotManager.mLightManager.amb, mIotManager.amb_seq);	
 						mIotManager.amb_seq = 0;
 						// mIotManager.report_flag |= ATTR_CLUSTER_ID_AMB;
 												
