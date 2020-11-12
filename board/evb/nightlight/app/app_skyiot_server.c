@@ -1639,7 +1639,15 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
    //    mIotManager.mLightManager.led_mode == SLOW_BLINK){
    //	return;
 	// }
-       	
+   	if(key_mode == KEY_SINGLE_MODE || key_mode == KEY_SHORTPRESS_MODE ){
+		
+        if(mIotManager.process_state == 0x55){
+            mIotManager.process_state = 0xff;
+            SkyBleMesh_WriteConfig();	
+            HAL_ResetBleDevice();
+			return;
+        }	
+   	}
 	if(key_mode == KEY_SINGLE_MODE){        
 		switch(mIotManager.mLightManager.mode)
 		{
@@ -1723,13 +1731,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 			}
 		} 
 		HAL_OpenInf_Power(false);
-		// SkyLed_LightEffective_CTL(false, 0, 0);
-		    
-        if(mIotManager.process_state == 0x55){
-            mIotManager.process_state = 0xff;
-            SkyBleMesh_WriteConfig();	
-            SkyBleMesh_Reset_timer();
-        }	
+		// SkyLed_LightEffective_CTL(false, 0, 0);		    
 		
 	}else if(key_mode == KEY_SHORTPRESS_MODE){
         if(mIotManager.release_flag == SKYIOT_FIRST_RELEASE){		
@@ -1792,13 +1794,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // 切换至感应模式，闪烁2次（2*2）。	
 			}
 
-		}
-		        
-        if(mIotManager.process_state == 0x55){
-            mIotManager.process_state = 0xff;
-            SkyBleMesh_WriteConfig();	
-            SkyBleMesh_Reset_timer();
-        }	
+		}		        
 		
 	}else if(key_mode == KEY_LONGPRESS_MODE){  
 		SkyiotManager_Default_Config(true);	
@@ -1810,6 +1806,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 			SkyBleMesh_WriteConfig();
 		}
 		SkyBleMesh_Reset_timer();
+		APP_DBG_PRINTF0("vvvvvvvvvvvvvvvv %X\n",mIotManager.process_state);
 	}		
 }
 
@@ -2341,6 +2338,8 @@ extern uint8_t SkyBleMesh_App_Init(void)
     for(int i =0 ;i < 16;i++){
         APP_DBG_PRINTF2("mIotManager.device_uuid[%d] = 0x%02x\n",i,mIotManager.device_uuid[i]);
     }
+	
+	APP_DBG_PRINTF0("ffffffffffffffffff %X\n",mIotManager.process_state);
 
 	mIotManager.alive_wakeup_cnt    = 0;
 	mIotManager.alive_status        = 0;		
