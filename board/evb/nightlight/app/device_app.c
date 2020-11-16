@@ -47,6 +47,12 @@
 /**
  * @brief  Application Link control block definition.
  */
+	
+typedef bool (*Product_Factory_Check_cb)(T_GAP_ADV_EVT_TYPE adv_type, uint8_t* bd_addr, uint8_t* data, uint8_t data_len);
+static Product_Factory_Check_cb ProductFactoryCheck_cb = NULL;
+
+
+
 typedef struct
 {
     T_GAP_CONN_STATE        conn_state;          /**< Connection state. */
@@ -503,6 +509,9 @@ T_APP_RESULT app_gap_callback(uint8_t cb_type, void *p_cb_data)
         break;
     /* central reference msg*/
     case GAP_MSG_LE_SCAN_INFO:
+		if(ProductFactoryCheck_cb){
+			ProductFactoryCheck_cb(p_data->p_le_scan_info->adv_type, p_data->p_le_scan_info->bd_addr, p_data->p_le_scan_info->data, p_data->p_le_scan_info->data_len);
+		}
         APP_PRINT_INFO5("GAP_MSG_LE_SCAN_INFO:adv_type 0x%x, bd_addr %s, remote_addr_type %d, rssi %d, data_len %d",
                         p_data->p_le_scan_info->adv_type,
                         TRACE_BDADDR(p_data->p_le_scan_info->bd_addr),
@@ -962,5 +971,10 @@ void hb_cb(hb_data_type_t type, void *pargs)
     default:
         break;
     }
+}
+
+void Regist_ProductFactoryCheck_cb(void *rx_cb)
+{
+	ProductFactoryCheck_cb = (Product_Factory_Check_cb)rx_cb;
 }
 

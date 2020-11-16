@@ -223,6 +223,8 @@ void app_le_gap_init(void)
 
     /* register gap message callback */
     le_register_app_cb(app_gap_callback);
+	
+	Regist_ProductFactoryCheck_cb(SkyMesh_ProductFactoryCheck_cb);
 
 #if F_BT_LE_5_0_SET_PHY_SUPPORT
     uint8_t  phys_prefer = GAP_PHYS_PREFER_ALL;

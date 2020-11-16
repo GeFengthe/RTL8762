@@ -2451,3 +2451,78 @@ extern uint8_t SkyBleMesh_Batt_Station(void)
     return mIotManager.batt_rank;
 }
 
+//=======================================================================================//
+
+// 工厂测试
+#define DONGLEADV_LEN_INDEX       3
+#define DONGLEADV_CMD_INDEX       5
+#define DONGLEADV_SCR_INDEX       6
+#define DONGLEADV_DEST_INDEX      12
+
+enum m_FACTORYTESTSTATE
+{
+    M_FACTORYTEST_INIT_STATE = 0x00,
+    M_FACTORYTEST_START_STATE,
+    M_FACTORYTEST_END_STATE
+};
+enum m_FACTORYTESTSTATE g_factorytest_state;
+const uint8_t DongleAdvAddr[6]={0x53, 0x4B, 0x59, 0x44, 0x55, 0x54};
+
+static bool ReverseComparisonBuff(uint8_t *src, uint8_t *dst, uint8_t len)
+{
+	uint8_t i = 0;
+	bool ret = false;
+	if(len){
+		for(i=0;i<len;i++){
+			if(src[i] != dst[len-i-1]){
+				break;
+			}
+		}
+		if( i == len ){
+			ret = true;
+		}
+	}
+	
+	return ret;
+}
+void SkyMesh_ProductFactoryCheck_cb(T_GAP_ADV_EVT_TYPE adv_type, uint8_t* bd_addr, uint8_t* data, uint8_t data_len)
+{
+	// APP_DBG_PRINTF1("%s %02X %02X %02X %02X %02X %02X ",__func__, bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
+       
+	// 未配网状态下，只进一次产测。
+	// 020106(沿用GATT头3B) + len(1B) + FF(1B) + 81(cmd) + scraddr(6B) + "dest_addr(6B)" + sum(1B)
+	if(g_factorytest_state==M_FACTORYTEST_INIT_STATE && (SkyBleMesh_IsProvision_Sate()!=true) && (adv_type==GAP_ADV_EVT_TYPE_NON_CONNECTABLE)){
+		if( ReverseComparisonBuff(bd_addr, (uint8_t*)DongleAdvAddr, 6) == true){
+			#if 0
+			uint8_t ii;
+			APP_DBG_PRINTF1("%s %02X %02X ",__func__, data[DONGLEADV_LEN_INDEX]+4 , data_len);
+			for(ii=0;ii< data_len ;ii++){
+				APP_DBG_PRINTF1("%02X ",data[ii]);
+			}			
+			#endif
+			if(data[DONGLEADV_LEN_INDEX]+4 ==  data_len){
+				uint8_t i=0, sum=0;
+				for(i=0;i< data_len-1 ;i++){
+					sum += data[i];
+				}				
+				// APP_DBG_PRINTF1("sum %02X ",sum);
+				if(data[data_len-1]==sum && data[DONGLEADV_CMD_INDEX]==0x81){
+					if(memcmp(DongleAdvAddr, &(data[DONGLEADV_SCR_INDEX]), 6) == 0){
+						if(data_len == (DONGLEADV_DEST_INDEX+1)){
+							// 不指定
+							APP_DBG_PRINTF1("UNspecify startfactory isintofactory=%d \n", g_factorytest_state );
+						}else if(data_len == (DONGLEADV_DEST_INDEX+7)){
+							// 指定
+							if(ReverseComparisonBuff(SkyBleMesh_GetProductMac(), (uint8_t*)(&(data[DONGLEADV_DEST_INDEX])), 6) == true){								
+								APP_DBG_PRINTF1("Specify startfactory isintofactory=%d \n", g_factorytest_state );
+								g_factorytest_state = M_FACTORYTEST_START_STATE;
+							}
+						}
+					}
+				}
+			}
+		
+		} 
+	}
+	
+}
