@@ -342,7 +342,7 @@ void HAL_Light_Dlps_Control(bool isenter)
 	    pwm_enable_ctrl(&light_pwm[FRONT_LED_PWM], true);
 	    pwm_enable_ctrl(&light_pwm[REAR_LED_PWM], true);
 	#else
-		 if(mLightManager->mode!=NLIGHT_MANUAL_MOD){
+		 if(mLightManager->mode==NLIGHT_MANUAL_MOD){
 			if( mLightManager->statu[FRONT_LED_PWM] == 1 ){
 				light_pwm[FRONT_LED_PWM].duty_cycle = PWM_FREQUENCY;
 			}else{
