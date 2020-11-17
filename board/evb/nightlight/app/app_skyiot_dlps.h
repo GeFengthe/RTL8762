@@ -40,7 +40,7 @@ extern void inf_ctrl_dlps(bool allowenter);
 
 extern void SkyBleMesh_ReadyEnterDlps_cfg(void);
 extern void SkyBleMesh_EnterDlps_cfg(void);
-extern void SkyBleMesh_ExitDlps_cfg(void);
+extern void SkyBleMesh_ExitDlps_cfg(bool norexit);
 
 
 #endif // 

@@ -342,7 +342,7 @@ void app_exit_dlps_config(void)
 {
 	// DBG_DIRECT("Exit DLPS\r\n");	
 	
-	SkyBleMesh_ExitDlps_cfg();
+	SkyBleMesh_ExitDlps_cfg(true);
 	
 }
 

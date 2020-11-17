@@ -20,12 +20,18 @@
 DLPS_CTRL_STATU_T DlpsCtrlStatu_t={(DLPS_JUST_SYSINIT_OK|DLPS_JUST_WAITING_TMR)};
 static plt_timer_t skybleenterdlps_timer=NULL;
 
-
 static plt_timer_t skyblewakeup_timer=NULL;
+static uint8_t dlpsstatu = 0; // 1:ready 2:enter 3:exit other:invalid
 
 
 static void SkyBleMesh_Wakeup_Timeout_cb(void *timer)
 {
+	APP_DBG_PRINTF(" %s %d",__func__, dlpsstatu);
+	
+	if(dlpsstatu == 1){
+		// Ã»ÄÜ½øDLPS£¬»Ö¸´¹Ø±ÕµÄtmrµÈ
+		SkyBleMesh_ExitDlps_cfg(false);
+	}
 }
 
 static void SkyBleMesh_StopWakeup_tmr(void)
@@ -98,12 +104,14 @@ void SkyBleMesh_EnterDlps_timer(void)
 
 void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
+	dlpsstatu = 1; // ready
+	SkyBleMesh_StartWakeup_tmr();
+		
 	// ble 
 	beacon_stop();  
 	
-	if(SkyBleMesh_IsProvision_Sate() == false || SkyBleMesh_Batt_Station() == BATT_WARING){     // unprov  æœªé…ç½‘æˆ–ä½ç”µé‡ä¼‘çœ ä¸SCAN
+	if(SkyBleMesh_IsProvision_Sate() == false || SkyBleMesh_Batt_Station() == BATT_WARING){     // unprov  Î´ÅäÍø»òµÍµçÁ¿ĞİÃß²»SCAN
 		gap_sched_scan(false);   // gap layer scan
-		SkyBleMesh_StartWakeup_tmr();
 	}else{	
 	}
 		
@@ -114,30 +122,36 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 void SkyBleMesh_EnterDlps_cfg(void)
 {	
 	// APP_DBG_PRINTF(" SkyBleMesh_EnterDlps_cfg");
+	dlpsstatu = 2; // enter
+	
 	// switch1
 	HAL_SwitchKey_Dlps_Control(true);	
-	// light ç»´æŒIOç”µå¹³ï¼Œè§†ç”µè·¯å’Œå•å‰çŠ¶æ€æ ‡å¿—è€Œå®šï¼Œå¦‚ç»¿æ¿LOWæ˜¯äº®ç¯ã€‚
+	// light Î¬³ÖIOµçÆ½£¬ÊÓµçÂ·ºÍµ¥Ç°×´Ì¬±êÖ¾¶ø¶¨£¬
 	SkyBleMesh_DlpsLight_Handle(true);
     HAL_INF_Dlps_Control(true);
     HAL_Adc_Dlps_Control(true);
 }
 
-void SkyBleMesh_ExitDlps_cfg(void)
+void SkyBleMesh_ExitDlps_cfg(bool norexit)
 {
-	// debug uart
-//    Pad_ControlSelectValue(P3_0, PAD_PINMUX_MODE);
-//    Pad_ControlSelectValue(P3_1, PAD_PINMUX_MODE);
+	dlpsstatu = 3; // exit
 
-	// switch
-	HAL_SwitchKey_Dlps_Control(false);
-	// light
-	SkyBleMesh_DlpsLight_Handle(false);
-    HAL_INF_Dlps_Control(false);
-    HAL_Adc_Dlps_Control(false);
+	if(norexit == true){ // Õı³£ÍË³öDLPS
+		// debug uart
+	    // Pad_ControlSelectValue(P3_0, PAD_PINMUX_MODE);
+	    // Pad_ControlSelectValue(P3_1, PAD_PINMUX_MODE);
+
+		// switch
+		HAL_SwitchKey_Dlps_Control(false);
+		// light
+		SkyBleMesh_DlpsLight_Handle(false);
+	    HAL_INF_Dlps_Control(false);
+	    HAL_Adc_Dlps_Control(false);
+	}
 	
 	// ble
-	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisionedä¸”ç”µé‡æ­£å¸¸
-		beacon_start(); // é…ç½‘æ‰ä¼šæ‰“å¼€ï¼Œè¿™ä¸ªè¦éªŒè¯ä¸‹ã€‚ æœªé…ç½‘ä¸å¹¿æ’­ã€‚
+	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisionedÇÒµçÁ¿Õı³£
+		beacon_start(); // ÅäÍø²Å»á´ò¿ª£¬Õâ¸öÒªÑéÖ¤ÏÂ£¬Î´ÅäÍø²»¹ã²¥
 	}	
 	
 	// sw timer
