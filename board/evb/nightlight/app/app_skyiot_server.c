@@ -1758,49 +1758,51 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 			}
 			HAL_OpenInf_Power(false);
 			SkyLed_LightEffective_CTL(false, 0, 0);			
-		}else{			
-			if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
-			 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // 副灯常亮-->副灯感应
-				mIotManager.mLightManager.mode = NLIGHT_REACT_LED2_MOD;
-				
-				mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
-				if(isprov == true){ 				
-					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 	
-					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
-				}
-			
-			}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
-			 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 0){  // 主灯常亮-->主灯感应
-				mIotManager.mLightManager.mode = NLIGHT_REACT_LED1_MOD;
-				
-				mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
-				if(isprov == true){ 				
-					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 
-					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1; 
-				}
-			
-			}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
-			 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // 主副灯常亮-->主副灯感应
-				mIotManager.mLightManager.mode = NLIGHT_REACT_LEDALL_MOD;
+		}else{		
+			if(mIotManager.mLightManager.mode == NLIGHT_MANUAL_MOD){ // 只有常亮模式才能进来
+				if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // 副灯常亮-->副灯感应
+					mIotManager.mLightManager.mode = NLIGHT_REACT_LED2_MOD;
 					
-				mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
-				mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
-				if(isprov == true){ 				
-					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 
-					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1; 	
-					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
+					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
+					if(isprov == true){ 				
+						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 	
+						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
+					}
+				
+				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 0){  // 主灯常亮-->主灯感应
+					mIotManager.mLightManager.mode = NLIGHT_REACT_LED1_MOD;
+					
+					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
+					if(isprov == true){ 				
+						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 
+						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1; 
+					}
+				
+				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // 主副灯常亮-->主副灯感应
+					mIotManager.mLightManager.mode = NLIGHT_REACT_LEDALL_MOD;
+						
+					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
+					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
+					if(isprov == true){ 				
+						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_MOD; 
+						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1; 	
+						mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
+					}
+				
+				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] ==0){	// 主副灯全灭-->无
+				
+				}else{
+					// 防错
 				}
-			
-			}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
-			 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] ==0){	// 主副灯全灭-->无
-			
-			}else{
-				// 防错
-			}
 
-			if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD){
-				HAL_OpenInf_Power(true);
-				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // 切换至感应模式，闪烁2次（2*2）。	
+				if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD){
+					HAL_OpenInf_Power(true);
+					SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // 切换至感应模式，闪烁2次（2*2）。	
+				}
 			}
 
 		}		        
