@@ -2418,7 +2418,7 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 		HAL_SkyAdc_Sample(&batt_val, &lightsense );	
 		if(onlybatt == false && HAL_Lighting_Output_Statu() == false){
 			// 灯光没有输出，认为采集的光感是正确的。
-			if(lightsense > (SKYIOT_AMBIENT_LIMITVOL+100)){
+			if(lightsense > (SKYIOT_AMBIENT_LIMITVOL+50)){ // +100
 				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_BRIGHT;
 			}else if(lightsense < (SKYIOT_AMBIENT_LIMITVOL-10)){
 				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_DARK;
