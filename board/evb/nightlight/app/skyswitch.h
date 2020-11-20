@@ -27,6 +27,7 @@
 
 enum SKY_SWITCH_INDEX_ENUM{
     SKYSWITC1_ENUM = 0x00,	
+    SKYSWITC_PCB_ENUM ,	
     SKYSWITC_NUMBERS ,	
 };
 
@@ -39,7 +40,7 @@ typedef enum{
 
 typedef struct {
 	uint8_t status[SKYSWITC_NUMBERS];	
-	uint8_t keyval;     // bit0:switch1 bit1:switch2   ; 1:press
+	uint8_t keyval;     // bit0:user switch bit1:PCB check switch   ; 1:press
 	uint8_t keymode;    // KEY_PRESS_MODE_e	
 }SkySwitchManager;
 
