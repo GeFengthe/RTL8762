@@ -2604,10 +2604,24 @@ static void SkyMesh_Product_PCB_Check(void)
 		case 0:{
 			if(g_PCBtest_state==M_PCBA_TEST_READY_STATE){
 				blemesh_factory_ctrl_dlps(false);  // 调禁止休眠
-				HAL_Lighting_OFF();
+				
+				if(tmpcnt%8 == 0){ 
+					HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
+					HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+				}else if(tmpcnt%8 == 4){
+					HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
+					HAL_Lighting_Nightlight(REAR_LED_PWM,  100);
+
+				}
+				// 200ms*2 = 50ms*8
+				if(++tmpcnt >= 8){
+					tmpcnt = 0;
+				}
+			
 			}else if(g_PCBtest_state==M_PCBA_TEST_START_STATE){				
 				HAL_OpenInf_Power(true); // 提前打开电源准备
 				pcbstep = 1;
+				tmpcnt = 0;
 			}
 		break;
 		}
