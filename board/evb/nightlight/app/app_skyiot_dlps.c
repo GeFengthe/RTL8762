@@ -110,9 +110,12 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 	// ble 
 	beacon_stop();  
 	
-	if(SkyBleMesh_IsProvision_Sate() == false || SkyBleMesh_Batt_Station() == BATT_WARING){     // unprov  未配网或低电量休眠不SCAN
+	if(SkyBleMesh_IsProvision_Sate() == false){     // unprov  未配网或低电量休眠不SCAN
 		gap_sched_scan(false);   // gap layer scan
 	}else{	
+		if(SkyBleMesh_Batt_Station() == BATT_WARING){
+			gap_sched_scan(false);   // gap layer scan
+		}
 	}
 		
 	// sw timer
@@ -231,4 +234,13 @@ void inf_ctrl_dlps(bool allowenter)
         DlpsCtrlStatu_t.bit.inf = 1;
     }
 }
+void blemesh_factory_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.factory = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.factory = 1;
+    }
+}
+
 

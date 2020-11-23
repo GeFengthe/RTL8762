@@ -185,7 +185,7 @@ void mesh_stack_init(void)
 	gap_sched_scan(false); 
 	#else
 	gap_sched_scan(false); 
-	uint16_t scan_interval = 0xA0;  //!< 250ms
+    uint16_t scan_interval = 0x1C0;  //!< 280ms
 	uint16_t scan_window   = 0x30; //!< 30ms
 	gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
 	gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
@@ -224,7 +224,9 @@ void app_le_gap_init(void)
     /* register gap message callback */
     le_register_app_cb(app_gap_callback);
 	
+	#if SKYMESH_FACTORYTEST_EABLE==1
 	Regist_ProductFactoryCheck_cb(SkyMesh_ProductFactoryCheck_cb);
+	#endif
 
 #if F_BT_LE_5_0_SET_PHY_SUPPORT
     uint8_t  phys_prefer = GAP_PHYS_PREFER_ALL;
@@ -293,13 +295,15 @@ void driver_init(void)
     if (node_state == UNPROV_DEVICE){
         if(batt_station == BATT_NORMAL){
 		gap_sched_scan(false); 
-		uint16_t scan_interval = 0xA0;  //!< 100ms
+        uint16_t scan_interval = 0x1C0;  //!< 280ms
 		uint16_t scan_window   = 0x30; //!< 30ms
 		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
 		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
 		gap_sched_scan(true); 
-		
-        SkyBleMesh_Unprov_timer();
+			
+		if(SkyBleMesh_Device_Active_Sate()==true){
+			SkyBleMesh_Unprov_timer();
+		}
         }else{
             SkyBleMesh_unBind_complete();
             DBG_DIRECT("NO Network");

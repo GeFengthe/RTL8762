@@ -34,11 +34,11 @@ uint8_t  ackattrsval=0;
 
 // timer 
 
-#define SKYBLERESET_MAXCNT          (45)    // é‡é…ç½‘å»¶æ—¶æœåŠ¡ï¼Œå»¶æ—¶çš„æ—¶é—´ç”¨ä½œä¿¡å·ç¯çš„é—ªçƒ
-#define SKYBLERESET_MINCNT          (10)    // é…ç½‘è¿‡ç¨‹ä¸­æŒ‰é”®é€€å‡ºé…ç½‘
-#define SKYBLERESET_TIMEOUT         (150)   // å¯¹å¼€å…³ï¼Œä»…ä»…å»¶æ—¶è€Œå·²ï¼Œç»™é—ªç¯æ—¶é—´
+#define SKYBLERESET_MAXCNT          (45)    // ÖØÅäÍøÑÓÊ±·şÎñ£¬ÑÓÊ±µÄÊ±¼äÓÃ×÷ĞÅºÅµÆµÄÉÁË¸
+#define SKYBLERESET_MINCNT          (10)    // ÅäÍø¹ı³ÌÖĞ°´¼üÍË³öÅäÍø
+#define SKYBLERESET_TIMEOUT         (150)   // ¶Ô¿ª¹Ø£¬½ö½öÑÓÊ±¶øÒÑ£¬¸øÉÁµÆÊ±¼ä
 
-#define SKYBLEPROVSUCCESS_MAXCNT    (16)    // é…ç½‘æˆåŠŸé—ª
+#define SKYBLEPROVSUCCESS_MAXCNT    (16)    // ÅäÍø³É¹¦ÉÁ
 #define SKYBLEPROVSUCCESS_TIMEOUT   (500)
 
 
@@ -55,12 +55,12 @@ uint8_t  ackattrsval=0;
 #define BLEMESH_COMMAND_WAIT_MS   (500) /* WAIT 250MS FOR Report ack */	
 #define DEFAULT_WAKEUP_ALIVE_CNT  (3)
 
-#define DEFAULT_SKYIOT_ALIVE_MS   (60000)  // qlj éœ€è¦ä¸€ä¸ªå®šæ—¶å™¨æ¥æ¢ç®—
+#define DEFAULT_SKYIOT_ALIVE_MS   (60000)  // qlj ĞèÒªÒ»¸ö¶¨Ê±Æ÷À´»»Ëã
 #define DEFAULT_GATEWAY_ALIVE_MS  (90000)
 #define DEFAULT_GATEWAY_SENQ_MS   (5000)
 
 
-#define MAX_BLEMESH_PACKET_LEN    (32)	// BLEMESH æ•°æ®åŒ…æœ€å¤§é•¿åº¦ 
+#define MAX_BLEMESH_PACKET_LEN    (32)	// BLEMESH Êı¾İ°ü×î´ó³¤¶È 
 
 
 #define TX_OPENCODE_POS     0
@@ -68,27 +68,27 @@ uint8_t  ackattrsval=0;
 #define TX_ATTR_ID_POS      5
 #define TX_ATTR_VAL_POS     7
 
-#define MAX_TX_BUF_LEN 			(MAX_BLEMESH_PACKET_LEN)    // æ¯ä¸ªå‘é€ç¼“å­˜æœ€å¤§32å­—èŠ‚
-#define MAX_RE_TX_CNT 			(2) // (3)     // æœ€å¤§é‡å‘æ¬¡æ•°          // å¾…ç½‘å…³ä½œåº”ç­”äº†å†æ”¹åˆ°é‡å‘3æ¬¡
-#define MAX_ACK_TIMEOUT 		(4000)  // æœ€å¤§åº”ç­”è¶…æ—¶ms
-#define MAX_TX_BUF_DEEP 		(20)    // æœ€å¤§10ä¸ªå‘é€ç¼“å­˜
+#define MAX_TX_BUF_LEN 			(MAX_BLEMESH_PACKET_LEN)    // Ã¿¸ö·¢ËÍ»º´æ×î´ó32×Ö½Ú
+#define MAX_RE_TX_CNT 			(2) // (3)     // ×î´óÖØ·¢´ÎÊı          // ´ıÍø¹Ø×÷Ó¦´ğÁËÔÙ¸Äµ½ÖØ·¢3´Î
+#define MAX_ACK_TIMEOUT 		(4000)  // ×î´óÓ¦´ğ³¬Ê±ms
+#define MAX_TX_BUF_DEEP 		(20)    // ×î´ó10¸ö·¢ËÍ»º´æ
 static uint16_t maxacktimout =  MAX_ACK_TIMEOUT;
 
 typedef struct
 {
 	uint8_t  buf[MAX_TX_BUF_LEN]; // opecode ~ end
 	uint8_t  len;
-	uint8_t  fullflag; // ç¼“å­˜å ç”¨æ ‡å¿— 1:used 0:unused
-	uint8_t  txcnt;    // æœ¬åŒ…å‘é€æ¬¡æ•°å€’è®¡
-	uint32_t txtick;   // è®°å½•æœ€è¿‘ä¸€æ¬¡å‘é€æ—¶é—´tick
+	uint8_t  fullflag; // »º´æÕ¼ÓÃ±êÖ¾ 1:used 0:unused
+	uint8_t  txcnt;    // ±¾°ü·¢ËÍ´ÎÊıµ¹¼Æ
+	uint32_t txtick;   // ¼ÇÂ¼×î½üÒ»´Î·¢ËÍÊ±¼ätick
 }MESH_TX_ATTR_STRUCT;
 // MESH_TX_ATTR_STRUCT MeshTxAttrStruct[ MAX_TX_BUF_DEEP ];
 MESH_TX_ATTR_STRUCT *MeshTxAttrStruct=NULL;
 
 
-// æ¥æ”¶æ•°æ®ç±»å‹
+// ½ÓÊÕÊı¾İÀàĞÍ
 typedef enum {
-	EVENT_TYPE_PROVISIONED = 0x1,	/* è®¾å¤‡é…ç½®æˆåŠŸ */	
+	EVENT_TYPE_PROVISIONED = 0x1,	/* Éè±¸ÅäÖÃ³É¹¦ */	
 	EVENT_TYPE_KEEPALIVE,
 	EVENT_TYPE_UPDATE_PROPERTY,
 	EVENT_TYPE_GET_PROPERTY,
@@ -100,15 +100,15 @@ typedef enum {
 }MESH_EVENT_TYPE_e;
 	
 typedef enum {
-	MESH_PACK_STATE_IDLE,        // å½“å‰ä¸åœ¨å‘é€
-	MESH_PACK_STATE_REPORT_ATTR, // å½“å‰æ­£åœ¨å‘é€
+	MESH_PACK_STATE_IDLE,        // µ±Ç°²»ÔÚ·¢ËÍ
+	MESH_PACK_STATE_REPORT_ATTR, // µ±Ç°ÕıÔÚ·¢ËÍ
 }MESH_PACK_STATE_e;
 
 typedef enum  {
 	PROPERTY_TYPE_CHAR   = 0x80,     // attr_param[0]
 	PROPERTY_TYPE_SHORT  = 0x81,     // attr_param[0]~[1]
 	PROPERTY_TYPE_INT    = 0x82,     // attr_param[0]~[3]
-	PROPERTY_TYPE_FLOAT  = 0x83,     // attr_param[0]~[3] æŒ‰ Prop_float æ ¼å¼
+	PROPERTY_TYPE_FLOAT  = 0x83,     // attr_param[0]~[3] °´ Prop_float ¸ñÊ½
 	PROPERTY_TYPE_STRING = 0x84	
 }PROPERTY_DATA_TYPE_e;
 
@@ -133,24 +133,24 @@ typedef struct
 
 
 typedef struct {	
-	uint8_t  process_state; 					/* è®¾å¤‡å·¥ä½œçŠ¶æ€: FF-æ­£å¸¸; 55-é…ç½‘çŠ¶æ€ */ 	
+	uint8_t  process_state; 					/* Éè±¸¹¤×÷×´Ì¬: FF-Õı³£; 55-ÅäÍø×´Ì¬ */ 	
 	uint8_t  mac_address[MAC_ADDRESS_LEN];
 	char     product_model[BT_PRODUCT_MODEL_LEN];
 	uint32_t product_type;
-	uint32_t product_brand; 					/* è®¾å¤‡å“ç‰Œ*/
-	uint8_t  device_uuid[BT_MESH_UUID_SIZE]; 	/* è®¾å¤‡UUID */
+	uint32_t product_brand; 					/* Éè±¸Æ·ÅÆ*/
+	uint8_t  device_uuid[BT_MESH_UUID_SIZE]; 	/* Éè±¸UUID */
 	uint8_t  critical_md5[MD5_LEN]; 			/* md5 for network_mode, mode,bri,ctp hsv */
 		
-	//åè®®æ§åˆ¶å­—æ®µ	
+	//Ğ­Òé¿ØÖÆ×Ö¶Î	
 	uint8_t  alive_status;	  					/* 0: online, 1: offline */
-	uint8_t  alive_wakeup_cnt;  				/*ä¸Šç”µæˆ–è€…ç¡çœ å”¤é†’åå‘ä¸‰æ¬¡å¿ƒè·³åŒ…*/
-	uint32_t recv_alive_tick;					/* ä¸Šæ¬¡æ¥å—åˆ°ç½‘å…³å¿ƒè·³çš„æ—¶é—´ */
-	uint32_t send_alive_tick; 					/* å‘é€å¿ƒè·³å¾—æ—¶é—´ */
+	uint8_t  alive_wakeup_cnt;  				/*ÉÏµç»òÕßË¯Ãß»½ĞÑºó·¢Èı´ÎĞÄÌø°ü*/
+	uint32_t recv_alive_tick;					/* ÉÏ´Î½ÓÊÜµ½Íø¹ØĞÄÌøµÄÊ±¼ä */
+	uint32_t send_alive_tick; 					/* ·¢ËÍĞÄÌøµÃÊ±¼ä */
 	
 	uint8_t  reppack_buffer[MAX_BLEMESH_PACKET_LEN];
 	uint8_t  reppack_len;
 	
-	//è®¾å¤‡å­—æ®µ
+	//Éè±¸×Ö¶Î
 	#if USE_NLIGHT_FOR_SKYIOT
 		uint8_t sw1_seq;
 		uint8_t sw2_seq;
@@ -162,20 +162,20 @@ typedef struct {
 		SkySwitchManager mSwitchManager;
 		SkyLightManager  mLightManager;
 
-		uint8_t release_flag;
+		uint8_t release_flag; // see SKYIOT_RELEASE_e
         uint8_t batt_rank;
-		uint8_t sigadc_flag; // 1:éœ€è¦ä¸€æ¬¡ADCé‡‡æ ·       0:æ— æ•ˆ
+		uint8_t sigadc_flag; // 1:ĞèÒªÒ»´ÎADC²ÉÑù       0:ÎŞĞ§
 
 	#endif
-	 uint32_t report_flag;	 // æŒ‰ä½å¯¹åº”è®¾å¤‡çš„æ§åˆ¶å±æ€§,ç½®ä½å³å‘
+	 uint32_t report_flag;	 // °´Î»¶ÔÓ¦Éè±¸µÄ¿ØÖÆÊôĞÔ,ÖÃÎ»¼´·¢
 }SkyBleMeshIotManager;
 	
 typedef struct {
 
 	#if USE_NLIGHT_FOR_SKYIOT
 	uint8_t  statu[ 2 ];  // TOTALPWMNUMBER
-	uint8_t  amb;      // ç¯å¢ƒå…‰ 0:ç¯å¢ƒæš—æ—¶æ„Ÿåº”           1:ç¯å¢ƒäº®æ—¶æ„Ÿåº”
-	uint32_t bri_time; // æ„Ÿåº”äº®ç¯æ—¶é•¿
+	uint8_t  amb;      // »·¾³¹â 0:»·¾³°µÊ±¸ĞÓ¦           1:»·¾³ÁÁÊ±¸ĞÓ¦
+	uint32_t bri_time; // ¸ĞÓ¦ÁÁµÆÊ±³¤
 	NLIGHT_MODE_e mode;	
 	#endif
 
@@ -203,7 +203,7 @@ static main_msg_fifo_t MainMsg_fifo={
 	
 static SkyBleMeshIotManager mIotManager;
 static bool IsSkyAppInited = false;
-static uint8_t g_skybleresetcnt=0;     // é‡é…ç½‘å»¶æ—¶æœåŠ¡ï¼Œå»¶æ—¶æ¬¡æ•°ï¼Œå³é‡é…ç½‘é—ªç¯æ¬¡æ•°
+static uint8_t g_skybleresetcnt=0;     // ÖØÅäÍøÑÓÊ±·şÎñ£¬ÑÓÊ±´ÎÊı£¬¼´ÖØÅäÍøÉÁµÆ´ÎÊı
 static uint8_t skybleprovsucesscnt=0;     
 static unsigned int SkyBleMesh_GetProductType(void);
 static int SkyBleMesh_ReadConfig(void);
@@ -215,7 +215,7 @@ static int SkyBleMesh_ReadConfig(void);
  */
  
 #if 1
-// qlj len åŠ é•¿åº¦è¶Šç•Œåˆ¤æ–­
+// qlj len ¼Ó³¤¶ÈÔ½½çÅĞ¶Ï
 static bool Hal_FlashWrite(FLASH_PARAM_TYPE_e type, uint16_t len, void *pdata)
 {
     uint32_t ret = 0;
@@ -296,7 +296,7 @@ static uint8_t HAL_IntToString(int num, char* str)
 
 	while(temp)
 	{
-		buf[len++] = (temp % 10) + '0';  //æŠŠtempçš„æ¯ä¸€ä½ä¸Šçš„æ•°å­˜å…¥buf
+		buf[len++] = (temp % 10) + '0';  //°ÑtempµÄÃ¿Ò»Î»ÉÏµÄÊı´æÈëbuf
 		temp = temp / 10;
 	}
 	//change seq
@@ -407,7 +407,7 @@ static bool Pop_Msg_From_FIFO(req_event_t *event)
 		|| checksameeven.prop_value  != 0){					
 
 		if( oldtick!=0 && HAL_CalculateTickDiff(oldtick, HAL_GetTickCount()) >= 1000){
-			// 1så†…ä¸¢å¼ƒé‡å¤æ¥æ”¶æŠ¥æ–‡ 
+			// 1sÄÚ¶ªÆúÖØ¸´½ÓÊÕ±¨ÎÄ 
 			checksameeven.event_id    = 0;
 			checksameeven.seqence_num = 0;
 			checksameeven.prop_ID     = 0;
@@ -423,7 +423,7 @@ static bool Pop_Msg_From_FIFO(req_event_t *event)
 }
 
 /*
-** è·å–éšæœºæ•°
+** »ñÈ¡Ëæ»úÊı
 */
 static void Regain_Random_UUID(uint8_t *uuid, uint8_t len)
 {
@@ -444,7 +444,7 @@ static void Regain_Random_UUID(uint8_t *uuid, uint8_t len)
 	}	
 }
 
-#if 1  // è·å–å‚æ•°
+#if 1  // »ñÈ¡²ÎÊı
 extern bool Hal_Get_Ble_MacAddr(uint8_t* mac)
 {
     bool isgetted=false;
@@ -474,7 +474,7 @@ extern void SkyBleMesh_Get_UUID(uint8_t *uuid, uint8_t len)
 
 extern void SkyBleMesh_Get_DeviceName(char *name, uint8_t *len)
 {
-	// å¹¿æ’­éœ€è¦å‰é¢åŠ  len+GAP_AD_TYPE_COMPLETE_NAME
+	// ¹ã²¥ĞèÒªÇ°Ãæ¼Ó len+GAP_AD_TYPE_COMPLETE_NAME
 	uint8_t typelen;
 	int product_type = SkyBleMesh_GetProductType();
 
@@ -492,7 +492,7 @@ extern void SkyBleMesh_Get_DeviceName(char *name, uint8_t *len)
 	
 		name[7+typelen] = 'M';	
 		
-		// åå››ä½macåœ°å€ï¼Œ æ³¨æ„å¤§å°ç«¯
+		// ºóËÄÎ»macµØÖ·£¬ ×¢Òâ´óĞ¡¶Ë
 		name[8+typelen] = HAL_HexToChar(mIotManager.mac_address[1]>>4);
 		name[9+typelen] = HAL_HexToChar(mIotManager.mac_address[1]&0xF);
 		name[10+typelen] = HAL_HexToChar(mIotManager.mac_address[0]>>4);
@@ -551,7 +551,7 @@ static uint8_t* SkyBleMesh_GetProductMac()
 #endif
 
 
-#if 1  // é€šä¿¡ç»„åŒ…
+#if 1  // Í¨ĞÅ×é°ü
 static void BleMesh_Packet_Clear(void)
 {	
 	uint8_t i=0;
@@ -606,7 +606,7 @@ static void BleMesh_Vendor_Make_Packet(uint8_t *buf, uint8_t len, bool needack )
 				
 				if((buf[TX_ATTR_ID_POS]==MeshTxAttrStruct[i].buf[TX_ATTR_ID_POS]) 
 					&& buf[TX_ATTR_ID_POS+1]==MeshTxAttrStruct[i].buf[TX_ATTR_ID_POS+1]) {
-					// åŒä¸€å±æ€§ä¸ŠæŠ¥ï¼Œæ›´æ–°åˆ°ä¸€ä¸ªæŠ¥æ–‡ä¸­ã€‚ä¸ç®¡ä¹‹å‰æŠ¥æ–‡æ˜¯å¦é‡å‘ï¼Œéƒ½æŒ‰å½“å‰çš„needackæ¥ã€‚
+					// Í¬Ò»ÊôĞÔÉÏ±¨£¬¸üĞÂµ½Ò»¸ö±¨ÎÄÖĞ¡£²»¹ÜÖ®Ç°±¨ÎÄÊÇ·ñÖØ·¢£¬¶¼°´µ±Ç°µÄneedackÀ´¡£
 					index = i;
 					APP_DBG_PRINTF3("find same attr index=%d ATTRID:%02X%02X\n", index,buf[TX_ATTR_ID_POS+1],buf[TX_ATTR_ID_POS]);
 					break;
@@ -616,8 +616,8 @@ static void BleMesh_Vendor_Make_Packet(uint8_t *buf, uint8_t len, bool needack )
 	}
 	
 	if( index==0xFF ){
-		// ç¼“å­˜ä¸­æ²¡æœ‰åŒä¸€å±æ€§æŠ¥æ–‡	
-		// è¿™ç§ç¼“å­˜æ–¹å¼ï¼Œåœ¨æ•°æ®é‡å¤§çš„æ—¶å€™å¯èƒ½ä¼šå¯¼è‡´åé¢indexå¾—ä¸åˆ°å‘é€ï¼Œè¿™é‡Œæš‚ä¸å­˜åœ¨è¿™ä¸ªé—®é¢˜ã€‚
+		// »º´æÖĞÃ»ÓĞÍ¬Ò»ÊôĞÔ±¨ÎÄ	
+		// ÕâÖÖ»º´æ·½Ê½£¬ÔÚÊı¾İÁ¿´óµÄÊ±ºò¿ÉÄÜ»áµ¼ÖÂºóÃæindexµÃ²»µ½·¢ËÍ£¬ÕâÀïÔİ²»´æÔÚÕâ¸öÎÊÌâ¡£
 		for(i=0; i<MAX_TX_BUF_DEEP; i++){
 			if( MeshTxAttrStruct[i].fullflag == 0 ){
 				index = i;
@@ -690,7 +690,7 @@ static void BleMesh_Vendor_Send_Packet(void)
 				MeshTxAttrStruct[i].txcnt--;
 				MeshTxAttrStruct[i].txtick = tick;
 				if( MeshTxAttrStruct[i].txcnt==0 ){
-					MeshTxAttrStruct[i].fullflag = 0;  // æœ€åä¸€åŒ…ä¸ç®¡åº”ç­”
+					MeshTxAttrStruct[i].fullflag = 0;  // ×îºóÒ»°ü²»¹ÜÓ¦´ğ
 					MeshTxAttrStruct[i].txtick   = 0;
 				}
 				break;
@@ -835,7 +835,7 @@ static void SkyIotGetProductMacAckPacket(void)
 	payload[2] = (BLEMESH_VENDOR_COMPANY_ID & 0xFF00) >> 8;
 	payload[3] = OPCODE_DEVINFO_RSP_PRODUCT_MACADDR;
 	
-	payload[4] = macaddr[5];  // åº”ç­”ç»™ç½‘å…³ä»¥å°ç«¯æ¨¡å¼
+	payload[4] = macaddr[5];  // Ó¦´ğ¸øÍø¹ØÒÔĞ¡¶ËÄ£Ê½
 	payload[5] = macaddr[4];
 	payload[6] = macaddr[3];
 	payload[7] = macaddr[2];
@@ -889,7 +889,7 @@ static void SkyIotReportPropertyPacket(uint16_t attrID, int value, uint8_t seq_n
 		mIotManager.reppack_buffer[10] = (value & 0xFF000000) >> 24;
 	}
 	
-	if(seq_num==0){	// ä¸»åŠ¨ä¸ŠæŠ¥ï¼Œéœ€è¦é‡ä¼ æœºåˆ¶
+	if(seq_num==0){	// Ö÷¶¯ÉÏ±¨£¬ĞèÒªÖØ´«»úÖÆ
 		BleMesh_Vendor_Make_Packet(mIotManager.reppack_buffer, mIotManager.reppack_len, true);
 	}else{
 		BleMesh_Vendor_Make_Packet(mIotManager.reppack_buffer, mIotManager.reppack_len, false);
@@ -908,7 +908,7 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 	
 	memset(&event, 0x0, sizeof(req_event_t));
 	
-	cmd_type = p_data[MESH_COMMAND_POS];   // è·å¾—å‘½ä»¤ç 
+	cmd_type = p_data[MESH_COMMAND_POS];   // »ñµÃÃüÁîÂë
 	
 	APP_DBG_PRINTF2("SkyBleMesh_handle_vendor_rx_cb opcode %02X, type %02X\n", opcode, cmd_type);	
 	
@@ -1017,12 +1017,12 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 */
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx)
 {
-	// qlj è€ƒè™‘ä» datatrans_server_model_init ç§»æ¤è¿‡æ¥
+	// qlj ¿¼ÂÇ´Ó datatrans_server_model_init ÒÆÖ²¹ıÀ´
 	Vendor_Model_Init(SkyBleMesh_handle_vendor_rx_cb);
 }
 
 
-#if 1  // è”ç½‘é…ç½®
+#if 1  // ÁªÍøÅäÖÃ
 
 static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 {
@@ -1035,10 +1035,10 @@ static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 	}else{
 		if(skybleprovsucesscnt == (SKYBLEPROVSUCCESS_MAXCNT+1)){			
 			#if USE_NLIGHT_FOR_SKYIOT		
-			SkyLed_LightEffective_CTL(true, LED_MODE_FAST_BLINK, 10); // å…¥ç½‘æˆåŠŸï¼Œé—ªçƒ5æ¬¡ï¼ˆ5*2ï¼‰ã€‚
+			SkyLed_LightEffective_CTL(true, LED_MODE_FAST_BLINK, 10); // ÈëÍø³É¹¦£¬ÉÁË¸5´Î£¨5*2£©¡£
 			#endif	
 
-			// é—ªç¯ç»“æŸåå»¶æ—¶10sï¼Œè§¦å‘é…ç½‘æˆåŠŸäº‹ä»¶ã€‚ 
+			// ÉÁµÆ½áÊøºóÑÓÊ±10s£¬´¥·¢ÅäÍø³É¹¦ÊÂ¼ş¡£ 
 			plt_timer_change_period(skybleprosuccess_timer, SKYBLEPROVSUCCESS_TIMEOUT, 10000);
 			
 		}else{		
@@ -1174,14 +1174,14 @@ static uint8_t Hal_Check_Influence(uint32_t newtick)
 		}
 
 		if( HAL_CalculateTickDiff(oldtick, newtick) >= 1000){
-			if(infcnt >= 2){           // 1så†…2ä¸ªä¿¡å·
+			if(infcnt >= 2){           // 1sÄÚ2¸öĞÅºÅ
 				retinf = SKYIOT_INF_HAVE_BODY;
 				infcnt = 0;
 				calledcnt2 = 0;
 				APP_DBG_PRINTF3("%s SKYIOT_INF_HAVE_BODY", __func__);
 			}else if(infcnt == 0){
 				calledcnt2++;
-				if(calledcnt2 >= 5){ // 5så†…0ä¸ªä¿¡å·
+				if(calledcnt2 >= 5){ // 5sÄÚ0¸öĞÅºÅ
 					retinf = SKYIOT_INF_NO_BODY;
 					calledcnt2 = 0;
 				APP_DBG_PRINTF3("%s SKYIOT_INF_NO_BODY", __func__);
@@ -1238,19 +1238,19 @@ static void SkyFunction_Handle(uint32_t newtick)
 				mIotManager.sigadc_flag = 0;
 			}
 		}else{
-			HAL_Set_Ambient_Power(1); // æå‰æ‰“å¼€ç”µæºå‡†å¤‡ADCé‡‡é›†
+			HAL_Set_Ambient_Power(1); // ÌáÇ°´ò¿ªµçÔ´×¼±¸ADC²É¼¯
 			delaycnt = 0;
 		}
 		
     }
 	
 
-	// äººæ„Ÿç”µæºæ‰“å¼€ï¼Œæ£€æµ‹äººæ„Ÿå˜åŒ–å°±ä¸ŠæŠ¥ï¼Œç‹¬ç«‹äºå°å¤œç¯æœ¬èº«
+	// ÈË¸ĞµçÔ´´ò¿ª£¬¼ì²âÈË¸Ğ±ä»¯¾ÍÉÏ±¨£¬¶ÀÁ¢ÓÚĞ¡Ò¹µÆ±¾Éí
 	uint8_t infstatu = Hal_Check_Influence(newtick);
 	static uint8_t meminfstatu=SKYIOT_INF_NO_BODY;
 	if(infstatu == SKYIOT_INF_NO_BODY || infstatu == SKYIOT_INF_HAVE_BODY){
 		if((mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD) && (HAL_Lighting_Influence_End() == true)){  
-			// æ„Ÿåº”ç»“æŸï¼Œç¯ç­äº†ï¼Œå†è§¦å‘å’Œæ›´æ–°å±æ€§
+			// ¸ĞÓ¦½áÊø£¬µÆÃğÁË£¬ÔÙ´¥·¢ºÍ¸üĞÂÊôĞÔ
 			if(mIotManager.mLightManager.inf != infstatu){
 				mIotManager.mLightManager.inf = infstatu;
 				mIotManager.report_flag |= BLEMESH_REPORT_FLAG_INF;
@@ -1259,7 +1259,7 @@ static void SkyFunction_Handle(uint32_t newtick)
 		}
 	}
 
-	// æ„Ÿåº”æ¨¡å¼äº®ç¯æ—¶é—´å¤„ç†
+	// ¸ĞÓ¦Ä£Ê½ÁÁµÆÊ±¼ä´¦Àí
 	if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD ){
 		if(infstatu == SKYIOT_INF_HAVE_BODY){
 			#if 0
@@ -1269,15 +1269,15 @@ static void SkyFunction_Handle(uint32_t newtick)
 					SkyLed_LightEffective_CTL(false, 0, 0); // 
 					APP_DBG_PRINTF0(" start light1 %d %d\n",mIotManager.mLightManager.amb, mIotManager.mLightManager.ambstatu);
 				}
-			    // æ„Ÿåº”æ¨¡å¼ã€æœ‰äººã€ç¯å¢ƒå…‰å‰æåŒ¹é…å½“å‰ç¯å¢ƒå…‰.å¯ä»¥è¿ç»­åŠ è½½
+			    // ¸ĞÓ¦Ä£Ê½¡¢ÓĞÈË¡¢»·¾³¹âÇ°ÌáÆ¥Åäµ±Ç°»·¾³¹â.¿ÉÒÔÁ¬Ğø¼ÓÔØ
 				SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, (mIotManager.mLightManager.bri_time*1000)/LED_BRIGHT_TMR_PERIOD); 
 				APP_DBG_PRINTF0(" continue light %d\n",(mIotManager.mLightManager.bri_time*1000)/LED_BRIGHT_TMR_PERIOD);
 				
-				meminfstatu = SKYIOT_INF_NO_BODY; // æŠ¥è¿‡å°±æ¸…æ‰
+				meminfstatu = SKYIOT_INF_NO_BODY; // ±¨¹ı¾ÍÇåµô
 			}else{
 				if(HAL_ReadAmbient_Power() == 0){	
 					meminfstatu = infstatu;
-					HAL_Set_Ambient_Power(1); // æå‰æ‰“å¼€ç”µæºå‡†å¤‡ADCé‡‡é›†
+					HAL_Set_Ambient_Power(1); // ÌáÇ°´ò¿ªµçÔ´×¼±¸ADC²É¼¯
 					mIotManager.sigadc_flag = 1;
 				}
 			}
@@ -1285,7 +1285,7 @@ static void SkyFunction_Handle(uint32_t newtick)
 				if(meminfstatu == SKYIOT_INF_NO_BODY){	
 					APP_DBG_PRINTF0(" start2 %d %d\n",mIotManager.mLightManager.amb, mIotManager.mLightManager.ambstatu);
 					meminfstatu = infstatu;
-					HAL_Set_Ambient_Power(1); // æå‰æ‰“å¼€ç”µæºå‡†å¤‡ADCé‡‡é›†
+					HAL_Set_Ambient_Power(1); // ÌáÇ°´ò¿ªµçÔ´×¼±¸ADC²É¼¯
 					mIotManager.sigadc_flag = 1;
 				}
 			#endif
@@ -1299,7 +1299,7 @@ static void SkyFunction_Handle(uint32_t newtick)
 					SkyLed_LightEffective_CTL(false, 0, 0); // 
 					APP_DBG_PRINTF0(" start light2 %d %d\n",mIotManager.mLightManager.amb, mIotManager.mLightManager.ambstatu);
 				}
-				// æ„Ÿåº”æ¨¡å¼ã€æœ‰äººã€ç¯å¢ƒå…‰å‰æåŒ¹é…å½“å‰ç¯å¢ƒå…‰.å¯ä»¥è¿ç»­åŠ è½½
+				// ¸ĞÓ¦Ä£Ê½¡¢ÓĞÈË¡¢»·¾³¹âÇ°ÌáÆ¥Åäµ±Ç°»·¾³¹â.¿ÉÒÔÁ¬Ğø¼ÓÔØ
 				SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, (mIotManager.mLightManager.bri_time*1000)/LED_BRIGHT_TMR_PERIOD); 
 			}
 
@@ -1361,8 +1361,8 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
 			gap_sched_scan(true); 
 			
-			// meshé…ç½‘30såæ‰è¿›å…¥
-			// ä¸€å®šåœ¨ä¸ŠæŠ¥é…ç½‘ä¿¡æ¯åï¼Œå¦åˆ™APPæ²¡æœ‰è®¾å¤‡ä¿¡æ¯ã€‚
+			// meshÅäÍø30sºó²Å½øÈë
+			// Ò»¶¨ÔÚÉÏ±¨ÅäÍøĞÅÏ¢ºó£¬·ñÔòAPPÃ»ÓĞÉè±¸ĞÅÏ¢¡£
             blemesh_unprov_ctrl_dlps(true); 
             break;
         }
@@ -1377,12 +1377,12 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 }
 
 
-// è¿›å…¥é‡é…ç½‘æ¨¡å¼
+// ½øÈëÖØÅäÍøÄ£Ê½
 extern void SkyBleMesh_unBind_complete(void)
 {	
     APP_DBG_PRINTF0("******************* SkyMesh_unBind_complete **************************\r\n");    
 
-	mesh_node_clear(); // æ¢å¤é‡é…ç½‘
+	mesh_node_clear(); // »Ö¸´ÖØÅäÍø
 	SkyBleMesh_Provision_State(MESH_PROVISION_STATE_UNPROV);
 	
 	beacon_stop();  	
@@ -1425,6 +1425,18 @@ static void SkyBleMesh_Reset_timer(void)
 		}
 	}
 }
+
+extern bool SkyBleMesh_Device_Active_Sate(void)
+{
+	bool ret=false;
+	
+	if(mIotManager.release_flag == SKYIOT_ACTIVE_RELEASE || mIotManager.release_flag == SKYIOT_FIRST_RELEASE){
+		ret = true;
+	}
+
+	return ret;
+}
+
 
 #endif
 
@@ -1555,11 +1567,11 @@ static int SkyBleMesh_ReadConfig(void)
 		return -1;
 	}
 	
-	// å‡ºå‚å€¼
+	// ³ö³§Öµ
 	memcpy(&(mIotManager.release_flag), buffer + offset, 1);	
 	offset += 1;
 	utils_md5_update(context, (unsigned char*)&(mIotManager.release_flag), 1);
-	// è¿›é…ç½‘æ ‡å¿—
+	// ½øÅäÍø±êÖ¾
 	memcpy(&(mIotManager.process_state), buffer + offset, 1);	
 	offset += 1;
 	utils_md5_update(context, (unsigned char*)&(mIotManager.process_state), 1);
@@ -1606,7 +1618,7 @@ static int SkyBleMesh_ReadConfig(void)
 }
 
 /*
-** è®¾å¤‡é»˜è®¤é…ç½® å¹¶ æ§åˆ¶
+** Éè±¸Ä¬ÈÏÅäÖÃ ²¢ ¿ØÖÆ
 */
 static void SkyiotManager_Default_Config(bool sychsaveparam)
 {
@@ -1638,12 +1650,12 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 		return;
 	}
 	
-    if(mIotManager.batt_rank != BATT_NORMAL){               // ç”µå‹ä½äºæ­£å¸¸å€¼ï¼Œä¸å…è®¸é…ç½‘
+    if(mIotManager.batt_rank != BATT_NORMAL){               // µçÑ¹µÍÓÚÕı³£Öµ£¬²»ÔÊĞíÅäÍø
         APP_DBG_PRINTF0("low batt");
         return;
     }
 
-	// qlj åº”è¯¥ä¸éœ€è¦å¤„ç†
+	// qlj Ó¦¸Ã²»ĞèÒª´¦Àí
    // if(mIotManager.mLightManager.led_mode == FAST_BLINK ||
    //    mIotManager.mLightManager.led_mode == SLOW_BLINK){
    //	return;
@@ -1662,27 +1674,27 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 		{
 			case NLIGHT_MANUAL_MOD:{
 				if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
-				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // å‰¯ç¯å¸¸äº®-->ä¸»ç¯å¸¸äº®
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // ¸±µÆ³£ÁÁ-->Ö÷µÆ³£ÁÁ
 					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 1;
 					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
 
 				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
-				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 0){  // ä¸»ç¯å¸¸äº®-->ä¸»å‰¯ç¯å¸¸äº®
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 0){  // Ö÷µÆ³£ÁÁ-->Ö÷¸±µÆ³£ÁÁ
 					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 1;
 					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 1;
 
 				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
-				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // ä¸»å‰¯ç¯å¸¸äº®-->ä¸»å‰¯ç¯å…¨ç­
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // Ö÷¸±µÆ³£ÁÁ-->Ö÷¸±µÆÈ«Ãğ
 					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
 					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
 
 				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
-				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] ==0){  // ä¸»å‰¯ç¯å…¨ç­-->å‰¯ç¯å¸¸äº®
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] ==0){  // Ö÷¸±µÆÈ«Ãğ-->¸±µÆ³£ÁÁ
 					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
 					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 1;
 
 				}else{
-					// é˜²é”™ å…¨ç­
+					// ·À´í È«Ãğ
 				}
 
 				if(isprov == true){					
@@ -1703,7 +1715,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 				}
-				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // åˆ‡æ¢è‡³æ„Ÿåº”æ¨¡å¼ï¼Œé—ªçƒ2æ¬¡ï¼ˆ2*2ï¼‰ã€‚
+				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // ÇĞ»»ÖÁ¸ĞÓ¦Ä£Ê½£¬ÉÁË¸2´Î£¨2*2£©¡£
 				
 				break;
 			}
@@ -1717,7 +1729,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 				}
-				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // åˆ‡æ¢è‡³æ„Ÿåº”æ¨¡å¼ï¼Œé—ªçƒ2æ¬¡ï¼ˆ2*2ï¼‰ã€‚	
+				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // ÇĞ»»ÖÁ¸ĞÓ¦Ä£Ê½£¬ÉÁË¸2´Î£¨2*2£©¡£	
 				
 				break;
 			}
@@ -1731,7 +1743,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;		
 				    mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 				}
-				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // åˆ‡æ¢è‡³æ„Ÿåº”æ¨¡å¼ï¼Œé—ªçƒ2æ¬¡ï¼ˆ2*2ï¼‰ã€‚	
+				SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // ÇĞ»»ÖÁ¸ĞÓ¦Ä£Ê½£¬ÉÁË¸2´Î£¨2*2£©¡£	
 
 				break;
 			}
@@ -1744,7 +1756,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 		
 	}else if(key_mode == KEY_SHORTPRESS_MODE){
         if(mIotManager.release_flag == SKYIOT_FIRST_RELEASE){		
-			mIotManager.release_flag = 0;
+			mIotManager.release_flag = SKYIOT_ACTIVE_RELEASE;
 			SkyBleMesh_WriteConfig();
 		
 			mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
@@ -1759,9 +1771,9 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 			HAL_OpenInf_Power(false);
 			SkyLed_LightEffective_CTL(false, 0, 0);			
 		}else{		
-			if(mIotManager.mLightManager.mode == NLIGHT_MANUAL_MOD){ // åªæœ‰å¸¸äº®æ¨¡å¼æ‰èƒ½è¿›æ¥
+			if(mIotManager.mLightManager.mode == NLIGHT_MANUAL_MOD){ // Ö»ÓĞ³£ÁÁÄ£Ê½²ÅÄÜ½øÀ´
 				if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
-				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // å‰¯ç¯å¸¸äº®-->å‰¯ç¯æ„Ÿåº”
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // ¸±µÆ³£ÁÁ-->¸±µÆ¸ĞÓ¦
 					mIotManager.mLightManager.mode = NLIGHT_REACT_LED2_MOD;
 					
 					mIotManager.mLightManager.statu[SKY_LED2_STATUS] = 0;
@@ -1771,7 +1783,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 					}
 				
 				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
-				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 0){  // ä¸»ç¯å¸¸äº®-->ä¸»ç¯æ„Ÿåº”
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 0){  // Ö÷µÆ³£ÁÁ-->Ö÷µÆ¸ĞÓ¦
 					mIotManager.mLightManager.mode = NLIGHT_REACT_LED1_MOD;
 					
 					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
@@ -1781,7 +1793,7 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 					}
 				
 				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 1
-				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // ä¸»å‰¯ç¯å¸¸äº®-->ä¸»å‰¯ç¯æ„Ÿåº”
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] == 1){  // Ö÷¸±µÆ³£ÁÁ-->Ö÷¸±µÆ¸ĞÓ¦
 					mIotManager.mLightManager.mode = NLIGHT_REACT_LEDALL_MOD;
 						
 					mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
@@ -1793,15 +1805,15 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 					}
 				
 				}else if( mIotManager.mLightManager.statu[SKY_LED1_STATUS] == 0
-				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] ==0){	// ä¸»å‰¯ç¯å…¨ç­-->æ— 
+				 && mIotManager.mLightManager.statu[SKY_LED2_STATUS] ==0){	// Ö÷¸±µÆÈ«Ãğ-->ÎŞ
 				
 				}else{
-					// é˜²é”™
+					// ·À´í
 				}
 
 				if(mIotManager.mLightManager.mode != NLIGHT_MANUAL_MOD){
 					HAL_OpenInf_Power(true);
-					SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // åˆ‡æ¢è‡³æ„Ÿåº”æ¨¡å¼ï¼Œé—ªçƒ2æ¬¡ï¼ˆ2*2ï¼‰ã€‚	
+					SkyLed_LightEffective_CTL(true, LED_MODE_MODE_BLINK, 4); // ÇĞ»»ÖÁ¸ĞÓ¦Ä£Ê½£¬ÉÁË¸2´Î£¨2*2£©¡£	
 				}
 			}
 
@@ -1810,8 +1822,8 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 	}else if(key_mode == KEY_LONGPRESS_MODE){  
 		SkyiotManager_Default_Config(true);	
 		SkyBleMesh_unBind_complete();
-		// SkyLed_LightEffective_CTL(false, 0, 0);  // æ˜ç¡®é—ªçƒåçš„çŠ¶æ€
-		SkyLed_LightEffective_CTL(true, LED_MODE_SLOW_BLINK, 10);  // é‡æ–°å…¥ç½‘ï¼Œé—ªçƒ5æ¬¡ï¼ˆ5*2ï¼‰ã€‚
+		// SkyLed_LightEffective_CTL(false, 0, 0);  // Ã÷È·ÉÁË¸ºóµÄ×´Ì¬
+		SkyLed_LightEffective_CTL(true, LED_MODE_SLOW_BLINK, 10);  // ÖØĞÂÈëÍø£¬ÉÁË¸5´Î£¨5*2£©¡£
 		if(mIotManager.process_state != 0x55){
 			mIotManager.process_state = 0x55;
 			SkyBleMesh_WriteConfig();
@@ -1831,7 +1843,7 @@ static void Reset_iotmanager_para(void)
 	mIotManager.recv_alive_tick     = HAL_GetTickCount();
 
 #if USE_NLIGHT_FOR_SKYIOT
-	// ä¸ŠæŠ¥è®¾ç½®é¡¹ï¼ŒåšåŒæ­¥
+	// ÉÏ±¨ÉèÖÃÏî£¬×öÍ¬²½
 	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;
 	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
@@ -1850,7 +1862,7 @@ static void Reset_iotmanager_para(void)
 }
 static void Main_Event_Handle(void)
 {
-	// æ¢å¤å¿ƒè·³åï¼Œå»¶æ—¶ä¸ŠæŠ¥ã€‚å»¶æ—¶æœŸé—´å¯èƒ½æœ‰seqä¸ä¸º0ï¼Œæ•…åªç½®ä¸ŠæŠ¥æ ‡å¿—
+	// »Ö¸´ĞÄÌøºó£¬ÑÓÊ±ÉÏ±¨¡£ÑÓÊ±ÆÚ¼ä¿ÉÄÜÓĞseq²»Îª0£¬¹ÊÖ»ÖÃÉÏ±¨±êÖ¾
 	static uint32_t oldtick=0, delayreport=0; 
 	uint32_t tick=0;
 	req_event_t event;
@@ -1879,7 +1891,7 @@ static void Main_Event_Handle(void)
 		switch(event.event_id){
 			case EVENT_TYPE_PROVISIONED:			
 				Reset_iotmanager_para();
-				mIotManager.report_flag = 0; // é…ç½‘æˆåŠŸåä¸ä¸»åŠ¨ä¸ŠæŠ¥ï¼Œç­‰å¾…ç½‘å…³è¯·æ±‚ã€‚
+				mIotManager.report_flag = 0; // ÅäÍø³É¹¦ºó²»Ö÷¶¯ÉÏ±¨£¬µÈ´ıÍø¹ØÇëÇó¡£
 			break;
 
 			case EVENT_TYPE_KEEPALIVE:
@@ -1903,9 +1915,9 @@ static void Main_Event_Handle(void)
 					Reset_iotmanager_para();
 				}
 				if (mIotManager.alive_status == 1){
-					// æ ¹æ®å‚æ•°ï¼Œå¯¹è®¾å¤‡æ§åˆ¶  
+					// ¸ù¾İ²ÎÊı£¬¶ÔÉè±¸¿ØÖÆ  
 #if USE_NLIGHT_FOR_SKYIOT
-					if(event.prop_ID == ATTR_CLUSTER_ID_SW1){				// APPæ§åˆ¶ä¸»ç¯
+					if(event.prop_ID == ATTR_CLUSTER_ID_SW1){				// APP¿ØÖÆÖ÷µÆ
 						mIotManager.mLightManager.statu[SKY_LED1_STATUS] = event.prop_value;
 						mIotManager.sw1_seq = event.seqence_num;
 						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW1, mIotManager.mLightManager.statu[SKY_LED1_STATUS], mIotManager.sw1_seq);	
@@ -1919,7 +1931,7 @@ static void Main_Event_Handle(void)
 						// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;
 
 						HAL_OpenInf_Power(false);
-					}else if(event.prop_ID == ATTR_CLUSTER_ID_SW2){			// APPæ§åˆ¶å‰¯ç¯
+					}else if(event.prop_ID == ATTR_CLUSTER_ID_SW2){			// APP¿ØÖÆ¸±µÆ
 						mIotManager.mLightManager.statu[SKY_LED2_STATUS] = event.prop_value;
 						mIotManager.sw2_seq = event.seqence_num;
 						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, mIotManager.mLightManager.statu[SKY_LED2_STATUS], mIotManager.sw2_seq);	
@@ -1933,14 +1945,14 @@ static void Main_Event_Handle(void)
 						// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 						
 						HAL_OpenInf_Power(false);
-					}else if(event.prop_ID == ATTR_CLUSTER_ID_TIM){			// APPä¿®æ”¹ç¯å…‰æ—¶é•¿
+					}else if(event.prop_ID == ATTR_CLUSTER_ID_TIM){			// APPĞŞ¸ÄµÆ¹âÊ±³¤
 						mIotManager.mLightManager.bri_time = event.prop_value;
 						mIotManager.tim_seq = event.seqence_num;
 						SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_TIM, mIotManager.mLightManager.bri_time, mIotManager.tim_seq);	
 						mIotManager.tim_seq = 0;
 						// mIotManager.report_flag |= BLEMESH_REPORT_FLAG_TIM;
 						
-					}else if(event.prop_ID == ATTR_CLUSTER_ID_AMB){			// APPä¿®æ”¹ç¯å¢ƒå…‰ç­–ç•¥
+					}else if(event.prop_ID == ATTR_CLUSTER_ID_AMB){			// APPĞŞ¸Ä»·¾³¹â²ßÂÔ
 						if(mIotManager.mLightManager.amb != event.prop_value){
 							mIotManager.sigadc_flag = 1;
 						}
@@ -1950,7 +1962,7 @@ static void Main_Event_Handle(void)
 						mIotManager.amb_seq = 0;
 						// mIotManager.report_flag |= ATTR_CLUSTER_ID_AMB;
 												
-					}else if(event.prop_ID == ATTR_CLUSTER_ID_MOD){			// APPåˆ‡æ¢è‡³æ„Ÿåº”æ¨¡å¼						
+					}else if(event.prop_ID == ATTR_CLUSTER_ID_MOD){			// APPÇĞ»»ÖÁ¸ĞÓ¦Ä£Ê½						
 						if(mIotManager.mLightManager.mode == NLIGHT_MANUAL_MOD && event.prop_value != NLIGHT_MANUAL_MOD){
 							// HAL_Lighting_OFF();
 							HAL_OpenInf_Power(true); 
@@ -1966,7 +1978,7 @@ static void Main_Event_Handle(void)
 						}else{				
 							// HAL_Lighting_OFF();						
 							SkyLed_LightEffective_CTL(false, 1 , 0);
-							SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, 5000/LED_BRIGHT_TMR_PERIOD);  // APPåˆ‡æ¢æ— æ¸å˜ äº®5s			
+							SkyLed_LightEffective_CTL(true, LED_MODE_DELAY_BRIGHT, 5000/LED_BRIGHT_TMR_PERIOD);  // APPÇĞ»»ÎŞ½¥±ä ÁÁ5s			
 							if(mIotManager.mLightManager.statu[SKY_LED1_STATUS] != 0){
 								mIotManager.mLightManager.statu[SKY_LED1_STATUS] = 0;
 								mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;
@@ -1989,7 +2001,7 @@ static void Main_Event_Handle(void)
 				}
 				if(mIotManager.alive_status == 1){		
 #if USE_NLIGHT_FOR_SKYIOT
-					// ç½‘å…³è¯·æ±‚å±æ€§ä¸Šä¼ 
+					// Íø¹ØÇëÇóÊôĞÔÉÏ´«
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW1;
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_SW2;
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
@@ -2009,7 +2021,9 @@ static void Main_Event_Handle(void)
 	
 #if USE_NLIGHT_FOR_SKYIOT
 	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
-		SkySwitch_Handle(mIotManager.mSwitchManager.keymode, true);
+		if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch
+			SkySwitch_Handle(mIotManager.mSwitchManager.keymode, true);
+		}
 		mIotManager.mSwitchManager.keymode = 0;
 		mIotManager.mSwitchManager.keyval = 0;
 	}
@@ -2021,7 +2035,13 @@ static void Main_WithoutNet_Handle(void)
 	
 #if USE_NLIGHT_FOR_SKYIOT
 	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
-		SkySwitch_Handle(mIotManager.mSwitchManager.keymode, false);
+		if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch	
+			SkySwitch_Handle(mIotManager.mSwitchManager.keymode, false);
+		}else if(mIotManager.mSwitchManager.keyval == 0x02){ // PCB check switch
+			if(mIotManager.mSwitchManager.keymode == KEY_SINGLE_MODE){
+				SkyMesh_Product_PCB_Check_State(); // ´¥·¢PCB³§²â
+			}
+		}
 		mIotManager.mSwitchManager.keymode = 0;
 		mIotManager.mSwitchManager.keyval = 0;
 	}		
@@ -2066,11 +2086,11 @@ static bool Main_Check_Online(void)
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
 				
-				mIotManager.alive_wakeup_cnt   = 1;	// é»˜è®¤éƒ½ä¼šå»å‘3æ¬¡ï¼Œæœ‰å¿ƒè·³åº”ç­”ä¼šæŠŠè®¡æ•°æ¸…æ‰ 			
+				mIotManager.alive_wakeup_cnt   = 1;	// Ä¬ÈÏ¶¼»áÈ¥·¢3´Î£¬ÓĞĞÄÌøÓ¦´ğ»á°Ñ¼ÆÊıÇåµô 			
 			}
 		}
 
-		//åˆ¤æ–­è·¯ç”±å™¨æ˜¯å¦åœ¨çº¿
+		//ÅĞ¶ÏÂ·ÓÉÆ÷ÊÇ·ñÔÚÏß
 		if (mIotManager.alive_status == 1){
 			int sub_timeout_ms;
 			sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);
@@ -2100,43 +2120,43 @@ static void Main_Upload_State(void)
 	if (mIotManager.alive_status == 1){	
 #if USE_NLIGHT_FOR_SKYIOT
 
-		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_SW1){							// ä¸»ç¯çŠ¶æ€å‘ç”Ÿæ”¹å˜ï¼šç½‘å…³æ§åˆ¶æˆ–æœ¬åœ°åˆ‡æ¢è‡³æ‰‹åŠ¨æ§åˆ¶æ¨¡å¼
+		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_SW1){							// Ö÷µÆ×´Ì¬·¢Éú¸Ä±ä£ºÍø¹Ø¿ØÖÆ»ò±¾µØÇĞ»»ÖÁÊÖ¶¯¿ØÖÆÄ£Ê½
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_SW1;
 			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW1, mIotManager.mLightManager.statu[SKY_LED1_STATUS], mIotManager.sw1_seq);	
 			mIotManager.sw1_seq = 0;
 		}
 		
-		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_SW2){							// å‰¯ç¯çŠ¶æ€å‘ç”Ÿæ”¹å˜ï¼šç½‘å…³æ§åˆ¶æˆ–æœ¬åœ°åˆ‡æ¢è‡³æ‰‹åŠ¨æ§åˆ¶æ¨¡å¼
+		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_SW2){							// ¸±µÆ×´Ì¬·¢Éú¸Ä±ä£ºÍø¹Ø¿ØÖÆ»ò±¾µØÇĞ»»ÖÁÊÖ¶¯¿ØÖÆÄ£Ê½
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_SW2;
 			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW2, mIotManager.mLightManager.statu[SKY_LED2_STATUS], mIotManager.sw2_seq);	
 			mIotManager.sw2_seq = 0;
 		}
 		
-		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_BAT){							// å…¥ç½‘ä¸»åŠ¨ä¸Šä¼ ï¼Œæˆ–é˜¶æ®µæ€§ä¸Šä¼ 
+		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_BAT){							// ÈëÍøÖ÷¶¯ÉÏ´«£¬»ò½×¶ÎĞÔÉÏ´«
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_BAT;
 			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_BAT, mIotManager.mLightManager.batt, mIotManager.bat_seq);	
 			mIotManager.bat_seq = 0;
 		}
 		
-        if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_INF){							// äººä½“æ„Ÿåº”
+        if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_INF){							// ÈËÌå¸ĞÓ¦
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_INF;
 			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_INF, mIotManager.mLightManager.inf, mIotManager.inf_seq);	
 			mIotManager.inf_seq = 0;
 		}
 		
-		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_AMB){							// å…‰ç…§ç­–ç•¥å‘ç”Ÿæ”¹å˜ï¼šç›®å‰åªè®¾ç½®
+		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_AMB){							// ¹âÕÕ²ßÂÔ·¢Éú¸Ä±ä£ºÄ¿Ç°Ö»ÉèÖÃ
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_AMB;
 			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_AMB, mIotManager.mLightManager.amb, mIotManager.amb_seq);	
 			mIotManager.amb_seq = 0;
 		}
 		
-		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_MOD){							// æ¨¡å¼å‘ç”Ÿåˆ‡æ¢ï¼šæœ¬åœ°å’Œç½‘å…³éƒ½ä¼šè§¦å‘
+		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_MOD){							// Ä£Ê½·¢ÉúÇĞ»»£º±¾µØºÍÍø¹Ø¶¼»á´¥·¢
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_MOD;			
 			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_MOD, mIotManager.mLightManager.mode, mIotManager.mod_seq);	
 			mIotManager.mod_seq = 0;
 		}
 		
-		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_TIM){							// äº®ç¯æ—¶é—´å‘ç”Ÿæ”¹å˜ï¼šç½‘å…³æ§åˆ¶
+		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_TIM){							// ÁÁµÆÊ±¼ä·¢Éú¸Ä±ä£ºÍø¹Ø¿ØÖÆ
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_TIM;
 			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_TIM, mIotManager.mLightManager.bri_time, mIotManager.tim_seq);	
 			mIotManager.tim_seq = 0;
@@ -2144,7 +2164,7 @@ static void Main_Upload_State(void)
 		#endif
 	}
 }
-// DLPSç›¸å…³
+// DLPSÏà¹Ø
 bool SkyBleMesh_Is_No_ReportMsg(void)
 {
 	bool ret = false;
@@ -2161,7 +2181,7 @@ bool SkyBleMesh_Is_No_ReportMsg(void)
 		}
 
 	} else{
-		ret = true; // qlj åé¢è€ƒè™‘ä¸‹
+		ret = true; // qlj ºóÃæ¿¼ÂÇÏÂ
 	}
 
 	return ret;
@@ -2204,6 +2224,13 @@ extern void SkyBleMesh_MainLoop(void)
 	uint32_t newtick = HAL_GetTickCount();
 	SkyBleMesh_Save_Params(newtick);
 	
+	#if SKYMESH_FACTORYTEST_EABLE==1
+	// ¹¤³§²âÊÔ
+	if(SkyMesh_Product_Factory_Checking() == true){ 		
+		return;
+	}
+	#endif
+	
 	bool isprov = SkyBleMesh_IsProvision_Sate();
 	if(isprov){
 		
@@ -2211,17 +2238,17 @@ extern void SkyBleMesh_MainLoop(void)
 		Main_Event_Handle();
 		SkyFunction_Handle(newtick);
 		
-		//åˆ¤æ–­è®¾å¤‡æ˜¯å¦ç¦»çº¿
+		//ÅĞ¶ÏÉè±¸ÊÇ·ñÀëÏß
 		if(Main_Check_Online() == true){
-			//çŠ¶æ€ä¸ŠæŠ¥ 
+			//×´Ì¬ÉÏ±¨ 
 			Main_Upload_State();
 			
-			// è½®è¯¢å‘é€ç¼“å­˜
+			// ÂÖÑ¯·¢ËÍ»º´æ
 			BleMesh_Vendor_Send_Packet();
 		}
 		
 	}else{
-		// æ²¡æœ‰é…ç½‘ä¹Ÿè¦æ‰§è¡Œæ§åˆ¶ï¼Œä¸ç»™ä¸ŠæŠ¥æ ‡å¿—
+		// Ã»ÓĞÅäÍøÒ²ÒªÖ´ĞĞ¿ØÖÆ£¬²»¸øÉÏ±¨±êÖ¾
         if(mIotManager.alive_status !=0 || mIotManager.recv_alive_tick != 0){
             mIotManager.alive_status        = 0;		
             mIotManager.report_flag         = 0;
@@ -2252,7 +2279,7 @@ static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
 	SoftWdtFed(SKYMESH_THREAD_SWDT_ID); 
 	#endif
 	
-	// ç»™APPtaskå‘æ¶ˆæ¯,subtypeåŒºåˆ†å“ªä¸ªtmr
+	// ¸øAPPtask·¢ÏûÏ¢,subtypeÇø·ÖÄÄ¸ötmr
     T_IO_MSG msg;
     msg.type = IO_MSG_TYPE_TIMER;
     msg.subtype = MAINLOOP_TIMEOUT;
@@ -2309,10 +2336,10 @@ extern uint8_t SkyBleMesh_App_Init(void)
     if(retcfg!=0 || retgetmac==false){ 		
         APP_DBG_PRINTF2("SkyBleMesh_ReadConfig read failed %d %d\n",retcfg, retgetmac);
 		
-		// æœ¬åœ°çƒ§å½•ä¸ä¼šæ“¦é™¤flashã€‚æ‰€ä»¥é€šè¿‡MACaddråˆ¤æ–­æ“¦é™¤flashã€‚å¹¶æ¸…é…ç½‘
-		mesh_node_clear(); // æ¢å¤é‡é…ç½‘
+		// ±¾µØÉÕÂ¼²»»á²Á³ıflash¡£ËùÒÔÍ¨¹ıMACaddrÅĞ¶Ï²Á³ıflash¡£²¢ÇåÅäÍø
+		mesh_node_clear(); // »Ö¸´ÖØÅäÍø
 		
-		/*åˆ›ç»´è®¾å¤‡mesh UUID:     CIP(2BYTE)+ PRODUCT_TYPE(4Byte)+ MACåœ°å€(6Byte)+ æœºæ•°(4Byte) */
+		/*´´Î¬Éè±¸mesh UUID:     CIP(2BYTE)+ PRODUCT_TYPE(4Byte)+ MACµØÖ·(6Byte)+ »úÊı(4Byte) */
 		Regain_Random_UUID(mIotManager.device_uuid, MESH_DEV_UUID_LEN);			
 		mIotManager.device_uuid[0] = BLEMESH_VENDOR_COMPANY_ID & 0xFF;
 		mIotManager.device_uuid[1] = (BLEMESH_VENDOR_COMPANY_ID>>8) & 0xFF;
@@ -2329,18 +2356,19 @@ extern uint8_t SkyBleMesh_App_Init(void)
 		#endif			
 			
 		mIotManager.process_state = 0xFF;
-		if(retgetmac==false){
-			SkyBleMesh_unBind_complete();
-			mIotManager.release_flag = SKYIOT_FIRST_RELEASE;
-
-		}
-		SkyiotManager_Default_Config(true);  // è®¾å¤‡é»˜è®¤é…ç½® å¹¶ æ§åˆ¶
-		SkyBleMesh_WriteConfig();        // ä¿å­˜å‚æ•°
+		mIotManager.release_flag = SKYIOT_INVALID_RELEASE;
+		// if(retgetmac==false){
+		// 	SkyBleMesh_unBind_complete();
+		// 	mIotManager.release_flag = SKYIOT_FIRST_RELEASE;
+		// }
 		
-		if(retgetmac==false){
-			APP_DBG_PRINTF1("Write First Release Flag");
-			SkyBleMesh_Reset_timer();
-		}
+		SkyiotManager_Default_Config(true);  // Éè±¸Ä¬ÈÏÅäÖÃ ²¢ ¿ØÖÆ
+		SkyBleMesh_WriteConfig();        // ±£´æ²ÎÊı
+		
+		// if(retgetmac==false){
+		// 	APP_DBG_PRINTF1("Write First Release Flag");
+		// 	SkyBleMesh_Reset_timer();
+		// }
 				
     } else {
         APP_DBG_PRINTF0("SkyBleMesh_ReadConfig read succ\n");
@@ -2379,7 +2407,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
         HAL_OpenInf_Power(true);
 		mIotManager.mLightManager.statu[SKY_LED1_STATUS]=0;
 		mIotManager.mLightManager.statu[SKY_LED2_STATUS]=0;
-		HAL_Lighting_OFF();                                   // æ„Ÿåº”æ¨¡å¼å¼€æœºç­ç¯
+		HAL_Lighting_OFF();                                   // ¸ĞÓ¦Ä£Ê½¿ª»úÃğµÆ
     }else{
 		if(mIotManager.release_flag == SKYIOT_FIRST_RELEASE){
 			mIotManager.mLightManager.statu[SKY_LED1_STATUS]=0;
@@ -2387,7 +2415,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 			mIotManager.mLightManager.mode=NLIGHT_MANUAL_MOD;
 			HAL_Lighting_OFF();
 		}else{
-			SkyLed_LightEffective_CTL(false, 0, 0); // æ‰‹åŠ¨æ¨¡å¼å¼€æœºäº®ç¯
+			SkyLed_LightEffective_CTL(false, 0, 0); // ÊÖ¶¯Ä£Ê½¿ª»úÁÁµÆ
 		}
 	}
 
@@ -2404,6 +2432,11 @@ extern uint8_t SkyBleMesh_App_Init(void)
 
 	IsSkyAppInited = true;
 	blemesh_sysinit_ctrl_dlps(true);
+	if(SkyBleMesh_Device_Active_Sate() == true){
+		blemesh_factory_ctrl_dlps(true);
+	}else{
+		blemesh_factory_ctrl_dlps(false);
+	}
 
 	
 	return 0; 
@@ -2414,10 +2447,10 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 	uint16_t batt_val=0, lightsense = 0;
 	
 	// if(HAL_ReadAmbient_Power() == 1){			
-		// ç¯å¢ƒå…‰ã€ç”µæ± ç”µå‹é‡‡é›†
+		// »·¾³¹â¡¢µç³ØµçÑ¹²É¼¯
 		HAL_SkyAdc_Sample(&batt_val, &lightsense );	
 		if(onlybatt == false && HAL_Lighting_Output_Statu() == false){
-			// ç¯å…‰æ²¡æœ‰è¾“å‡ºï¼Œè®¤ä¸ºé‡‡é›†çš„å…‰æ„Ÿæ˜¯æ­£ç¡®çš„ã€‚
+			// µÆ¹âÃ»ÓĞÊä³ö£¬ÈÏÎª²É¼¯µÄ¹â¸ĞÊÇÕıÈ·µÄ¡£
 			if(lightsense > (SKYIOT_AMBIENT_LIMITVOL+100)){ // +100
 				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_BRIGHT;
 			}else if(lightsense < (SKYIOT_AMBIENT_LIMITVOL-10)){
@@ -2437,7 +2470,7 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 				APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 3.1V \n");
 			}
 		}else{
-			if(batt_val > (BATT_WARIN_RANK+150)){ // ç”µå‹å¤§äºé¢„è­¦å€¼150mvï¼Œè§£é™¤é¢„è­¦
+			if(batt_val > (BATT_WARIN_RANK+150)){ // µçÑ¹´óÓÚÔ¤¾¯Öµ150mv£¬½â³ıÔ¤¾¯
 				mIotManager.batt_rank = BATT_NORMAL;
 			}
 		}
@@ -2454,8 +2487,10 @@ extern uint8_t SkyBleMesh_Batt_Station(void)
 }
 
 //=======================================================================================//
+#if SKYMESH_FACTORYTEST_EABLE==1
+extern void HAL_Lighting_Nightlight(uint8_t lightindex, uint16_t val);
 
-// å·¥å‚æµ‹è¯•
+// ¹¤³§²âÊÔ
 #define DONGLEADV_LEN_INDEX       3
 #define DONGLEADV_CMD_INDEX       5
 #define DONGLEADV_SCR_INDEX       6
@@ -2465,10 +2500,21 @@ enum m_FACTORYTESTSTATE
 {
     M_FACTORYTEST_INIT_STATE = 0x00,
     M_FACTORYTEST_START_STATE,
+    M_FACTORYTEST_FINISH_STATE,
     M_FACTORYTEST_END_STATE
 };
-enum m_FACTORYTESTSTATE g_factorytest_state;
+enum m_FACTORYTESTSTATE g_factorytest_state=M_FACTORYTEST_INIT_STATE;
 const uint8_t DongleAdvAddr[6]={0x53, 0x4B, 0x59, 0x44, 0x55, 0x54};
+
+enum m_PCBA_TESTSTATE
+{
+    M_PCBA_TEST_INIT_STATE = 0x00,
+    M_PCBA_TEST_READY_STATE,
+    M_PCBA_TEST_START_STATE,
+    M_PCBA_TEST_END_STATE
+};
+enum m_PCBA_TESTSTATE g_PCBtest_state=M_PCBA_TEST_INIT_STATE;
+
 
 static bool ReverseComparisonBuff(uint8_t *src, uint8_t *dst, uint8_t len)
 {
@@ -2491,8 +2537,8 @@ void SkyMesh_ProductFactoryCheck_cb(T_GAP_ADV_EVT_TYPE adv_type, uint8_t* bd_add
 {
 	// APP_DBG_PRINTF1("%s %02X %02X %02X %02X %02X %02X ",__func__, bd_addr[0], bd_addr[1], bd_addr[2], bd_addr[3], bd_addr[4], bd_addr[5]);
        
-	// æœªé…ç½‘çŠ¶æ€ä¸‹ï¼Œåªè¿›ä¸€æ¬¡äº§æµ‹ã€‚
-	// 020106(æ²¿ç”¨GATTå¤´3B) + len(1B) + FF(1B) + 81(cmd) + scraddr(6B) + "dest_addr(6B)" + sum(1B)
+	// Î´ÅäÍø×´Ì¬ÏÂ£¬Ö»½øÒ»´Î²ú²â¡£
+	// 020106(ÑØÓÃGATTÍ·3B) + len(1B) + FF(1B) + 81(cmd) + scraddr(6B) + "dest_addr(6B)" + sum(1B)
 	if(g_factorytest_state==M_FACTORYTEST_INIT_STATE && (SkyBleMesh_IsProvision_Sate()!=true) && (adv_type==GAP_ADV_EVT_TYPE_NON_CONNECTABLE)){
 		if( ReverseComparisonBuff(bd_addr, (uint8_t*)DongleAdvAddr, 6) == true){
 			#if 0
@@ -2511,10 +2557,10 @@ void SkyMesh_ProductFactoryCheck_cb(T_GAP_ADV_EVT_TYPE adv_type, uint8_t* bd_add
 				if(data[data_len-1]==sum && data[DONGLEADV_CMD_INDEX]==0x81){
 					if(memcmp(DongleAdvAddr, &(data[DONGLEADV_SCR_INDEX]), 6) == 0){
 						if(data_len == (DONGLEADV_DEST_INDEX+1)){
-							// ä¸æŒ‡å®š
+							// ²»Ö¸¶¨
 							APP_DBG_PRINTF1("UNspecify startfactory isintofactory=%d \n", g_factorytest_state );
 						}else if(data_len == (DONGLEADV_DEST_INDEX+7)){
-							// æŒ‡å®š
+							// Ö¸¶¨
 							if(ReverseComparisonBuff(SkyBleMesh_GetProductMac(), (uint8_t*)(&(data[DONGLEADV_DEST_INDEX])), 6) == true){								
 								APP_DBG_PRINTF1("Specify startfactory isintofactory=%d \n", g_factorytest_state );
 								g_factorytest_state = M_FACTORYTEST_START_STATE;
@@ -2528,3 +2574,227 @@ void SkyMesh_ProductFactoryCheck_cb(T_GAP_ADV_EVT_TYPE adv_type, uint8_t* bd_add
 	}
 	
 }
+
+
+void SkyMesh_Product_PCB_Check_State(void)
+{
+	if(g_PCBtest_state==M_PCBA_TEST_INIT_STATE){
+		g_PCBtest_state = M_PCBA_TEST_READY_STATE;
+	}	
+}
+void SkyMesh_Product_PCB_Check_Start(void)
+{
+	if(g_PCBtest_state==M_PCBA_TEST_READY_STATE){
+		g_PCBtest_state = M_PCBA_TEST_START_STATE;
+	}	
+}
+static void SkyMesh_Product_PCB_Check(void)
+{
+	// 50ms called
+	static uint8_t pcbstep = 0;
+	static uint8_t tmpcnt = 0;
+	
+	if(g_PCBtest_state==M_PCBA_TEST_INIT_STATE){
+		pcbstep = 0;
+		tmpcnt = 0;
+		return;
+	}
+	
+	switch(pcbstep){
+		case 0:{
+			if(g_PCBtest_state==M_PCBA_TEST_READY_STATE){
+				blemesh_factory_ctrl_dlps(false);  // µ÷½ûÖ¹ĞİÃß
+				HAL_Lighting_OFF();
+			}else if(g_PCBtest_state==M_PCBA_TEST_START_STATE){				
+				HAL_OpenInf_Power(true); // ÌáÇ°´ò¿ªµçÔ´×¼±¸
+				pcbstep = 1;
+			}
+		break;
+		}
+		case 1:{
+			HAL_OpenInf_Power(true); // ÌáÇ°´ò¿ªµçÔ´×¼±¸
+			
+			HAL_Lighting_Nightlight(FRONT_LED_PWM, 100);
+			HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+		
+			uint32_t newtick = HAL_GetTickCount();
+			uint8_t infstatu = Hal_Check_Influence(newtick);			
+			if(infstatu == SKYIOT_INF_HAVE_BODY){ // ÈË¸Ğ
+				pcbstep = 2;
+			}
+		break;
+		}
+		case 2:{
+			if(tmpcnt%16 == 0){ 
+				HAL_Lighting_Nightlight(FRONT_LED_PWM, 100);
+				HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+			}else if(tmpcnt%16 == 4){
+				HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
+				HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+
+			}else if(tmpcnt%16 == 8){
+				HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
+				HAL_Lighting_Nightlight(REAR_LED_PWM,  100);
+
+			}else if(tmpcnt%16 == 12){
+				HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
+				HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+
+			}
+			// 200ms*4 = 50ms*16
+			if(++tmpcnt >= 16){
+				tmpcnt = 0;
+			}
+		break;
+		}
+				
+	}
+	
+}
+
+
+void SkyMesh_Product_device_Check_State(void)
+{
+	if(g_factorytest_state==M_FACTORYTEST_FINISH_STATE){
+		g_factorytest_state = M_FACTORYTEST_END_STATE;
+	}
+}
+
+static void SkyMesh_Product_device_Check(void)
+{
+	// 50ms called
+	static uint8_t devicestep = 0;
+	static uint8_t tmpcnt = 0;
+	
+	if(g_factorytest_state==M_FACTORYTEST_INIT_STATE){
+		devicestep = 0;
+		tmpcnt = 0;
+		return;
+	}
+	
+	switch(devicestep){
+		case 0:{
+			HAL_Set_Ambient_Power(1); // ÌáÇ°´ò¿ªµçÔ´×¼±¸ADC²É¼¯
+			HAL_OpenInf_Power(true); // ÌáÇ°´ò¿ªµçÔ´×¼±¸
+			
+			if(g_factorytest_state == M_FACTORYTEST_START_STATE){
+				blemesh_factory_ctrl_dlps(false);  // µ÷½ûÖ¹ĞİÃß
+				HAL_Lighting_ON();
+			
+				uint32_t newtick = HAL_GetTickCount();
+				uint8_t infstatu = Hal_Check_Influence(newtick);			
+				if(infstatu == SKYIOT_INF_HAVE_BODY){ // ÈË¸Ğ
+					devicestep = 1;
+				}
+			}
+		break;
+		}
+		case 1:{
+			HAL_Lighting_OFF();
+			if(tmpcnt%10 == 0){
+				HAL_Set_Ambient_Power(1); // Ò»Ö±´ò¿ªµçÔ´×¼±¸ADC²É¼¯
+				mIotManager.mLightManager.ambstatu = SKYIOT_AMBIENT_BRIGHT; // Ç¿ÖÆ¸øÏÂ
+			}else if(tmpcnt%10 == 9){
+				SkyBleMesh_Batterval_Lightsense(false);
+			}
+			if(++tmpcnt >= 10){
+				tmpcnt = 0;
+			}
+		
+			if(mIotManager.mLightManager.ambstatu == SKYIOT_AMBIENT_DARK){ // ¹â¸Ğ
+				devicestep = 2;
+				tmpcnt = 0;
+			}
+		break;
+		}
+		case 2:{
+			if(tmpcnt%16 == 0){ 
+				HAL_Lighting_Nightlight(FRONT_LED_PWM, 100);
+				HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+			}else if(tmpcnt%16 == 4){
+				HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
+				HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+
+			}else if(tmpcnt%16 == 8){
+				HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
+				HAL_Lighting_Nightlight(REAR_LED_PWM,  100);
+
+			}else if(tmpcnt%16 == 12){
+				HAL_Lighting_Nightlight(FRONT_LED_PWM, 0);
+				HAL_Lighting_Nightlight(REAR_LED_PWM,  0);
+
+			}
+			// 200ms*4 = 50ms*16
+			if(++tmpcnt >= 16){
+				tmpcnt = 0;
+				
+				if(g_factorytest_state == M_FACTORYTEST_START_STATE){
+					g_factorytest_state = M_FACTORYTEST_FINISH_STATE;
+				}
+			}
+			
+			if(g_factorytest_state == M_FACTORYTEST_END_STATE){
+				// blemesh_factory_ctrl_dlps(true);  // »Ö¸´ĞİÃß ÓĞÖØÆô²»ĞèÒª
+				// Ğ´Ê×´Î³ö³§±êÖ¾				
+		        SkyBleMesh_unBind_complete();
+		        mIotManager.process_state = 0xFF;
+		        mIotManager.release_flag = SKYIOT_FIRST_RELEASE;
+		        SkyBleMesh_WriteConfig();
+				SkyBleMesh_Reset_timer();
+		        APP_DBG_PRINTF1("Write First Release Flag");
+						
+				devicestep = 0;
+			}
+		break;
+		}
+			
+	
+	}
+}
+
+
+
+bool SkyMesh_Product_Factory_Checking(void)
+{
+	bool ret = false;
+	
+
+	if(g_PCBtest_state!=M_PCBA_TEST_INIT_STATE){
+		SkyMesh_Product_PCB_Check();
+		g_factorytest_state = M_FACTORYTEST_INIT_STATE; // ÓÅÏÈPCB²âÊÔ
+	}
+	
+	if(g_factorytest_state!=M_FACTORYTEST_INIT_STATE){
+		SkyMesh_Product_device_Check();
+	}
+
+	
+	if(g_PCBtest_state!=M_PCBA_TEST_INIT_STATE || g_factorytest_state!=M_FACTORYTEST_INIT_STATE){
+		
+		#if 1
+		if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
+			if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch
+				if(mIotManager.mSwitchManager.keymode == KEY_SHORTPRESS_MODE){ // ÔÚ´Ë¼ì²â¼´¿É
+					SkyMesh_Product_device_Check_State(); // ´¥·¢Õû»ú³§²â  
+				}else if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE){ // ÔÚ´Ë¼ì²â¼´¿É
+					SkyBleMesh_Reset_timer(); // ·À´íÖØÆô  
+				}else if(mIotManager.mSwitchManager.keymode == KEY_SINGLE_MODE){ 
+					SkyMesh_Product_PCB_Check_Start();    // PCB¿ªÊ¼¼ì²â
+				}
+			}else if(mIotManager.mSwitchManager.keyval == 0x02){ // PCB check switch
+				if(mIotManager.mSwitchManager.keymode == KEY_SINGLE_MODE){  // Õâ¸öÊ×´ÎĞèÒªÔÚÍâÃæ¼ì²â
+					SkyMesh_Product_PCB_Check_State(); // ´¥·¢PCB³§²â
+				}
+			}
+			mIotManager.mSwitchManager.keymode = 0;
+			mIotManager.mSwitchManager.keyval = 0;
+		}		
+		#endif
+		
+		ret = true;
+	}
+
+	return ret;
+}
+#endif
+

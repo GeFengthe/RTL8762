@@ -30,7 +30,7 @@
 #define PRODUCT_TYPE    				(118)		// TODO 修改为小夜灯:118
 #define PRODUCT_MODEL   				("LCAM01") 	// LCAM01	
 #define PRODUCT_BRAND   				(11)	    // swaiot
-#define PRODUCT_VERSION 				("1.0.10")
+#define PRODUCT_VERSION 				("1.0.11")
 #endif
 
 // #define MESH_ADV_NAME_LEN (30)
@@ -107,6 +107,8 @@ extern void SkyBleMesh_Unprov_timer_delet(void);
 extern void SkyBleMesh_ChangeScan_timer(uint8_t multi);
 extern void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg);
 extern void SkyBleMesh_unBind_complete(void);
+extern bool SkyBleMesh_Device_Active_Sate(void);
+
 
 extern int SkyBleMesh_WriteConfig(void);
 extern bool SkyBleMesh_Is_No_ReportMsg(void);
@@ -125,6 +127,15 @@ extern uint8_t SkyBleMesh_Batt_Station(void);
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx);
 
 extern void SkyMesh_ProductFactoryCheck_cb(T_GAP_ADV_EVT_TYPE adv_type, uint8_t* bd_addr, uint8_t* data, uint8_t data_len);
+
+
+#define SKYMESH_FACTORYTEST_EABLE       1
+
+#if SKYMESH_FACTORYTEST_EABLE==1
+extern bool SkyMesh_Product_Factory_Checking(void);
+#endif
+
+
 #if MESH_TEST_PRESSURE == 1
 extern void test_update_attr(void);
 extern void SkyBleMesh_Test_Timeout_cb(void *timer);
