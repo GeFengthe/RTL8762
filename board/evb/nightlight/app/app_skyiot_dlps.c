@@ -64,18 +64,18 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 	}else{
 		switch_io_ctrl_dlps(false);
 	}
-	
+
+    DBG_DIRECT("dword=%x\r\n",DlpsCtrlStatu_t.dword);
 	if(DlpsCtrlStatu_t.dword == DLPS_JUST_WAITING_TMR){
 		SkyBleMesh_ReadyEnterDlps_cfg();
-		
+		DBG_DIRECT("enter DLPS_cfg\r\n");
 		if(skybleenterdlps_timer){
 			plt_timer_delete(skybleenterdlps_timer, 0);
 			skybleenterdlps_timer = NULL;
 		}
 		
-		Reenter_tmr_ctrl_dlps(true);
+		Reenter_tmr_ctrl_dlps(true);    
 	}
-	
 }
 
 static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)

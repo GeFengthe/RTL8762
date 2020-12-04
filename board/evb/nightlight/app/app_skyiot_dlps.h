@@ -19,7 +19,7 @@ typedef union
         uint32_t ledtmr:  1; // led relay timer1
         uint32_t inf:     1; // inf
         uint32_t factory: 1; // PCB & device check
-        uint32_t rsvd: 24;
+        uint32_t rsvd:    24;        //24
     } bit;
 } DLPS_CTRL_STATU_T;
 extern DLPS_CTRL_STATU_T DlpsCtrlStatu_t;

@@ -2232,7 +2232,7 @@ extern void SkyBleMesh_MainLoop(void)
 	#endif
 	
 	bool isprov = SkyBleMesh_IsProvision_Sate();
-	if(isprov){
+	if(isprov==true && mIotManager.batt_rank!=BATT_WARING){
 		
 		//recv message	
 		Main_Event_Handle();
@@ -2356,7 +2356,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 		#endif			
 			
 		mIotManager.process_state = 0xFF;
-		mIotManager.release_flag = SKYIOT_INVALID_RELEASE;
+		mIotManager.release_flag = SKYIOT_FIRST_RELEASE;
 		// if(retgetmac==false){
 		// 	SkyBleMesh_unBind_complete();
 		// 	mIotManager.release_flag = SKYIOT_FIRST_RELEASE;
@@ -2461,7 +2461,11 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 		if(mIotManager.batt_rank == BATT_NORMAL){	
 			if(batt_val <= BATT_WARIN_RANK-50){
 				mIotManager.batt_rank = BATT_WARING;
-				SkyBleMesh_unBind_complete();	
+				
+				// SkyBleMesh_unBind_complete();				
+				beacon_stop();  	
+				gap_sched_scan(false);   
+	
 				mIotManager.mLightManager.statu[SKY_LED1_STATUS]=0;
 				mIotManager.mLightManager.statu[SKY_LED2_STATUS]=0;
 				mIotManager.mLightManager.mode=NLIGHT_MANUAL_MOD;
@@ -2472,6 +2476,17 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 		}else{
 			if(batt_val > (BATT_WARIN_RANK+150)){ // 电压大于预警值150mv，解除预警
 				mIotManager.batt_rank = BATT_NORMAL;
+
+				beacon_start(); 
+				gap_sched_scan(false); 
+			    uint16_t scan_interval = 0x1C0;  //!< 280ms
+				uint16_t scan_window   = 0x30; //!< 30ms
+				gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+				gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+				gap_sched_scan(true); 
+
+				// 上述不能恢复，就重启，简单粗暴
+				// 	SkyBleMesh_Reset_timer();
 			}
 		}
 		
