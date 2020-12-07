@@ -35,7 +35,7 @@ BEGIN_DECLS
   */
 
 #define DFU_TEMP_BUFFER_SIZE            2048
-#define DFU_SERVER_ADV_PERIOD           5000//!< ms
+#define DFU_SERVER_ADV_PERIOD           10000//!< ms
 #define DFU_SERVER_TIMEOUT_MSG          110
 #define DFU_WO_SCAN                     1
 

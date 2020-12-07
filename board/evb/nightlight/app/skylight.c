@@ -489,14 +489,19 @@ void SkyLed_Timeout_cb_handel(void *timer)
 							if(mLightManager->statu[REAR_LED_PWM] == 1){
 								HAL_Lighting_Nightlight(REAR_LED_PWM, LIGHT_BRIGHTNESS_PRECENT);
 							}
+                            mLightMonitor.mode = LED_MODE_UNKOWN;
+                            mLightMonitor.blinktime = 0;
 						}else if(mLightManager->mode == NLIGHT_REACT_LED1_MOD
 							  || mLightManager->mode == NLIGHT_REACT_LED2_MOD
 							  || mLightManager->mode == NLIGHT_REACT_LEDALL_MOD){ // 感应模式亮灯延时	LED_DELAY_BRIGHT_TIME		转换到cnt上				
 							mLightMonitor.blinkcnt = LED_DELAY_BRIGHT_TIME/LED_BRIGHT_TMR_PERIOD;
 							mLightMonitor.blinktime = 0;
 							mLightMonitor.mode = LED_MODE_DELAY_BRIGHT;
-						}
-						mLightMonitor.blinktime = 0;
+						}else{
+                            mLightMonitor.mode = LED_MODE_UNKOWN;
+                            mLightMonitor.blinktime = 0;
+                        }
+						
 					}
 				break;
 				}
@@ -519,7 +524,10 @@ void SkyLed_Timeout_cb_handel(void *timer)
 	}
 	if(mLightMonitor.mode == LED_MODE_UNKOWN && mLightMonitor.blinkcnt==0){		
 		Delete_LED_Timer();
-	}
+	}else{
+        DBG_DIRECT(" ----------------mLightMonitor.mode=0x%x,mLightMonitor.blinkcnt=0x%x    ,mLightManager.mode=0x%x--------------------------\r\n",mLightMonitor.mode,mLightMonitor.blinkcnt,mLightManager->mode);
+        
+    }
 		
 }
 

@@ -51,6 +51,7 @@ typedef enum{
 	NLIGHT_REACT_LED1_MOD,    // 主灯
 	NLIGHT_REACT_LED2_MOD,    // 副灯
 	NLIGHT_REACT_LEDALL_MOD,  // 主副灯
+    
 }NLIGHT_MODE_e;
 	
 

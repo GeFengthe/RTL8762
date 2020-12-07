@@ -65,7 +65,7 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 		switch_io_ctrl_dlps(false);
 	}
 
-    DBG_DIRECT("dword=%x\r\n",DlpsCtrlStatu_t.dword);
+//    DBG_DIRECT("dword=%x\r\n",DlpsCtrlStatu_t.dword);
 	if(DlpsCtrlStatu_t.dword == DLPS_JUST_WAITING_TMR){
 		SkyBleMesh_ReadyEnterDlps_cfg();
 		DBG_DIRECT("enter DLPS_cfg\r\n");
@@ -85,6 +85,7 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 		startdelay--; // when reset,check dlps after 5s 
 		return;
 	}
+//    SkyBleMesh_EnterDlps_TmrCnt_Handle();
 	
     T_IO_MSG msg;
     msg.type = IO_MSG_TYPE_TIMER;

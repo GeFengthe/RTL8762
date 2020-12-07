@@ -1355,8 +1355,8 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 			}
 		
 			gap_sched_scan(false); 
-            uint16_t scan_interval = 0x1C0;  //!< 280ms
-            uint16_t scan_window   = 0x30; //!< 30ms
+            uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
+            uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
             gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
 			gap_sched_scan(true); 
@@ -2175,7 +2175,7 @@ bool SkyBleMesh_Is_No_ReportMsg(void)
 			if( MeshTxAttrStruct[i].fullflag==1 ){
 				break;
 			}
-		}		
+		}
 		if(i==MAX_TX_BUF_DEEP && mIotManager.report_flag==0){
 			ret = true;
 		}
@@ -2430,6 +2430,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 
 	// SkyBleMesh_MainLoop_timer(); // called in app_task
 
+//    mIotManager.release_flag = SKYIOT_ACTIVE_RELEASE ;        //为了不场测，也可以进低功耗
 	IsSkyAppInited = true;
 	blemesh_sysinit_ctrl_dlps(true);
 	if(SkyBleMesh_Device_Active_Sate() == true){

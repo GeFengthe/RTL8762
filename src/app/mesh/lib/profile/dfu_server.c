@@ -420,8 +420,8 @@ void  dfu_server_handle_cp(uint16_t length, uint8_t *p_value)
     uint8_t notif_data[11] = {0};
     dfu_control_point.opcode = *p_value;
     uint8_t *p = p_value + 1;
-    DFU_PRINT_TRACE2("dfu_service_handle_control_point_req: opcode=0x%x, length=%d",
-                     dfu_control_point.opcode, length);
+//    DBG_DIRECT("dfu_service_handle_control_point_req: opcode=0x%x, length=%d",
+//                     dfu_control_point.opcode, length);
     if (dfu_control_point.opcode >= DFU_OPCODE_MAX || dfu_control_point.opcode <= DFU_OPCODE_MIN)
     {
         notif_data[0] = DFU_OPCODE_NOTIF;
@@ -429,6 +429,8 @@ void  dfu_server_handle_cp(uint16_t length, uint8_t *p_value)
         notif_data[2] = 0xff;
         server_send_data(0, dfu_server_id, INDEX_DFU_CONTROL_POINT_CHAR_VALUE, \
                          notif_data, 3, GATT_PDU_TYPE_NOTIFICATION);
+//        DBG_DIRECT("dfu_service_handle_control_point_req: opcode=0x%x, length=%d",
+//                     dfu_control_point.opcode, length);
         return;
     }
 
@@ -813,6 +815,7 @@ T_APP_RESULT dfu_attr_write_cb(uint8_t conn_id, uint8_t service_id, uint16_t att
 
     if (attrib_index == INDEX_DFU_CONTROL_POINT_CHAR_VALUE)
     {
+//        DBG_DIRECT( "--------INTHE ATTRIB_INDEX=%d-------------\r\n",attrib_index);
         dfu_server_handle_cp(length, p_value);
     }
     else if (attrib_index == INDEX_DFU_PACKET_VALUE)

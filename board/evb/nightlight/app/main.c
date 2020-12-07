@@ -295,8 +295,8 @@ void driver_init(void)
     if (node_state == UNPROV_DEVICE){
         if(batt_station == BATT_NORMAL){
 		gap_sched_scan(false); 
-        uint16_t scan_interval = 0x1C0;  //!< 280ms
-		uint16_t scan_window   = 0x30; //!< 30ms
+        uint16_t scan_interval = 0x1C0;  //!<  1C0 280ms        500
+		uint16_t scan_window   = 0x30; //!< 30 30ms  10ms
 		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
 		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
 		gap_sched_scan(true); 
