@@ -214,6 +214,9 @@ static int SkyBleMesh_ReadConfig(void);
  ****************************************************************************************
  */
  
+static void SkyMesh_Product_PCB_Check_State(void);
+
+
 #if 1
 // qlj len 加长度越界判断
 static bool Hal_FlashWrite(FLASH_PARAM_TYPE_e type, uint16_t len, void *pdata)
@@ -2531,7 +2534,6 @@ enum m_PCBA_TESTSTATE
 };
 enum m_PCBA_TESTSTATE g_PCBtest_state=M_PCBA_TEST_INIT_STATE;
 
-
 static bool ReverseComparisonBuff(uint8_t *src, uint8_t *dst, uint8_t len)
 {
 	uint8_t i = 0;
@@ -2592,7 +2594,7 @@ void SkyMesh_ProductFactoryCheck_cb(T_GAP_ADV_EVT_TYPE adv_type, uint8_t* bd_add
 }
 
 
-void SkyMesh_Product_PCB_Check_State(void)
+static void SkyMesh_Product_PCB_Check_State(void)
 {
 	if(g_PCBtest_state==M_PCBA_TEST_INIT_STATE){
 		g_PCBtest_state = M_PCBA_TEST_READY_STATE;

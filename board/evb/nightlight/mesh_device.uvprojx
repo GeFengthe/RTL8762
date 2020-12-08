@@ -337,7 +337,7 @@
               <MiscControls>--gnu --preinclude app_flags.h --bss_threshold=0</MiscControls>
               <Define>MESH_DEVICE</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\inc\app;..\..\..\inc\bluetooth\gap;..\..\..\inc\bluetooth\gap\gap_lib;..\..\..\inc\bluetooth\profile;..\..\..\inc\bluetooth\profile\server;..\..\..\inc\bluetooth\profile\client;..\..\..\inc\os;..\..\..\inc\peripheral;..\..\..\inc\platform;..\..\..\inc\platform\cmsis;..\..\..\src\app\mesh\lib;..\..\..\src\app\mesh\lib\lib;..\..\..\src\app\mesh\lib\platform;..\..\..\src\app\mesh\lib\gap;..\..\..\src\app\mesh\lib\cmd;..\..\..\src\app\mesh\lib\model;..\..\..\src\app\mesh\lib\model\realtek;..\..\..\src\app\mesh\lib\profile;..\..\..\src\app\mesh\lib\utility;..\..\..\src\app\mesh\lib\inc;..\..\..\src\app\mesh\lib\common;..\..\..\src\app\mesh\device;.\app;..\nightlight</IncludePath>
+              <IncludePath>..\..\..\inc\app;..\..\..\inc\bluetooth\gap;..\..\..\inc\bluetooth\gap\gap_lib;..\..\..\inc\bluetooth\profile;..\..\..\inc\bluetooth\profile\server;..\..\..\inc\bluetooth\profile\client;..\..\..\inc\os;..\..\..\inc\peripheral;..\..\..\inc\platform;..\..\..\inc\platform\cmsis;..\..\..\src\app\mesh\lib;..\..\..\src\app\mesh\lib\lib;..\..\..\src\app\mesh\lib\platform;..\..\..\src\app\mesh\lib\gap;..\..\..\src\app\mesh\lib\cmd;..\..\..\src\app\mesh\lib\model;..\..\..\src\app\mesh\lib\model\realtek;..\..\..\src\app\mesh\lib\profile;..\..\..\src\app\mesh\lib\utility;..\..\..\src\app\mesh\lib\inc;..\..\..\src\app\mesh\lib\common;..\..\..\src\app\mesh\device;.\app;..\nightlight;..\..\..\src\test_model</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -415,6 +415,21 @@
               <FileName>bee2_adc_lib.lib</FileName>
               <FileType>4</FileType>
               <FilePath>..\..\..\bin\bee2_adc_lib.lib</FilePath>
+            </File>
+            <File>
+              <FileName>gap_utils.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\bin\gap_utils.lib</FilePath>
+            </File>
+            <File>
+              <FileName>auto_k_rf.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\bin\auto_k_rf.lib</FilePath>
+            </File>
+            <File>
+              <FileName>auto_k_rf_bonding_lib_DUT.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\..\..\bin\auto_k_rf_bonding_lib_DUT.lib</FilePath>
             </File>
           </Files>
         </Group>
@@ -673,6 +688,26 @@
               <FileName>skyadc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\skyadc.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>test_module</GroupName>
+          <Files>
+            <File>
+              <FileName>data_uart_test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\test_model\data_uart_test.c</FilePath>
+            </File>
+            <File>
+              <FileName>single_tone.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\test_model\single_tone.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart_transport.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\test_model\uart_transport.c</FilePath>
             </File>
           </Files>
         </Group>
