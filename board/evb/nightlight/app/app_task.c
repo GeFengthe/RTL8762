@@ -40,6 +40,16 @@
 #include "app_skyiot_dlps.h"
 #include "soft_wdt.h"
 
+// module test
+#include "board.h" 
+#if MP_TEST_MODE_SUPPORT_AUTO_K_RF
+#include "data_uart_test.h"
+#include "test_mode.h"
+#endif
+extern T_TEST_MODE   test_mode_value;
+
+
+
 /*============================================================================*
  *                              Macros
  *============================================================================*/
@@ -126,7 +136,21 @@ void app_main_task(void *p_param)
     gap_start_bt_stack(evt_queue_handle, io_queue_handle, MAX_NUMBER_OF_GAP_MESSAGE);
 
     mesh_start(EVENT_MESH, EVENT_IO_TO_APP, evt_queue_handle, io_queue_handle);
-		
+	 
+	// module test	
+	printi("TEST_MODE=%d",test_mode_value);
+	if (test_mode_value == NOT_TEST_MODE) {
+		data_uart_init(P3_0, P3_1, app_send_uart_msg);
+		user_cmd_init("MeshDevice");
+	}
+	#if MP_TEST_MODE_SUPPORT_AUTO_K_RF
+	else if(test_mode_value == DATA_UART_TEST_MODE) {
+		printi("test_mode uart_test_init");
+		uart_test_init();
+	}
+	#endif
+	
+	
 	SkyBleMesh_MainLoop_timer();	
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);

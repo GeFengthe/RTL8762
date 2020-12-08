@@ -34,36 +34,36 @@ user_cmd_parse_result_t user_cmd_reset(user_cmd_parse_value_t *pparse_value)
 
 user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
 {
-//    data_uart_debug("MeshState:\t%d\r\n", mesh_node.node_state);
-//    data_uart_debug("DevUUID:\t");
-//    data_uart_dump(mesh_node.dev_uuid, 16);
+    data_uart_debug("MeshState:\t%d\r\n", mesh_node.node_state);
+    data_uart_debug("DevUUID:\t");
+    data_uart_dump(mesh_node.dev_uuid, 16);
     uint8_t bt_addr[6];
     gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
-//    data_uart_debug("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
-//                    bt_addr[5], bt_addr[4], bt_addr[3], bt_addr[2], bt_addr[1], bt_addr[0]);
+    data_uart_debug("BTAddr:\t\t0x%02x%02x%02x%02x%02x%02x\r\n",
+                    bt_addr[5], bt_addr[4], bt_addr[3], bt_addr[2], bt_addr[1], bt_addr[0]);
     for (uint16_t index = 0; index < mesh_node.dev_key_num; index++)
     {
         if (mesh_node.dev_key_list[index].used && mesh_node.dev_key_list[index].element_num != 0)
         {
-//            data_uart_debug("DevKey:\t\t%d-0x%04x-%d-", index, mesh_node.dev_key_list[index].unicast_addr,
-//                            mesh_node.dev_key_list[index].element_num);
-//            data_uart_dump(mesh_node.dev_key_list[index].dev_key, 16);
+            data_uart_debug("DevKey:\t\t%d-0x%04x-%d-", index, mesh_node.dev_key_list[index].unicast_addr,
+                            mesh_node.dev_key_list[index].element_num);
+            data_uart_dump(mesh_node.dev_key_list[index].dev_key, 16);
         }
     }
     for (uint16_t index = 0; index < mesh_node.app_key_num; index++)
     {
         if (mesh_node.app_key_list[index].key_state != MESH_KEY_STATE_INVALID)
         {
-//            data_uart_debug("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", index,
-//                            mesh_node.app_key_list[index].app_key_index_g, mesh_node.app_key_list[index].key_state,
-//                            key_state_to_tx_loop(mesh_node.app_key_list[index].key_state),
-//                            mesh_node.app_key_list[index].net_key_binding);
+            data_uart_debug("AppKey:\t\t%d-0x%04x-%d-%d-%d\r\n", index,
+                            mesh_node.app_key_list[index].app_key_index_g, mesh_node.app_key_list[index].key_state,
+                            key_state_to_tx_loop(mesh_node.app_key_list[index].key_state),
+                            mesh_node.app_key_list[index].net_key_binding);
             for (uint8_t loop = 0; loop < 2; loop++)
             {
                 if (mesh_node.app_key_list[index].papp_key[loop] != NULL)
                 {
-//                    data_uart_debug("\t\t");
-//                    data_uart_dump(mesh_node.app_key_list[index].papp_key[loop]->app_key, 16);
+                    data_uart_debug("\t\t");
+                    data_uart_dump(mesh_node.app_key_list[index].papp_key[loop]->app_key, 16);
                 }
             }
         }
@@ -72,10 +72,10 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
     {
         if (mesh_node.net_key_list[index].key_state != MESH_KEY_STATE_INVALID)
         {
-//            data_uart_debug("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n", index,
-//                            mesh_node.net_key_list[index].net_key_index_g, mesh_node.net_key_list[index].key_state,
-//                            key_state_to_tx_loop(mesh_node.net_key_list[index].key_state),
-//                            key_state_to_key_refresh_phase(mesh_node.net_key_list[index].key_state));
+            data_uart_debug("NetKey:\t\t%d-0x%04x-%d-%d-%d\r\n", index,
+                            mesh_node.net_key_list[index].net_key_index_g, mesh_node.net_key_list[index].key_state,
+                            key_state_to_tx_loop(mesh_node.net_key_list[index].key_state),
+                            key_state_to_key_refresh_phase(mesh_node.net_key_list[index].key_state));
             if (mesh_node.net_key_list[index].net_key_index_g & 0x8000)
             {
                 break;
@@ -84,25 +84,25 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
             {
                 if (mesh_node.net_key_list[index].pnet_key[loop] != NULL)
                 {
-//                    data_uart_debug("\t\t");
-//                    data_uart_dump(mesh_node.net_key_list[index].pnet_key[loop]->net_key, 16);
+                    data_uart_debug("\t\t");
+                    data_uart_dump(mesh_node.net_key_list[index].pnet_key[loop]->net_key, 16);
                 }
             }
         }
     }
-//    data_uart_debug("IVindex:\t%d-0x%x\r\n", mesh_node.iv_update_flag, mesh_node.iv_index);
-//    data_uart_debug("Seq:\t\t0x%06x\r\n", mesh_node.seq);
-//    data_uart_debug("NodeAddr:\t0x%04x-%d-%d\r\n", mesh_node.unicast_addr,
-//                    mesh_node.element_queue.count, mesh_node.model_num);
+    data_uart_debug("IVindex:\t%d-0x%x\r\n", mesh_node.iv_update_flag, mesh_node.iv_index);
+    data_uart_debug("Seq:\t\t0x%06x\r\n", mesh_node.seq);
+    data_uart_debug("NodeAddr:\t0x%04x-%d-%d\r\n", mesh_node.unicast_addr,
+                    mesh_node.element_queue.count, mesh_node.model_num);
     mesh_element_p pelement = (mesh_element_p)mesh_node.element_queue.pfirst;
     while (pelement != NULL)
     {
-//        data_uart_debug("Element:\t%d-%d\r\n", pelement->element_index, pelement->model_queue.count);
+        data_uart_debug("Element:\t%d-%d\r\n", pelement->element_index, pelement->model_queue.count);
         mesh_model_p pmodel = (mesh_model_p)pelement->model_queue.pfirst;
         while (pmodel != NULL)
         {
-//            data_uart_debug("Model:\t\t%d-%d-0x%08x", pmodel->pmodel_info->model_index,
-//                            pmodel->model_index, pmodel->pmodel_info->model_id);
+            data_uart_debug("Model:\t\t%d-%d-0x%08x", pmodel->pmodel_info->model_index,
+                            pmodel->model_index, pmodel->pmodel_info->model_id);
             uint8_t key_flag = true;
             for (uint16_t index = 0; index < mesh_node.app_key_num; index++)
             {
@@ -112,22 +112,22 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
                     if (key_flag)
                     {
                         key_flag = false;
-//                        data_uart_debug("-(key:%d", index);
+                        data_uart_debug("-(key:%d", index);
                     }
                     else
                     {
-//                        data_uart_debug("-%d", index);
+                        data_uart_debug("-%d", index);
                     }
                 }
             }
             if (!key_flag)
             {
-//                data_uart_debug(")");
+                data_uart_debug(")");
             }
             if (MESH_NOT_UNASSIGNED_ADDR(pmodel->pub_params.pub_addr))
             {
-//                data_uart_debug("-(pub:0x%04x-%d-%d)", pmodel->pub_params.pub_addr, pmodel->pub_params.pub_ttl,
-//                                pmodel->pub_params.pub_key_info.app_key_index);
+                data_uart_debug("-(pub:0x%04x-%d-%d)", pmodel->pub_params.pub_addr, pmodel->pub_params.pub_ttl,
+                                pmodel->pub_params.pub_key_info.app_key_index);
             }
             mesh_model_p pmodelb = pmodel;
             while (pmodelb->pmodel_info->pmodel_bound != NULL)
@@ -141,27 +141,27 @@ user_cmd_parse_result_t user_cmd_list(user_cmd_parse_value_t *pparse_value)
                 {
                     if (pmodelb != pmodel)
                     {
-//                        data_uart_debug("-(sub:-%d-%d-0x%04x",
-//                                        ((mesh_model_p)pmodel->pmodel_info->pmodel_bound->pmodel)->model_index,
-//                                        pmodelb->model_index, paddr_element->mesh_addr);
+                        data_uart_debug("-(sub:-%d-%d-0x%04x",
+                                        ((mesh_model_p)pmodel->pmodel_info->pmodel_bound->pmodel)->model_index,
+                                        pmodelb->model_index, paddr_element->mesh_addr);
                     }
                     else
                     {
-//                        data_uart_debug("-(sub:0x%04x", paddr_element->mesh_addr);
+                        data_uart_debug("-(sub:0x%04x", paddr_element->mesh_addr);
                     }
                 }
                 else
                 {
-//                    data_uart_debug("-0x%04x", paddr_element->mesh_addr);
+                    data_uart_debug("-0x%04x", paddr_element->mesh_addr);
                 }
                 paddr_element = paddr_element->pnext;
                 if (paddr_element == NULL)
                 {
-//                    data_uart_debug(")");
+                    data_uart_debug(")");
                 }
             }
             pmodel = pmodel->pnext;
-//            data_uart_debug("\r\n");
+            data_uart_debug("\r\n");
         }
         pelement = pelement->pnext;
     }
@@ -177,15 +177,15 @@ user_cmd_parse_result_t user_cmd_dev_info_show(user_cmd_parse_value_t *pparse_va
 user_cmd_parse_result_t user_cmd_dev_uuid_set(user_cmd_parse_value_t *pparse_value)
 {
     plt_hex_to_bin(mesh_node.dev_uuid, (uint8_t *)pparse_value->pparameter[0], 16);
-//    data_uart_debug("DevUUID:\t");
-//    data_uart_dump(mesh_node.dev_uuid, 16);
+    data_uart_debug("DevUUID:\t");
+    data_uart_dump(mesh_node.dev_uuid, 16);
     return USER_CMD_RESULT_OK;
 }
 
 user_cmd_parse_result_t user_cmd_bearer_adv_set(user_cmd_parse_value_t *pparse_value)
 {
     bearer_adv_set(pparse_value->dw_parameter[0]);
-//    data_uart_debug("Adv bearer: %s\r\n", pparse_value->dw_parameter[0] ? "on" : "off");
+    data_uart_debug("Adv bearer: %s\r\n", pparse_value->dw_parameter[0] ? "on" : "off");
     return USER_CMD_RESULT_OK;
 }
 
@@ -206,8 +206,8 @@ user_cmd_parse_result_t user_cmd_prov_auth_value(user_cmd_parse_value_t *pparse_
         auth_value_len = strlen(pparse_value->pparameter[0]);
         auth_value = (uint8_t *)pparse_value->pparameter[0];
     }
-//    data_uart_debug("AuthValue: len=%d, value=", auth_value_len);
-//    data_uart_dump(auth_value, auth_value_len);
+    data_uart_debug("AuthValue: len=%d, value=", auth_value_len);
+    data_uart_dump(auth_value, auth_value_len);
     return prov_auth_value_set(auth_value, auth_value_len) ? USER_CMD_RESULT_OK : USER_CMD_RESULT_ERROR;
 }
 
@@ -221,7 +221,7 @@ user_cmd_parse_result_t user_cmd_vir_addr_set(user_cmd_parse_value_t *pparse_val
     va_addr = vir_addr_get(va_index);
     if (MESH_NOT_UNASSIGNED_ADDR(va_addr))
     {
-//        data_uart_debug("index=%d va=0x%04x\r\n", va_index, va_addr);
+        data_uart_debug("index=%d va=0x%04x\r\n", va_index, va_addr);
         return USER_CMD_RESULT_OK;
     }
     else
@@ -253,12 +253,12 @@ int32_t tp_reveive(const mesh_model_info_p pmodel_info, uint32_t type, void *par
     mesh_msg_t *pmesh_msg = (mesh_msg_t *)pargs;
     uint8_t *pbuffer = pmesh_msg->pbuffer + pmesh_msg->msg_offset;
     tp_msg_t *pmsg = (tp_msg_t *)(pbuffer);
-//    data_uart_debug("From:0x%04x To:0x%04x Tid:%d Time:%dms\r\n", pmesh_msg->src, pmesh_msg->dst,
-//                    pmsg->tid, plt_time_read_ms());
+    data_uart_debug("From:0x%04x To:0x%04x Tid:%d Time:%dms\r\n", pmesh_msg->src, pmesh_msg->dst,
+                    pmsg->tid, plt_time_read_ms());
     if (pmesh_msg->msg_len < sizeof(tp_msg_t))
     {
-//        data_uart_send_string(pmsg->padding, pmesh_msg->msg_len - MEMBER_OFFSET(tp_msg_t, padding));
-//        data_uart_debug("\r\n>");
+        data_uart_send_string(pmsg->padding, pmesh_msg->msg_len - MEMBER_OFFSET(tp_msg_t, padding));
+        data_uart_debug("\r\n>");
     }
     return 0;
 }
@@ -277,7 +277,7 @@ void pong_receive(uint16_t src, uint16_t dst, uint8_t hops_forward, ping_pong_ty
     }
     if (ping_count == 1)
     {
-//        data_uart_debug("\b");
+        data_uart_debug("\b");
     }
     uint32_t rtime = diff_time - pong_delay * 10 + (diff_time > pong_delay * 10 ? 0 : 30);
     rtime_sum += rtime;
@@ -289,8 +289,8 @@ void pong_receive(uint16_t src, uint16_t dst, uint8_t hops_forward, ping_pong_ty
     {
         rtime_min = rtime;
     }
-//    data_uart_debug("%d\t0x%04x\t%d\t%d\t%d\t%d\t%d\t%d\r\n", pong_count, src, hops_forward,
-//                    hops_reverse, diff_time, pong_delay * 10, rtime, rtime_sum / pong_count);
+    data_uart_debug("%d\t0x%04x\t%d\t%d\t%d\t%d\t%d\t%d\r\n", pong_count, src, hops_forward,
+                    hops_reverse, diff_time, pong_delay * 10, rtime, rtime_sum / pong_count);
 }
 
 extern void *evt_queue_handle; //!< Event queue handle
@@ -313,7 +313,7 @@ mesh_msg_send_cause_t ping_handle_timeout(void)
     ping_count++;
     pong_count_sum += pong_count;
     rtime_sum_sum += rtime_sum;
-//    data_uart_debug("count\tdst\tf-hops\tr-hops\ttime\tdelay\trtime\tatime\t%d\r\n", ping_count);
+    data_uart_debug("count\tdst\tf-hops\tr-hops\ttime\tdelay\trtime\tatime\t%d\r\n", ping_count);
     ping_time_us = plt_time_read_us();
     ping_time_ms = plt_time_read_ms();
     pong_count = 0;
@@ -339,9 +339,9 @@ static user_cmd_parse_result_t common_ping(user_cmd_parse_value_t *pparse_value)
         {
             pong_count_sum += pong_count;
             rtime_sum_sum += rtime_sum;
-//            data_uart_debug("ping statistic: ping=%d pong=%d time(ms) min=%d max=%d avg=%d\r\n", ping_count,
-//                            pong_count_sum,
-//                            rtime_min, rtime_max, rtime_sum_sum / pong_count_sum);
+            data_uart_debug("ping statistic: ping=%d pong=%d time(ms) min=%d max=%d avg=%d\r\n", ping_count,
+                            pong_count_sum,
+                            rtime_min, rtime_max, rtime_sum_sum / pong_count_sum);
             return USER_CMD_RESULT_OK;
         }
     }
@@ -451,29 +451,29 @@ user_cmd_parse_result_t user_cmd_connect(user_cmd_parse_value_t *pparse_value)
     le_set_conn_param(GAP_CONN_PARAM_1M, &conn_req_param);
     le_connect(GAP_PHYS_CONN_INIT_1M_BIT, addr, (T_GAP_REMOTE_ADDR_TYPE)addr_type,
                GAP_LOCAL_ADDR_LE_PUBLIC, 1000);
-//    data_uart_debug("Connecting ");
+    data_uart_debug("Connecting ");
     plt_swap1(addr, 6);
-//    data_uart_dump(addr, 6);
+    data_uart_dump(addr, 6);
     return USER_CMD_RESULT_OK;
 }
 
 user_cmd_parse_result_t user_cmd_disconnect(user_cmd_parse_value_t *pparse_value)
 {
-//    data_uart_debug("Disconnecting\r\n");
+    data_uart_debug("Disconnecting\r\n");
     le_disconnect(pparse_value->dw_parameter[0]);
     return USER_CMD_RESULT_OK;
 }
 
 user_cmd_parse_result_t user_cmd_dfu_start_discover(user_cmd_parse_value_t *pparse_value)
 {
-//    data_uart_debug("Dfu Start Discover\r\n");
+    data_uart_debug("Dfu Start Discover\r\n");
     dfu_client_start_discovery(pparse_value->dw_parameter[0]);
     return USER_CMD_RESULT_OK;
 }
 
 user_cmd_parse_result_t user_cmd_proxy_discover(user_cmd_parse_value_t *pparse_value)
 {
-//    data_uart_debug("Proxy Start Discover\r\n");
+    data_uart_debug("Proxy Start Discover\r\n");
 #if MESH_DEVICE
     /* for pts test */
     proxy_client_add(NULL);
@@ -492,17 +492,17 @@ user_cmd_parse_result_t user_cmd_proxy_cccd_operate(user_cmd_parse_value_t *ppar
     uint8_t cmd_type = (uint8_t)pparse_value->dw_parameter[0];
     /* Enable or disable, 1--enable, 0--disable. */
     bool cmd_data = (bool)pparse_value->dw_parameter[1];
-//    data_uart_debug("Proxy Cccd Operate\r\n");
+    data_uart_debug("Proxy Cccd Operate\r\n");
     switch (cmd_type)
     {
     case 0:/* V3 Notify char notif enable/disable. */
         {
             proxy_client_data_out_cccd_set(proxy_client_conn_id, cmd_data);
             proxy_ctx_set_link(proxy_ctx_id, proxy_client_conn_id);
-//            data_uart_debug("GATT bearer: on\r\n");
+            data_uart_debug("GATT bearer: on\r\n");
             if (bearer_adv_get())
             {
-//                data_uart_debug("\r\nThe adv bearer exits too, you can use \"bas\" cmd to close it\r\n");
+                data_uart_debug("\r\nThe adv bearer exits too, you can use \"bas\" cmd to close it\r\n");
             }
         }
         break;
@@ -514,10 +514,10 @@ user_cmd_parse_result_t user_cmd_proxy_cccd_operate(user_cmd_parse_value_t *ppar
 
 user_cmd_parse_result_t user_cmd_proxy_list(user_cmd_parse_value_t *pparse_value)
 {
-//    data_uart_debug("Proxy Server Handle List:\r\nidx\thandle\r\n");
+    data_uart_debug("Proxy Server Handle List:\r\nidx\thandle\r\n");
     for (proxy_handle_type_t hdl_idx = HDL_PROXY_SRV_START; hdl_idx < HDL_PROXY_CACHE_LEN; hdl_idx++)
     {
-//        data_uart_debug("%d\t0x%x\r\n", hdl_idx, proxy_client_handle_get(proxy_client_conn_id, hdl_idx));
+        data_uart_debug("%d\t0x%x\r\n", hdl_idx, proxy_client_handle_get(proxy_client_conn_id, hdl_idx));
     }
     return USER_CMD_RESULT_OK;
 }
@@ -527,7 +527,7 @@ user_cmd_parse_result_t user_cmd_proxy_cfg_set_filter_type(user_cmd_parse_value_
 {
     proxy_cfg_filter_type_t filter_type = (proxy_cfg_filter_type_t)pparse_value->dw_parameter[0];
     proxy_cfg_set_filter_type(proxy_ctx_id, filter_type);
-//    data_uart_debug("Proxy cfg set filter type %d\r\n", filter_type);
+    data_uart_debug("Proxy cfg set filter type %d\r\n", filter_type);
     return USER_CMD_RESULT_OK;
 }
 
@@ -535,7 +535,7 @@ user_cmd_parse_result_t user_cmd_proxy_cfg_add_addr(user_cmd_parse_value_t *ppar
 {
     uint16_t addr = pparse_value->dw_parameter[0];
     proxy_cfg_add_remove_addr(proxy_ctx_id, TRUE, &addr, 1);
-//    data_uart_debug("Proxy cfg add addr 0x%04x\r\n", addr);
+    data_uart_debug("Proxy cfg add addr 0x%04x\r\n", addr);
     return USER_CMD_RESULT_OK;
 }
 
@@ -543,7 +543,7 @@ user_cmd_parse_result_t user_cmd_proxy_cfg_remove_addr(user_cmd_parse_value_t *p
 {
     uint16_t addr = pparse_value->dw_parameter[0];
     proxy_cfg_add_remove_addr(proxy_ctx_id, FALSE, &addr, 1);
-//    data_uart_debug("Proxy cfg remove addr 0x%04x\r\n", addr);
+    data_uart_debug("Proxy cfg remove addr 0x%04x\r\n", addr);
     return USER_CMD_RESULT_OK;
 }
 
@@ -561,7 +561,7 @@ user_cmd_parse_result_t user_cmd_log_set(user_cmd_parse_value_t *pparse_value)
     memset(log_value, pparse_value->dw_parameter[0] & 0x4 ? 0xff : 0, sizeof(log_value));
     diag_level_set(LEVEL_TRACE, log_value);
 
-//    data_uart_debug("Log setting %d!\r\n", pparse_value->dw_parameter[0]);
+    data_uart_debug("Log setting %d!\r\n", pparse_value->dw_parameter[0]);
     return USER_CMD_RESULT_OK;
 }
 
@@ -576,7 +576,7 @@ user_cmd_parse_result_t user_cmd_time(user_cmd_parse_value_t *pparse_value)
     minute %= 60;
     day = hour / 24;
     hour %= 24;
-//    data_uart_debug("Time: %dd%dh%dm%ds\r\n", day, hour, minute, second);
+    data_uart_debug("Time: %dd%dh%dm%ds\r\n", day, hour, minute, second);
     return USER_CMD_RESULT_OK;
 }
 
@@ -585,7 +585,7 @@ user_cmd_parse_result_t user_cmd_adv_power_set(user_cmd_parse_value_t *pparse_va
     uint8_t tx_gain[4] = {0x30, 0x80, 0xA0, 0xF0};
     int8_t tx_gain_info[4] = {-20, 0, 4, 8};
     le_adv_set_tx_power(GAP_ADV_TX_POW_SET_1M, tx_gain[pparse_value->dw_parameter[0]]);
-//    data_uart_debug("Adv power %d dBm\r\n", tx_gain_info[pparse_value->dw_parameter[0]]);
+    data_uart_debug("Adv power %d dBm\r\n", tx_gain_info[pparse_value->dw_parameter[0]]);
     return USER_CMD_RESULT_OK;
 }
 

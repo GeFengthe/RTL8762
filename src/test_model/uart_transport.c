@@ -25,7 +25,10 @@
 
 #if MP_TEST_MODE_SUPPORT_DATA_UART_TEST
 
+#define MP_TEST_UART_TX_PIN DATA_UART_TX_PIN  
+#define MP_TEST_UART_RX_PIN DATA_UART_RX_PIN 
 /* Defines -------------------------------------------------------------------*/
+
 
 /* Protocol defines ------------------------------------------------------------*/
 /* Protocol header define */

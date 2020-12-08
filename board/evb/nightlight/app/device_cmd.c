@@ -163,6 +163,31 @@ static user_cmd_parse_result_t user_cmd_data_transmission_notify(user_cmd_parse_
     return USER_CMD_RESULT_OK;
 }
 
+#include "board.h"
+#if MP_TEST_MODE_SUPPORT_DATA_UART_TEST
+#include "test_mode.h"
+static user_cmd_parse_result_t user_cmd_test_mode(user_cmd_parse_value_t *pparse_value)
+{
+	uint8_t mode = pparse_value->dw_parameter[0];
+ 	switch(mode){
+		case SINGLE_TONE_MODE:{
+			switch_to_hci_mode();
+		}
+		break;
+		case DATA_UART_TEST_MODE:{
+			#if MP_TEST_MODE_SUPPORT_AUTO_K_RF   
+			switch_to_test_mode(DATA_UART_TEST_MODE);
+			#endif
+		}
+		break;
+		
+		default:
+		break;
+	}
+	return USER_CMD_RESULT_OK;
+}
+#endif
+
 /*----------------------------------------------------
  * command table
  * --------------------------------------------------*/
@@ -225,6 +250,15 @@ const user_cmd_table_entry_t device_cmd_table[] =
         "data transmission notify\n\r",
         user_cmd_data_transmission_notify
     },
+#if MP_TEST_MODE_SUPPORT_DATA_UART_TEST
+	{
+	"testmode",
+	"testmode [mode]\n\r",
+	"testmode to a appoint mode\n\r",
+	user_cmd_test_mode
+	},
+#endif
+
     /* MUST be at the end: */
     {
         0,

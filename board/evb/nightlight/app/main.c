@@ -406,7 +406,7 @@ void task_init(void)
  * @brief    Entry of APP code
  * @return   int (To avoid compile warning)
  */
-int main(void)
+void app_normal_power_on_seq(void)
 {
     extern uint32_t random_seed_value;
     srand(random_seed_value);
@@ -420,10 +420,50 @@ int main(void)
 	
     pwr_mgr_init();
     task_init();
-    os_sched_start();
+    // os_sched_start();
 
-    return 0;
+    // return 0;
 }
+
+// module test
+#if MP_TEST_MODE_SUPPORT_DATA_UART_TEST
+#include "test_mode.h"
+#include "single_tone.h"
+#endif
+T_TEST_MODE   test_mode_value;
+
+int main(void)
+{
+	test_mode_value = get_test_mode(); 
+	reset_test_mode();
+	switch (test_mode_value) {
+		case NOT_TEST_MODE:{
+			app_normal_power_on_seq(); 
+		}
+		break;
+		#if MP_TEST_MODE_SUPPORT_DATA_UART_TEST
+		case SINGLE_TONE_MODE: {
+			single_tone_init();
+		}
+		break;
+		case DATA_UART_TEST_MODE:{
+		#if MP_TEST_MODE_SUPPORT_AUTO_K_RF
+			printi("DATA_UART_TEST_MODE");
+			app_normal_power_on_seq();
+		#endif 
+		}
+		break;
+		#endif
+		
+		default:
+		break;
+	}
+	os_sched_start();
+	return 0;
+}
+
+
+
 
 #include "otp_config.h"
 #ifdef BT_STACK_CONFIG_ENABLE

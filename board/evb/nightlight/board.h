@@ -79,6 +79,13 @@ extern "C" {
   * @}
   */
 
+// module test
+#define MP_TEST_MODE_SUPPORT_DATA_UART_TEST     1 
+#define MP_TEST_MODE_SUPPORT_AUTO_K_RF          1    
+
+
+
+
 #ifdef __cplusplus
 }
 #endif

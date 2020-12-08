@@ -664,6 +664,11 @@
               <FileType>1</FileType>
               <FilePath>.\app\app_hwtmr.c</FilePath>
             </File>
+            <File>
+              <FileName>io_management.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\io_management.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
