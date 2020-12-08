@@ -525,7 +525,7 @@ void SkyLed_Timeout_cb_handel(void *timer)
 	if(mLightMonitor.mode == LED_MODE_UNKOWN && mLightMonitor.blinkcnt==0){		
 		Delete_LED_Timer();
 	}else{
-        DBG_DIRECT(" ----------------mLightMonitor.mode=0x%x,mLightMonitor.blinkcnt=0x%x    ,mLightManager.mode=0x%x--------------------------\r\n",mLightMonitor.mode,mLightMonitor.blinkcnt,mLightManager->mode);
+       // DBG_DIRECT(" ----------------mLightMonitor.mode=0x%x,mLightMonitor.blinkcnt=0x%x    ,mLightManager.mode=0x%x--------------------------\r\n",mLightMonitor.mode,mLightMonitor.blinkcnt,mLightManager->mode);
         
     }
 		
