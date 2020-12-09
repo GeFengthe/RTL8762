@@ -59,6 +59,11 @@ static void uart_test_find_device_type(void *p_data);
 static void uart_test_direct_k_rf_freq(void *p_data);
 static void uart_test_manual_k_rf_freq(void *p_data);
 static void uart_test_enter_hci_download_mode(void *p_data);
+static void uart_test_enter_ampere_test(void *p_data);
+static void uart_test_get_checksum_cmd(void *p_data);
+static void uart_test_io_test(void *p_data);
+static void uart_test_change_baudrate(void *p_data);
+static void uart_test_verify_dut_info(void *p_data);
 
 /*============================================================================*
  *                              Global Variables
@@ -83,11 +88,11 @@ const T_UART_TEST_PROTOCOL uart_test_func_map[UART_TEST_SUPPORT_NUM] =
     {DISABLE_TEST_MODE_FLG_CMD, 0, NULL},
     {ENABLE_TEST_MODE_FLG_CMD, 0, NULL},
     {ERASE_PAIR_INFO_CMD, 0, NULL},
-    {CHANGE_BAUDRATE_CMD, 1, NULL},
+    {CHANGE_BAUDRATE_CMD, 1, uart_test_change_baudrate},
     {DIRECT_K_RF_FREQ_CMD, 2, uart_test_direct_k_rf_freq},
     {GET_GLODEN_INFO_CMD, 0, NULL},
     {GET_DUT_INFO_CMD, 32, uart_test_get_dut_info},
-    {VERIFY_DUT_INFO_CMD, 0, NULL},
+    {VERIFY_DUT_INFO_CMD, 0, uart_test_verify_dut_info},
     {AUTO_K_RF_FREQ_CMD, 18, uart_test_auto_k_rf_freq},
     {FIND_DEVICE_TYPE_CMD, 0, uart_test_find_device_type},
     {REBOOT_DEVICE_CMD, 0, uart_test_reboot_device},
@@ -97,6 +102,10 @@ const T_UART_TEST_PROTOCOL uart_test_func_map[UART_TEST_SUPPORT_NUM] =
     {TERMINATE_CONNECT_CMD, 0, NULL},
     {MANUAL_K_RF_FREQ_CMD, 1, uart_test_manual_k_rf_freq},
     {ENTER_HCI_DOWNLOAD_MODE_CMD, 0, uart_test_enter_hci_download_mode},
+	
+    {ENTER_AMPERE_TEST_CMD, 0, uart_test_enter_ampere_test},
+    {GET_CHECKSUM_CMD,      1, uart_test_get_checksum_cmd},
+    {IO_TEST_CMD,           1, uart_test_io_test},
     //Add more command here,Please store in order according to opcode!
 };
 
@@ -138,19 +147,34 @@ void uart_test_read_patch_version(void *p_data)
   * @param p_data: point to UART packet struct.
   * @retval None.
   */
+ typedef union
+{
+    uint32_t dword;
+    uint8_t byte[4];
+    struct
+    {
+        uint32_t first:  4; // 
+        uint32_t second: 8; // 
+        uint32_t third:  15; // 
+        uint32_t forth:  5; //
+    } bit;
+} appverchanger_t;
 void uart_test_read_app_version(void *p_data)
 {
-    uint8_t app_version_bytes[4] = {0};
-    app_version_bytes[0] = (uint8_t)(VERSION_MAJOR);
-    app_version_bytes[1] = (uint8_t)(VERSION_MINOR);
-    app_version_bytes[2] = (uint8_t)(VERSION_REVISION);
-    app_version_bytes[3] = (uint8_t)(VERSION_BUILDNUM);
-
+ 	// 从 PRODUCT_VERSION 宏上获取
+ 	// 注意要转换，有点变态 如1.2.3.4
+ 	// 00100 000000000000011 00000010 0001  版本号转换
+ 	// 00100000 00000000 00110000 00100001  对应传输[3]~[0]
+ 	appverchanger_t appver;
+	appver.bit.first  = 1;
+	appver.bit.second = 0;
+	appver.bit.third  = 11;
+	appver.bit.forth  = 0;
     UART_DBG_BUFFER(MODULE_APP, LEVEL_INFO, "[uart_test_read_app_version] app version: %d.%d.%d.%d", 4,
-                    app_version_bytes[0], app_version_bytes[1], app_version_bytes[2], app_version_bytes[3]);
+                    appver.byte[0], appver.byte[1], appver.byte[2], appver.byte[3]);
 
     /* Response data */
-    UARTCmd_Response(READ_APP_VERSION_CMD, UART_TEST_SUCCESS, app_version_bytes, 4);
+    UARTCmd_Response(READ_APP_VERSION_CMD, UART_TEST_SUCCESS, appver.byte, 4);
 }
 
 /**
@@ -409,6 +433,87 @@ void uart_test_enter_hci_download_mode(void *p_data)
 
     WDG_SystemReset(RESET_ALL, UART_CMD_RESET);
 }
+#include "mesh_beacon.h"
+#include "gap_scheduler.h"
+static void uart_test_enter_ampere_test(void *p_data)
+{
+    DBG_DIRECT("[uart_test_enter_ampere_test] messure current,close scan beacon wakeup!");
+
+	beacon_stop();  
+	gap_sched_scan(false);   // gap layer scan
+	// it will not sleep before the production test
+
+    UARTCmd_Response(ENTER_AMPERE_TEST_CMD, UART_TEST_SUCCESS, NULL, 0);
+}
+
+static void uart_test_get_checksum_cmd(void *p_data)
+{
+    DBG_DIRECT("[uart_test_get_checksum_cmd]!");
+
+    uint8_t index = *((uint8_t *)p_data);	
+    uint32_t checksum =0;
+	if(index==0){
+
+	}else if(index==1){
+
+	}
+    UARTCmd_Response(GET_CHECKSUM_CMD, UART_TEST_SUCCESS, (uint8_t*)(&checksum), 4);
+}
+
+static void uart_test_io_test(void *p_data)
+{
+    uint8_t ioindex = *((uint8_t *)p_data);
+	uint8_t ios[10]={5,6,7,8,11,12,13,14,15,16};
+    DBG_DIRECT("[uart_test_io_test] io %d", ios[ioindex]);
+	if(ioindex<10){
+	// 增加io控制
+
+   		UARTCmd_Response(IO_TEST_CMD, UART_TEST_SUCCESS, NULL, 0);
+	}else{
+   		UARTCmd_Response(IO_TEST_CMD, UART_TEST_ERROR, NULL, 0);
+	}
+
+}
+#include "data_uart.h"
+static void uart_test_change_baudrate(void *p_data)
+{
+    uint8_t index = *((uint8_t *)p_data);
+	data_uart_baudrate_t baudrate[3]={DATA_UART_BAUDRATE_115200, DATA_UART_BAUDRATE_1000000, DATA_UART_BAUDRATE_2000000};
+	
+	if(index<3){
+		data_uart_baudrate(baudrate[index]);
+   		UARTCmd_Response(CHANGE_BAUDRATE_CMD, UART_TEST_SUCCESS, NULL, 0);
+	}else{
+   		UARTCmd_Response(CHANGE_BAUDRATE_CMD, UART_TEST_ERROR, NULL, 0);
+	}
+
+}
+
+static void uart_test_verify_dut_info(void *p_data)
+{
+#if MP_TEST_MODE_SUPPORT_AUTO_K_RF
+    bool result = false;
+    uint8_t verify[16];
+
+    memset(verify, 0, 16);
+    result = check_verify_result(verify);
+
+    UART_DBG_BUFFER(MODULE_APP, LEVEL_INFO,
+                    "[uart_test_verify_dut_info] result is %d", 1, result);
+
+    if (result == true)
+    {
+        UARTCmd_Response(VERIFY_DUT_INFO_CMD, UART_TEST_SUCCESS, verify, 16);
+    }
+    else
+    {
+        UARTCmd_Response(VERIFY_DUT_INFO_CMD, UART_TEST_ERROR, NULL, 0);
+    }
+#else
+    UARTCmd_Response(VERIFY_DUT_INFO_CMD, UART_TEST_ERROR, NULL, 0);
+#endif
+}
+
 
 /**
   * @brief  Get the spefied uart command.
