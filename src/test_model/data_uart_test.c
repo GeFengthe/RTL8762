@@ -60,10 +60,11 @@ static void uart_test_direct_k_rf_freq(void *p_data);
 static void uart_test_manual_k_rf_freq(void *p_data);
 static void uart_test_enter_hci_download_mode(void *p_data);
 static void uart_test_enter_ampere_test(void *p_data);
-static void uart_test_get_checksum_cmd(void *p_data);
-static void uart_test_io_test(void *p_data);
+static void uart_test_get_sum(void *p_data);
+static void uart_test_io(void *p_data);
 static void uart_test_change_baudrate(void *p_data);
 static void uart_test_verify_dut_info(void *p_data);
+static void uart_test_enter_single_tone(void *p_data);
 
 /*============================================================================*
  *                              Global Variables
@@ -97,18 +98,126 @@ const T_UART_TEST_PROTOCOL uart_test_func_map[UART_TEST_SUPPORT_NUM] =
     {FIND_DEVICE_TYPE_CMD, 0, uart_test_find_device_type},
     {REBOOT_DEVICE_CMD, 0, uart_test_reboot_device},
     {UPDATE_MAC_ADDR_CMD, 6, uart_test_write_mac_addr},
-    {ENTER_SINGLE_TONE_MODE_CMD, 0, NULL},
+    {ENTER_SINGLE_TONE_MODE_CMD, 1, uart_test_enter_single_tone},//support
     {READ_HARDWARE_VERSION_CMD, 0, NULL},
     {TERMINATE_CONNECT_CMD, 0, NULL},
     {MANUAL_K_RF_FREQ_CMD, 1, uart_test_manual_k_rf_freq},
     {ENTER_HCI_DOWNLOAD_MODE_CMD, 0, uart_test_enter_hci_download_mode},
 	
     {ENTER_AMPERE_TEST_CMD, 0, uart_test_enter_ampere_test},
-    {GET_CHECKSUM_CMD,      1, uart_test_get_checksum_cmd},
-    {IO_TEST_CMD,           1, uart_test_io_test},
+    {GET_CHECKSUM_CMD,1,uart_test_get_sum},      //support need to add content
+    {IO_TEST_CMD,1,uart_test_io},                 //support need to add content
     //Add more command here,Please store in order according to opcode!
 };
 
+void uart_test_get_sum(void *p_data)
+{
+    uint8_t cmd_type = *((uint8_t *)p_data + 3);
+    uint32_t checksum = 0;
+    uint32_t address =0;
+    switch(cmd_type)
+    {
+        case 0: //patch checksum
+            {
+                address = 0x80d000;
+                checksum = *(uint32_t *)address;
+            }
+            break;
+        case 1: //app checksum
+                address = 0x87FFFC;
+                checksum = *(uint32_t *)address;
+            break;
+        default:
+            break; 
+    }
+    DBG_DIRECT("tian debug checksum=0x%08x\n",checksum);
+    UARTCmd_Response(GET_CHECKSUM_CMD, UART_TEST_SUCCESS, (uint8_t *)&checksum, 4);
+}
+#define MODULE_PIN5       P4_1
+#define MODULE_PIN6       P4_0
+#define MODULE_PIN7       P0_6
+#define MODULE_PIN8       P0_5
+#define MODULE_PIN11     P3_3
+#define MODULE_PIN12     P3_2
+#define MODULE_PIN13     P2_2
+#define MODULE_PIN14     P2_3
+#define MODULE_PIN15     P2_4
+#define MODULE_PIN16     P2_5
+
+uint8_t  module_io_pin[]={MODULE_PIN5,MODULE_PIN6,MODULE_PIN7,MODULE_PIN8,MODULE_PIN11,\
+                                             MODULE_PIN12,MODULE_PIN13,MODULE_PIN14,MODULE_PIN15,MODULE_PIN16};
+static void test_board_gpio_init(void)
+{    
+        uint8_t pin_num=0;
+        uint8_t i;
+        pin_num=sizeof(module_io_pin);
+        DBG_DIRECT("tian debug test_board_gpio_init num=%d\n",pin_num);
+        for(i=0;i<pin_num;i++){
+            Pad_Config(module_io_pin[i], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);    
+            Pinmux_Config(module_io_pin[i], DWGPIO);            
+        }
+}
+void test_driver_gpio_init(void)
+ {
+      uint8_t pin_num=0;
+      uint8_t i;
+      GPIO_InitTypeDef GPIO_InitStruct;   
+      pin_num=sizeof(module_io_pin);
+      DBG_DIRECT("tian debug test_driver_gpio_init num=%d\n",pin_num);
+      RCC_PeriphClockCmd(APBPeriph_GPIO, APBPeriph_GPIO_CLOCK, ENABLE);  
+      GPIO_StructInit(&GPIO_InitStruct);   
+      GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;   
+      GPIO_InitStruct.GPIO_ITCmd  = DISABLE; 
+      for(i=0;i<pin_num;i++){
+          GPIO_InitStruct.GPIO_Pin    = GPIO_GetPin(module_io_pin[i]);    
+          GPIO_Init(&GPIO_InitStruct);
+      }   
+ }
+void gpio_all_clear(void){
+    uint8_t i;
+    uint32_t gpiopins=0;
+    for(i=0;i<sizeof(module_io_pin);i++)
+    {
+        //DBG_DIRECT("tian debug pin %08x\n",GPIO_GetPin(module_io_pin[i]);
+        gpiopins |= GPIO_GetPin(module_io_pin[i]);
+    }
+    DBG_DIRECT("tian debug gpiopins=%08x\n",gpiopins);
+    GPIO_ResetBits(gpiopins);
+}
+void gpio_init(void)
+{    
+    test_board_gpio_init();    /* Initialize gpio peripheral */   
+    test_driver_gpio_init(); 
+	gpio_all_clear();
+}
+void gpio_test_control(uint8_t pin_num)
+{
+    uint8_t test_num;
+
+    test_num=pin_num-1;
+    DBG_DIRECT("tian debug test pin %d\n",pin_num);
+    gpio_all_clear();
+    GPIO_WriteBit(GPIO_GetPin(module_io_pin[test_num]), (BitAction)(1));
+}
+static void uart_test_io(void *p_data)
+{
+    //uint8_t cmd_type = *((uint8_t *)p_data + 3);
+    uint8_t IO_Test= *((uint8_t *)p_data + 3);
+    static uint8_t gpio_inited=0;
+    DBG_DIRECT("tian debug type=%d,data=%04x\n",IO_Test);
+    if(gpio_inited==0){
+            gpio_init();
+            gpio_inited=1;
+    }
+    if(IO_Test==0 || IO_Test>sizeof(module_io_pin)){
+        gpio_init();
+        gpio_inited=1;
+        UARTCmd_Response(IO_TEST_CMD, UART_TEST_ERROR, NULL, 0);
+    }else{
+         gpio_test_control(IO_Test);//test io
+         UARTCmd_Response(IO_TEST_CMD, UART_TEST_SUCCESS, NULL, 0);
+    }
+}
 /**
   * @brief Read patch command.
   * @param p_data: point to UART packet struct.
@@ -246,6 +355,22 @@ void uart_test_reboot_device(void *p_data)
     UARTCmd_Response(REBOOT_DEVICE_CMD, UART_TEST_SUCCESS, NULL, 0);
 
     WDG_SystemReset(RESET_ALL, UART_CMD_RESET);
+}
+#define BT_CHANNEL_MAX 40
+void uart_test_enter_single_tone(void *p_data)
+{
+	uint8_t test_channel=0;
+
+	test_channel=*((uint8_t *)p_data + 3);
+    DBG_DIRECT("[uart_test_enter_single_tone] tian Switch to Single Tone test mode!,ch=%d\n",test_channel);
+
+	if(test_channel<BT_CHANNEL_MAX){
+	    UARTCmd_Response(ENTER_SINGLE_TONE_MODE_CMD, UART_TEST_SUCCESS, NULL, 0);
+	    switch_to_test_mode(SINGLE_TONE_MODE);
+	}
+	else{		
+		UARTCmd_Response(ENTER_SINGLE_TONE_MODE_CMD, UART_TEST_ERROR, NULL, 0);
+	}
 }
 
 /**
@@ -446,38 +571,10 @@ static void uart_test_enter_ampere_test(void *p_data)
     UARTCmd_Response(ENTER_AMPERE_TEST_CMD, UART_TEST_SUCCESS, NULL, 0);
 }
 
-static void uart_test_get_checksum_cmd(void *p_data)
-{
-    DBG_DIRECT("[uart_test_get_checksum_cmd]!");
-
-    uint8_t index = *((uint8_t *)p_data);	
-    uint32_t checksum =0;
-	if(index==0){
-
-	}else if(index==1){
-
-	}
-    UARTCmd_Response(GET_CHECKSUM_CMD, UART_TEST_SUCCESS, (uint8_t*)(&checksum), 4);
-}
-
-static void uart_test_io_test(void *p_data)
-{
-    uint8_t ioindex = *((uint8_t *)p_data);
-	uint8_t ios[10]={5,6,7,8,11,12,13,14,15,16};
-    DBG_DIRECT("[uart_test_io_test] io %d", ios[ioindex]);
-	if(ioindex<10){
-	// Ôö¼Óio¿ØÖÆ
-
-   		UARTCmd_Response(IO_TEST_CMD, UART_TEST_SUCCESS, NULL, 0);
-	}else{
-   		UARTCmd_Response(IO_TEST_CMD, UART_TEST_ERROR, NULL, 0);
-	}
-
-}
 #include "data_uart.h"
 static void uart_test_change_baudrate(void *p_data)
 {
-    uint8_t index = *((uint8_t *)p_data);
+    uint8_t index = *((uint8_t *)p_data+3);
 	data_uart_baudrate_t baudrate[3]={DATA_UART_BAUDRATE_115200, DATA_UART_BAUDRATE_1000000, DATA_UART_BAUDRATE_2000000};
 	
 	if(index<3){
