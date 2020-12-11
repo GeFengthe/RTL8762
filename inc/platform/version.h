@@ -1,6 +1,6 @@
 #define VERSION_MAJOR            1
 #define VERSION_MINOR            0
-#define VERSION_REVISION         12
+#define VERSION_REVISION         13
 #define VERSION_BUILDNUM         0
 #define VERSION_GCID             0x8da2a630
 #define CUSTOMER_NAME            sdk

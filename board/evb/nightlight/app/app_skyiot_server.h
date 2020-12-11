@@ -30,7 +30,7 @@
 #define PRODUCT_TYPE    				(118)		// TODO 修改为小夜灯:118
 #define PRODUCT_MODEL   				("LCAM01") 	// LCAM01	
 #define PRODUCT_BRAND   				(11)	    // swaiot
-#define PRODUCT_VERSION 				("1.0.12")      // 注意同步给接口 uart_test_read_app_version  和 version.h中的VERSION_MAJOR
+#define PRODUCT_VERSION 				("1.0.13")      // 注意同步给接口 uart_test_read_app_version  和 version.h中的 VERSION_MAJOR
 #endif
 
 // #define MESH_ADV_NAME_LEN (30)
