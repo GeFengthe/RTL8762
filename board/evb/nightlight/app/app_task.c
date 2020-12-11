@@ -137,6 +137,7 @@ void app_main_task(void *p_param)
 
     mesh_start(EVENT_MESH, EVENT_IO_TO_APP, evt_queue_handle, io_queue_handle);
 	 
+	#if 0 
 	// module test	
 	printi("TEST_MODE=%d",test_mode_value);
 	if (test_mode_value == NOT_TEST_MODE) {
@@ -149,6 +150,13 @@ void app_main_task(void *p_param)
 		uart_test_init();
 	}
 	#endif
+	#else 
+	// module test
+	if(SkyBleMesh_Device_Active_Sate() == false){
+		printi("test_mode uart_test_init");
+		uart_test_init();
+	}	
+	#endif 
 	
 	
 	SkyBleMesh_MainLoop_timer();	

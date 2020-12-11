@@ -93,6 +93,7 @@ void app_handle_io_msg(T_IO_MSG io_msg)
 			break;
 		}
 		case IO_MSG_TYPE_UART:{
+			#if 0
 			if (test_mode_value == NOT_TEST_MODE) { 
 				/* We handle user command informations from Data UART in this branch. */
 				uint8_t data = io_msg.subtype;
@@ -100,6 +101,11 @@ void app_handle_io_msg(T_IO_MSG io_msg)
 			}
 			#if MP_TEST_MODE_SUPPORT_AUTO_K_RF 
 			else if(test_mode_value == DATA_UART_TEST_MODE) {
+				uart_test_handle_uart_msg(io_msg);
+			}
+			#endif
+			#else
+			if(SkyBleMesh_Device_Active_Sate() == false){
 				uart_test_handle_uart_msg(io_msg);
 			}
 			#endif

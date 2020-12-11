@@ -277,7 +277,7 @@ void uart_test_read_app_version(void *p_data)
  	appverchanger_t appver;
 	appver.bit.first  = 1;
 	appver.bit.second = 0;
-	appver.bit.third  = 11;
+	appver.bit.third  = 12;
 	appver.bit.forth  = 0;
     UART_DBG_BUFFER(MODULE_APP, LEVEL_INFO, "[uart_test_read_app_version] app version: %d.%d.%d.%d", 4,
                     appver.byte[0], appver.byte[1], appver.byte[2], appver.byte[3]);

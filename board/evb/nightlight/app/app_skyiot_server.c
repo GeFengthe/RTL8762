@@ -2359,11 +2359,10 @@ extern uint8_t SkyBleMesh_App_Init(void)
 		#endif			
 			
 		mIotManager.process_state = 0xFF;
-		mIotManager.release_flag = SKYIOT_FIRST_RELEASE;
-		// if(retgetmac==false){
+		if(retgetmac==false){
 		// 	SkyBleMesh_unBind_complete();
-		// 	mIotManager.release_flag = SKYIOT_FIRST_RELEASE;
-		// }
+			mIotManager.release_flag = SKYIOT_INVALID_RELEASE;
+		 }
 		
 		SkyiotManager_Default_Config(true);  // 设备默认配置 并 控制
 		SkyBleMesh_WriteConfig();        // 保存参数
@@ -2381,7 +2380,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
         APP_DBG_PRINTF2("mIotManager.device_uuid[%d] = 0x%02x\n",i,mIotManager.device_uuid[i]);
     }
 	
-	APP_DBG_PRINTF0("ffffffffffffffffff %X\n",mIotManager.process_state);
+	APP_DBG_PRINTF0("Device Work State: release_flag=%02X\n", mIotManager.release_flag);
 
 	mIotManager.alive_wakeup_cnt    = 0;
 	mIotManager.alive_status        = 0;		
@@ -2433,7 +2432,7 @@ extern uint8_t SkyBleMesh_App_Init(void)
 
 	// SkyBleMesh_MainLoop_timer(); // called in app_task
 
-//    mIotManager.release_flag = SKYIOT_ACTIVE_RELEASE ;        //为了不场测，也可以进低功耗
+	// mIotManager.release_flag = SKYIOT_ACTIVE_RELEASE ;        // 自测用，为了不产测，也可以进低功耗
 	IsSkyAppInited = true;
 	blemesh_sysinit_ctrl_dlps(true);
 	if(SkyBleMesh_Device_Active_Sate() == true){
