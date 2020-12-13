@@ -10,7 +10,7 @@
 *.out
 *.Administrator
 #*.bak
-*.txt
+#*.txt
 *.apk
 *.tmp
 *.omf
