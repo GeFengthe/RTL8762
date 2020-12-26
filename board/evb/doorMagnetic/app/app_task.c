@@ -154,7 +154,7 @@ void app_main_task(void *p_param)
 	// module test
 	if(SkyBleMesh_Device_Active_Sate() == false){
 		printi("test_mode uart_test_init");
-		uart_test_init();
+//		uart_test_init();
 	}	
 	#endif 
 	
@@ -166,7 +166,6 @@ void app_main_task(void *p_param)
     DBG_DIRECT("----------------compiler TIME: %s ---------------------------------\r\n", __TIME__);
 	DBG_DIRECT("-------------brand: %d ---model: %s ---ver: %s ------------------\r\n",PRODUCT_BRAND, PRODUCT_MODEL,PRODUCT_VERSION);
 	// DBG_DIRECT("-------------brand: %d ---model: %s ---ver: %d.%d.%02d ------------------\r\n",PRODUCT_BRAND, PRODUCT_MODEL,PRODUCT_FIRST_VERSION, PRODUCT_SECOND_VERSION, PRODUCT_THIRD_VERSION);
-    
     while (true)
     {
 		#if USE_SOFT_WATCHDOG

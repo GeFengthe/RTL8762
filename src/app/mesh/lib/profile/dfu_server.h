@@ -37,7 +37,7 @@ BEGIN_DECLS
 #define DFU_TEMP_BUFFER_SIZE            2048
 #define DFU_SERVER_ADV_PERIOD           10000//!< ms
 #define DFU_SERVER_TIMEOUT_MSG          110
-#define DFU_WO_SCAN                     1
+#define DFU_WO_SCAN                     0
 
 //00006287-3c17-d293-8e48-14fe2e4da212
 #define GATT_UUID128_DFU_SERVICE        0x12, 0xA2, 0x4D, 0x2E, 0xFE, 0x14, 0x48, 0x8e, 0x93, 0xD2, 0x17, 0x3C, 0x87, 0x62, 0x00, 0x00

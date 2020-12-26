@@ -112,6 +112,7 @@ void app_handle_io_msg(T_IO_MSG io_msg)
 			break;
 		}
 		case IO_MSG_TYPE_TIMER:{
+//                DBG_DIRECT("--------timer-io_msg= %d-------\r\n",io_msg.subtype);
 				SkyBleMesh_Handle_SwTmr_msg(&io_msg); // 
 			break;
 		}
@@ -852,7 +853,7 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
             // mesh_model_bind_all_key();
 			SkyBleMesh_Unprov_timer_delet();
 			SkyBleMesh_ChangeScan_timer(6);
-			
+			DBG_DIRECT("-------PROV_CB_TYPE_COMPLETE-------\r\n");
             prov_data_p pprov_data = cb_data.pprov_data;
             data_uart_debug("been prov-ed with addr 0x%04x!\r\n", pprov_data->unicast_address);
 			SkyBleMesh_Provision_State(MESH_PROVISION_STATE_SUCCEED);

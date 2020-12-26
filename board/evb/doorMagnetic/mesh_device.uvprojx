@@ -337,7 +337,7 @@
               <MiscControls>--gnu --preinclude app_flags.h --bss_threshold=0</MiscControls>
               <Define>MESH_DEVICE</Define>
               <Undefine></Undefine>
-              <IncludePath>..\..\..\inc\app;..\..\..\inc\bluetooth\gap;..\..\..\inc\bluetooth\gap\gap_lib;..\..\..\inc\bluetooth\profile;..\..\..\inc\bluetooth\profile\server;..\..\..\inc\bluetooth\profile\client;..\..\..\inc\os;..\..\..\inc\peripheral;..\..\..\inc\platform;..\..\..\inc\platform\cmsis;..\..\..\src\app\mesh\lib;..\..\..\src\app\mesh\lib\lib;..\..\..\src\app\mesh\lib\platform;..\..\..\src\app\mesh\lib\gap;..\..\..\src\app\mesh\lib\cmd;..\..\..\src\app\mesh\lib\model;..\..\..\src\app\mesh\lib\model\realtek;..\..\..\src\app\mesh\lib\profile;..\..\..\src\app\mesh\lib\utility;..\..\..\src\app\mesh\lib\inc;..\..\..\src\app\mesh\lib\common;..\..\..\src\app\mesh\device;.\app;..\nightlight;..\..\..\src\test_model</IncludePath>
+              <IncludePath>..\..\..\inc\app;..\..\..\inc\bluetooth\gap;..\..\..\inc\bluetooth\gap\gap_lib;..\..\..\inc\bluetooth\profile;..\..\..\inc\bluetooth\profile\server;..\..\..\inc\bluetooth\profile\client;..\..\..\inc\os;..\..\..\inc\peripheral;..\..\..\inc\platform;..\..\..\inc\platform\cmsis;..\..\..\src\app\mesh\lib;..\..\..\src\app\mesh\lib\lib;..\..\..\src\app\mesh\lib\platform;..\..\..\src\app\mesh\lib\gap;..\..\..\src\app\mesh\lib\cmd;..\..\..\src\app\mesh\lib\model;..\..\..\src\app\mesh\lib\model\realtek;..\..\..\src\app\mesh\lib\profile;..\..\..\src\app\mesh\lib\utility;..\..\..\src\app\mesh\lib\inc;..\..\..\src\app\mesh\lib\common;..\..\..\src\app\mesh\device;.\app;..\nightlight;..\..\..\src\test_model;..\doorMagnetic</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -683,11 +683,6 @@
               <FileName>skylight.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\skylight.c</FilePath>
-            </File>
-            <File>
-              <FileName>skyinf.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\app\skyinf.c</FilePath>
             </File>
             <File>
               <FileName>skyadc.c</FileName>

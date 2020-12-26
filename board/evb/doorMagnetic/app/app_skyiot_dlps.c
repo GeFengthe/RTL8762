@@ -23,11 +23,14 @@ static plt_timer_t skybleenterdlps_timer=NULL;
 static plt_timer_t skyblewakeup_timer=NULL;
 static uint8_t dlpsstatu = 0; // 1:ready 2:enter 3:exit other:invalid
 
+uint32_t etime=0;
+
 
 static void SkyBleMesh_Wakeup_Timeout_cb(void *timer)
 {
+ 
+    DBG_DIRECT("------Waketime --------\r\n");
 	APP_DBG_PRINTF(" %s %d",__func__, dlpsstatu);
-	
 	if(dlpsstatu == 1){
 		// 没能进DLPS，恢复关闭的tmr等
 		SkyBleMesh_ExitDlps_cfg(false);
@@ -44,7 +47,7 @@ static void SkyBleMesh_StopWakeup_tmr(void)
 static void SkyBleMesh_StartWakeup_tmr(void)
 {	
 	if(skyblewakeup_timer == NULL){		
-		skyblewakeup_timer = plt_timer_create("WAKEUP", 280, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
+//		skyblewakeup_timer = plt_timer_create("WAKEUP", 6000, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
 		if (skyblewakeup_timer != NULL){
 			plt_timer_start(skyblewakeup_timer, 0);
 		}
@@ -65,10 +68,10 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 		switch_io_ctrl_dlps(false);
 	}
 
-//    DBG_DIRECT("dword=%x\r\n",DlpsCtrlStatu_t.dword);
+    DBG_DIRECT("DlpsCtrl=0x%x",DlpsCtrlStatu_t);
 	if(DlpsCtrlStatu_t.dword == DLPS_JUST_WAITING_TMR){
 		SkyBleMesh_ReadyEnterDlps_cfg();
-		DBG_DIRECT("enter DLPS_cfg\r\n");
+//		DBG_DIRECT("enter DLPS_cfg\r\n");
 		if(skybleenterdlps_timer){
 			plt_timer_delete(skybleenterdlps_timer, 0);
 			skybleenterdlps_timer = NULL;
@@ -80,11 +83,11 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 
 static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 {
-	static uint8_t startdelay = 100;
-	if(startdelay){
-		startdelay--; // when reset,check dlps after 5s 
-		return;
-	}
+//	static  uint16_t startdelay = 1000;
+//	if(startdelay){
+//		startdelay--; // when reset,check dlps after 5s 
+//		return;
+//	}
 //    SkyBleMesh_EnterDlps_TmrCnt_Handle();
 	
     T_IO_MSG msg;
@@ -96,7 +99,7 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 void SkyBleMesh_EnterDlps_timer(void)
 {	
 	if(skybleenterdlps_timer == NULL){ 	
-		skybleenterdlps_timer = plt_timer_create("dlps", 50, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
+		skybleenterdlps_timer = plt_timer_create("dlps", 700, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
 		if (skybleenterdlps_timer != NULL){
 			plt_timer_start(skybleenterdlps_timer, 0);
 		}
@@ -106,18 +109,18 @@ void SkyBleMesh_EnterDlps_timer(void)
 void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
 	dlpsstatu = 1; // ready
-	SkyBleMesh_StartWakeup_tmr();
+//	SkyBleMesh_StartWakeup_tmr();
 		
 	// ble 
 	beacon_stop();  
-	
-	if(SkyBleMesh_IsProvision_Sate() == false){     // unprov  未配网或低电量休眠不SCAN
-		gap_sched_scan(false);   // gap layer scan
-	}else{	
-		if(SkyBleMesh_Batt_Station() == BATT_WARING){
-			gap_sched_scan(false);   // gap layer scan
-		}
-	}
+//	gap_sched_scan(false);
+//	if(SkyBleMesh_IsProvision_Sate() == false){     // unprov  未配网或低电量休眠不SCAN
+//		gap_sched_scan(false);   // gap layer scan
+//	}else{	
+//		if(SkyBleMesh_Batt_Station() == BATT_WARING){
+//			gap_sched_scan(false);   // gap layer scan
+//		}
+//	}
 		
 	// sw timer
 	SkyBleMesh_StopMainLoop_tmr();
@@ -132,25 +135,21 @@ void SkyBleMesh_EnterDlps_cfg(void)
 	HAL_SwitchKey_Dlps_Control(true);	
 	// light 维持IO电平，视电路和单前状态标志而定，
 	SkyBleMesh_DlpsLight_Handle(true);
-    HAL_INF_Dlps_Control(true);
-    HAL_Adc_Dlps_Control(true);
+//    HAL_INF_Dlps_Control(true);
+//    HAL_Adc_Dlps_Control(true);
 }
 
 void SkyBleMesh_ExitDlps_cfg(bool norexit)
 {
 	dlpsstatu = 3; // exit
+    DBG_DIRECT("-------ExitDlps_cfg-------\r\n");
+//    DBG_DIRECT("---------KEY1=%d----\r\n",GPIO_ReadInputDataBit(P4_2));
 
 	if(norexit == true){ // 正常退出DLPS
-		// debug uart
-	    // Pad_ControlSelectValue(P3_0, PAD_PINMUX_MODE);
-	    // Pad_ControlSelectValue(P3_1, PAD_PINMUX_MODE);
 
-		// switch
 		HAL_SwitchKey_Dlps_Control(false);
 		// light
 		SkyBleMesh_DlpsLight_Handle(false);
-	    HAL_INF_Dlps_Control(false);
-	    HAL_Adc_Dlps_Control(false);
 	}
 	
 	// ble
@@ -162,11 +161,10 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 	SkyBleMesh_StartMainLoop_tmr();
 	
 	SkyBleMesh_EnterDlps_timer();
-	Reenter_tmr_ctrl_dlps(false);
+//	Reenter_tmr_ctrl_dlps(false);                   移到 mainLoop主函数定时器回调最后至1
 	
 	SkyBleMesh_StopWakeup_tmr();
 
-	// APP_DBG_PRINTF(" SkyBleMesh_ExitDlps_cfg");
 
 }
 bool switch_check_dlps_statu(void)

@@ -41,7 +41,7 @@ extern "C" {
 #define PRODUCT_ID                              0x0000
 #define VERSION_ID                              0x0000
 
-#define DFU_AUTO_BETWEEN_DEVICES                1 // 0 打开DLPS下可以升级
+#define DFU_AUTO_BETWEEN_DEVICES                0 // 0 打开DLPS下可以升级
 #define DFU_PRODUCT_ID                          DFU_PRODUCT_ID_MESH_DEVICE
 #define DFU_APP_VERSION                         0x00000000
 //#define DFU_VERSION_1                      ({T_IMG_HEADER_FORMAT *p_header = (T_IMG_HEADER_FORMAT *)get_header_addr_by_img_id(RomPatch);\

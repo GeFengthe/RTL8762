@@ -176,7 +176,7 @@ void mesh_stack_init(void)
 	// mesh_model_bind_all_key();
 	
     /** register proxy adv callback */
-    device_info_cb_reg(device_info_cb);
+//    device_info_cb_reg(device_info_cb);
     // hb_init(hb_cb);
 	
 	
@@ -210,6 +210,10 @@ void app_le_gap_init(void)
     uint16_t auth_sec_req_flags = GAP_AUTHEN_BIT_BONDING_FLAG;
 
     /* Setup the GAP Bond Manager */
+//    uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
+//    uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
+//    gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+//    gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
     gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(auth_pair_mode), &auth_pair_mode);
     gap_set_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, sizeof(auth_flags), &auth_flags);
     gap_set_param(GAP_PARAM_BOND_IO_CAPABILITIES, sizeof(auth_io_cap), &auth_io_cap);
@@ -300,6 +304,7 @@ void driver_init(void)
 		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
 		gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
 		gap_sched_scan(true); 
+        DBG_DIRECT("----------UNPORV--gap_sched_params_set\r\n------\r\n");
 			
 		if(SkyBleMesh_Device_Active_Sate()==true){
 			SkyBleMesh_Unprov_timer();
@@ -328,7 +333,7 @@ void driver_init(void)
 */
 void app_enter_dlps_config(void)
 {
-	// DBG_DIRECT("En DLPS \r\n");
+	 DBG_DIRECT("En DLPS \r\n");
 		
 	SkyBleMesh_EnterDlps_cfg();
 }
@@ -383,8 +388,9 @@ void pwr_mgr_init(void)
 #if ENABLE_DLPS
     if (false == dlps_check_cb_reg(app_dlps_check_cb))
     {
-        APP_PRINT_ERROR0("Error: dlps_check_cb_reg(app_dlps_check_cb) failed!");
+        DBG_DIRECT("Error: dlps_check_cb_reg(app_dlps_check_cb) failed!");
     }
+//    DBG_DIRECT("dlps_check_cb_reg(app_dlps_check_cb)Successd!");
     DLPS_IORegUserDlpsExitCb(app_exit_dlps_config);
     DLPS_IORegUserDlpsEnterCb(app_enter_dlps_config);
     DLPS_IORegister();
@@ -420,9 +426,9 @@ void app_normal_power_on_seq(void)
 	
     pwr_mgr_init();
     task_init();
-    // os_sched_start();
+//    os_sched_start();
 
-    // return 0;
+//    return 0;
 }
 
 // module test

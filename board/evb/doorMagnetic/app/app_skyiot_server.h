@@ -27,10 +27,10 @@
 #define MESH_TEST_PRESSURE       		0
 
 #if (SKY_SWITCH_TYPE == SKY_NIGHTLIGHT_TYPE)
-#define PRODUCT_TYPE    				(118)		// TODO 修改为小夜灯:118
-#define PRODUCT_MODEL   				("LCAM01") 	// LCAM01	
+#define PRODUCT_TYPE    				(123)		// TODO 修改为小夜灯:118
+#define PRODUCT_MODEL   				("RBDNM01") 	// LCAM01	
 #define PRODUCT_BRAND   				(11)	    // swaiot
-#define PRODUCT_VERSION 				("1.0.13")      // 注意同步给接口 uart_test_read_app_version  和 version.h中的 VERSION_MAJOR
+#define PRODUCT_VERSION 				("1.0.01")      // 注意同步给接口 uart_test_read_app_version  和 version.h中的 VERSION_MAJOR
 #endif
 
 // #define MESH_ADV_NAME_LEN (30)
@@ -63,7 +63,7 @@ typedef enum
 #define LIGHT_DEFAULT_WAY				(0x00)	    // 光暗时灯亮
 #define LED_NORMAL_VER                  2           // LED正常版本
 #define LIGHT_DAYTIME                   (0x02)      // 白天
-#define ENV_DETECT_TIME                 (1*60*1000) // 默认1min检测一次环境
+//#define ENV_DETECT_TIME                 (1*60*1000) // 默认1min检测一次环境
 #define WRITE_DEFAULT_TIME              (5*1000)   	// 默认每5s据状态写flash
 #define APP_UNREACT_MODE_N              0
 #define APP_REACT_MODE_M                1
@@ -71,10 +71,13 @@ typedef enum
 #define APP_REACT_MODE_A                3
 #define BATT_NORMAL                     0           // 电压正常
 #define BATT_WARING                     1           // 警戒电压
-#define BATT_WARIN_RANK                 3100        // 警戒电压等级1对应的电压值
+#define BATT_WARIN_RANK                 2400        // 警戒电压等级1对应的电压值
 #define BATT_THRESHOLD_VAL              100         // 电压判定误差范畴
 #define BATT_TIMEOUT                    10*60*1000  // 电压采集时间周期
 
+#define BLEMESH_REPORT_FLAG_ALM         0x01
+#define BLEMESH_REPORT_FLAG_STU         0x02
+#define BLEMESH_REPORT_FLAG_BAT         0x04
 
 typedef enum
 {
@@ -129,7 +132,7 @@ extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx);
 extern void SkyMesh_ProductFactoryCheck_cb(T_GAP_ADV_EVT_TYPE adv_type, uint8_t* bd_addr, uint8_t* data, uint8_t data_len);
 
 
-#define SKYMESH_FACTORYTEST_EABLE       1
+#define SKYMESH_FACTORYTEST_EABLE       0
 
 #if SKYMESH_FACTORYTEST_EABLE==1
 extern bool SkyMesh_Product_Factory_Checking(void);

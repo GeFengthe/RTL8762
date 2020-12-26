@@ -133,9 +133,9 @@ void uart_test_get_sum(void *p_data)
     DBG_DIRECT("tian debug checksum=0x%08x\n",checksum);
     UARTCmd_Response(GET_CHECKSUM_CMD, UART_TEST_SUCCESS, (uint8_t *)&checksum, 4);
 }
-#define MODULE_PIN5       P4_1
-#define MODULE_PIN6       P4_0
-#define MODULE_PIN7       P0_6
+#define MODULE_PIN5       P2_7
+#define MODULE_PIN6       P4_3
+#define MODULE_PIN7       P0_0
 #define MODULE_PIN8       P0_5
 #define MODULE_PIN11     P3_3
 #define MODULE_PIN12     P3_2
