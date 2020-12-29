@@ -27,6 +27,7 @@
 #define SWITCH_ALM_GPIO_PIN         GPIO_GetPin(SWITCH_ALM_GPIO)
 
 static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO,SWITCH_STU_GPIO,SWITCH_ALM_GPIO};
+
 #endif
 
 
@@ -46,8 +47,9 @@ static SCAN_KEY_STATUS_e keystatus = SCAN_KEY_INIT;
 static KEY_PRESS_MODE_e  keymode   = KEY_MODE_INIT;
 
 static SkySwitchManager *mSwitchManager=NULL;
+uint8_t door_flag =0;
 
-static bool BlinkProLed=false;
+//static bool BlinkProLed=false;
 
 //static uint8_t oskystatu =0;
 
@@ -98,72 +100,53 @@ static void HAL_GpioForSwitch_Init(void)
     GPIO_Init(&GPIO_InitStruct);
 }
 
-void HAL_BlinkProLed_Enable(void)
-{
-	BlinkProLed = true;
-}
-void HAL_BlinkProLed_Disable(void)
-{
-	BlinkProLed = false;
-}
-bool HAL_BlinkProLed_Statu(void)
-{
-	return BlinkProLed;
-}
-
 void HAL_Skymag_Dlps_Control(bool isenter)
 {
     if(isenter)
     {
-        if(GPIO_ReadOutputDataBit(SWITCH_ALM_GPIO) ==1)
+        DBG_DIRECT("---SKYMAG stu=%d,alm=%d",GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_STU_ENUM])) == 1,GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1);
+        if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1)
         {
             Pad_Config(SWITCH_ALM_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-//            System_WakeUpPinEnable(SWITCH_ALM_GPIO,PAD_WAKEUP_POL_LOW,0);
+            System_WakeUpPinEnable(SWITCH_ALM_GPIO,PAD_WAKEUP_POL_LOW,0);
         }else
         {
             Pad_Config(SWITCH_ALM_GPIO,PAD_SW_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_LOW);
-//            System_WakeUpPinEnable(SWITCH_ALM_GPIO,PAD_WAKEUP_POL_HIGH,0);
+            System_WakeUpPinEnable(SWITCH_ALM_GPIO,PAD_WAKEUP_POL_HIGH,0);
         }
-         if(GPIO_ReadOutputDataBit(SWITCH_STU_GPIO) ==1)
+         if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_STU_ENUM])) == 1)
         {
-            Pad_Config(SWITCH_STU_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-//            System_WakeUpPinEnable(SWITCH_STU_GPIO,PAD_WAKEUP_POL_LOW,0);
+            Pad_Config(SWITCH_STU_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+            System_WakeUpPinEnable(SWITCH_STU_GPIO,PAD_WAKEUP_POL_LOW,0);
         }else
         {
-            Pad_Config(SWITCH_STU_GPIO,PAD_SW_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_LOW);
-//            System_WakeUpPinEnable(SWITCH_STU_GPIO,PAD_WAKEUP_POL_HIGH,0);
+            Pad_Config(SWITCH_STU_GPIO,PAD_SW_MODE,PAD_IS_PWRON,PAD_PULL_DOWN,PAD_OUT_DISABLE,PAD_OUT_LOW);
+            System_WakeUpPinEnable(SWITCH_STU_GPIO,PAD_WAKEUP_POL_HIGH,0);
         }
+        
     }else{
         Pad_Config(SWITCH_ALM_GPIO,PAD_PINMUX_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_LOW);
-        if(System_WakeUpInterruptValue(SWITCH_ALM_GPIO) == 1)
-        {
-            Pad_ClearWakeupINTPendingBit(SWITCH_ALM_GPIO);
-            System_WakeUpPinDisable(SWITCH_ALM_GPIO);
-            switch_io_ctrl_dlps(false);
-        }
-        Pad_Config(SWITCH_STU_GPIO,PAD_PINMUX_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_HIGH);
-        if(System_WakeUpInterruptValue(SWITCH_STU_GPIO) == 1)
-        {
-            Pad_ClearWakeupINTPendingBit(SWITCH_STU_GPIO);
-            System_WakeUpPinDisable(SWITCH_STU_GPIO);
-            switch_io_ctrl_dlps(false);
-        }     
+        Pad_Config(SWITCH_STU_GPIO,PAD_PINMUX_MODE,PAD_IS_PWRON,PAD_PULL_UP,PAD_OUT_DISABLE,PAD_OUT_HIGH);
+        door_flag=1;
+        Pad_ClearWakeupINTPendingBit(SWITCH_ALM_GPIO);
+        System_WakeUpPinDisable(SWITCH_ALM_GPIO);
+        Pad_ClearWakeupINTPendingBit(SWITCH_STU_GPIO);
+        System_WakeUpPinDisable(SWITCH_STU_GPIO);
     }
 }    
 
 void HAL_SwitchKey_Dlps_Control(bool isenter)
 {
 	if(isenter){
-//        DBG_DIRECT("---------KEY1=%d----\r\n",GPIO_ReadInputDataBit(SWITCH1_GPIO));
 		Pad_Config(SWITCH1_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-//		System_WakeUpPinEnable(SWITCH1_GPIO, PAD_WAKEUP_POL_LOW, 0);
+		System_WakeUpPinEnable(SWITCH1_GPIO, PAD_WAKEUP_POL_LOW, 0);
 	}else{
 		Pad_Config(SWITCH1_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-		if(System_WakeUpInterruptValue(SWITCH1_GPIO) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
+//		if(System_WakeUpInterruptValue(SWITCH1_GPIO) == 1){		// 也可读IO状态。 USE_GPIO_DLPS 须为1
 			Pad_ClearWakeupINTPendingBit(SWITCH1_GPIO);
 			System_WakeUpPinDisable(SWITCH1_GPIO);
 			switch_io_ctrl_dlps(false);		
-		}
+//		}
 		
 	}	
 }
@@ -204,7 +187,7 @@ static void Scan_Keyboard_Function(void)
 	}
 	
 	keypress = ReadKeyStatu();
-    DBG_DIRECT("-----key is mode=%d-----\r\n",keypress);
+//    DBG_DIRECT("-----key is mode=%d-----\r\n",keypress);
 	switch(keystatus)
 	{
 		case SCAN_KEY_INIT:{		

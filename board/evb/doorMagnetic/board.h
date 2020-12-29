@@ -62,8 +62,8 @@ extern "C" {
 #define USE_GPIO_DLPS        1
 #define USE_PWM0_DLPS        0
 #define USE_PWM1_DLPS        0
-#define USE_PWM2_DLPS        1
-#define USE_PWM3_DLPS        1
+#define USE_PWM2_DLPS        0
+#define USE_PWM3_DLPS        0
 
 
 /* do not modify USE_IO_DRIVER_DLPS macro */

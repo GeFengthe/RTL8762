@@ -36,7 +36,7 @@ uint8_t  ackattrsval=0;
 
 #define SKYBLERESET_MAXCNT          (45)    // 重配网延时服务，延时的时间用作信号灯的闪烁
 #define SKYBLERESET_MINCNT          (10)    // 配网过程中按键退出配网
-#define SKYBLERESET_TIMEOUT         (150)   // 对开关，仅仅延时而已，给闪灯时间
+#define SKYBLERESET_TIMEOUT         (150*45)   // 对开关，仅仅延时而已，给闪灯时间
 
 #define SKYBLEPROVSUCCESS_MAXCNT    (16)    // 配网成功闪
 #define SKYBLEPROVSUCCESS_TIMEOUT   (500)
@@ -55,8 +55,8 @@ uint8_t  ackattrsval=0;
 #define BLEMESH_COMMAND_WAIT_MS   (500) /* WAIT 250MS FOR Report ack */	
 #define DEFAULT_WAKEUP_ALIVE_CNT  (3)
 
-#define DEFAULT_SKYIOT_ALIVE_MS   (60000)  // qlj 需要一个定时器来换算
-#define DEFAULT_GATEWAY_ALIVE_MS  (90000)
+#define DEFAULT_SKYIOT_ALIVE_MS   (60000*5)  // qlj 需要一个定时器来换算
+#define DEFAULT_GATEWAY_ALIVE_MS  (60000*6)
 #define DEFAULT_GATEWAY_SENQ_MS   (5000)
 
 
@@ -719,7 +719,7 @@ static void BleMesh_Vendor_Ack_Packet(uint8_t eventid, uint16_t attrID, uint32_t
 				tmpid = (tmpid<<8) | MeshTxAttrStruct[i].buf[TX_ATTR_ID_POS];
 				if( attrID == tmpid ){						
 					switch(attrID){
-						case ATTR_CLUSTER_ID_SW1:
+						case ATTR_CLUSTER_ID_ALM:
 //						case ATTR_CLUSTER_ID_SW2:
 						case ATTR_CLUSTER_ID_BAT:
                         case ATTR_CLUSTER_ID_STU:
@@ -848,7 +848,7 @@ static void SkyIotReportPropertyPacket(uint16_t attrID, int value, uint8_t seq_n
 	uint8_t uAttrSize = 0;
 	
 	switch(attrID){
-		case ATTR_CLUSTER_ID_SW1:
+		case ATTR_CLUSTER_ID_ALM:
 		case ATTR_CLUSTER_ID_BAT:
         case ATTR_CLUSTER_ID_STU:
 			uAttrSize = 1;
@@ -926,7 +926,7 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 				uint16_t prop_ID = (p_data[MESH_ATTR_ID_POS+1]<<8) | (p_data[MESH_ATTR_ID_POS]);
 			
 				switch(prop_ID){
-					case ATTR_CLUSTER_ID_SW1:
+					case ATTR_CLUSTER_ID_ALM:
 					case ATTR_CLUSTER_ID_SW2:
 					case ATTR_CLUSTER_ID_INF:
 					case ATTR_CLUSTER_ID_AMB:
@@ -950,7 +950,7 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 				uint16_t prop_ID = (p_data[MESH_ATTR_ID_POS-1+1]<<8) | (p_data[MESH_ATTR_ID_POS-1]);
 				
 				switch(prop_ID){
-					case ATTR_CLUSTER_ID_SW1:
+					case ATTR_CLUSTER_ID_ALM:
 					case ATTR_CLUSTER_ID_SW2:
 					case ATTR_CLUSTER_ID_INF:
 					case ATTR_CLUSTER_ID_AMB:
@@ -1020,7 +1020,7 @@ static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 	}else{
 		if(skybleprovsucesscnt == (SKYBLEPROVSUCCESS_MAXCNT+1)){			
 			#if USE_DOOR_FOR_SKYIOT		
-//            SkyLed_Ctrl(LED_MODE_FAST_BLINK,10);      // 入网成功，闪烁5次（5*2）。
+            SkyLed_Ctrl(LED_MODE_FAST_BLINK,10);      // 入网成功，闪烁5次（5*2）。
 			#endif	
             DBG_DIRECT("-------PROV_SUCCESS--------\r\n");
 			// 闪灯结束后延时10s，触发配网成功事件。 
@@ -1059,7 +1059,7 @@ extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate)
 		case MESH_PROVISION_STATE_SUCCEED:{
 			
 			if(skybleprosuccess_timer == NULL){		
-//				skybleprosuccess_timer = plt_timer_create("prvok", SKYBLEPROVSUCCESS_TIMEOUT, true, 0, SkyBleMesh_Prov_Success_Timeout_cb);
+				skybleprosuccess_timer = plt_timer_create("prvok", SKYBLEPROVSUCCESS_TIMEOUT, true, 0, SkyBleMesh_Prov_Success_Timeout_cb);
 				if (skybleprosuccess_timer != NULL){
 					plt_timer_start(skybleprosuccess_timer, 1000);
 				}
@@ -1081,7 +1081,7 @@ extern void SkyBleMesh_Provision_State(MESH_PROVISION_STATE_e sate)
 extern bool SkyBleMesh_IsProvision_Sate(void)
 {
 	bool ret=false;
-	
+//	DBG_DIRECT("----mesh_pro_state=%d,pro_succeed=%d-----\r\n",mesh_provison_state,MESH_PROVISION_STATE_SUCCEED);
 	if(mesh_provison_state==MESH_PROVISION_STATE_SUCCEED || mesh_provison_state==MESH_PROVISION_STATE_PROVED){
 		ret = true;
 	}
@@ -1113,7 +1113,7 @@ void SkyBleMesh_Unprov_timer(void)
 		if(mIotManager.process_state == 0x55){
 			timeout = MESH_UNPROV_NORMAL_TIME_OUT;
 		}
-//		skyble_unprov_timer = plt_timer_create("unprov calc", timeout, false, 0, SkyBleMesh_Unprov_Timeout_cb);
+		skyble_unprov_timer = plt_timer_create("unprov calc", timeout, false, 0, SkyBleMesh_Unprov_Timeout_cb);
 		if (skyble_unprov_timer != NULL){
 			plt_timer_start(skyble_unprov_timer, 0);
 			blemesh_unprov_ctrl_dlps(false);
@@ -1135,6 +1135,7 @@ static void SkyBleMesh_ChangeScan_Timeout_cb(void *ptimer)
 {
 	if(skyble_changescan_timer){
 		plt_timer_delete(skyble_changescan_timer, 0);
+        DBG_DIRECT("----skyble_chang_delete-\r\n");
 		skyble_changescan_timer = NULL;
 	}
 	
@@ -1208,7 +1209,7 @@ void SkyBleMesh_ChangeScan_timer(uint8_t multi)
 		multi = 1;
 	}
 	if(skyble_changescan_timer == NULL){ 	
-//		skyble_changescan_timer = plt_timer_create("change scan", CHANGE_SCAN_PARAM_TIME_OUT*multi, false, 0, SkyBleMesh_ChangeScan_Timeout_cb);
+		skyble_changescan_timer = plt_timer_create("change scan", CHANGE_SCAN_PARAM_TIME_OUT*multi, false, 0, SkyBleMesh_ChangeScan_Timeout_cb);
 		if (skyble_changescan_timer != NULL){
 			plt_timer_start(skyble_changescan_timer, 0);
 		}
@@ -1231,8 +1232,9 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
              SkyBleMesh_EnterDlps_TmrCnt_Handle();
             break;
         }
-		case UNPROV_TIMEOUT:{
+		case UNPROV_TIMEOUT:{                       //未入网定时器
             beacon_stop();
+            gap_sched_scan(false);
             blemesh_unprov_ctrl_dlps(true);
 						
 			if(mIotManager.process_state == 0x55){
@@ -1241,25 +1243,15 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 			}
             break;
         }
-		case PROV_SUCCESS_TIMEOUT:{			
+		case PROV_SUCCESS_TIMEOUT:{			        //入网成功定时器
 			if(mIotManager.process_state == 0x55){
 				mIotManager.process_state = 0xff;
 				SkyBleMesh_WriteConfig();	
 			}
-			gap_sched_scan(false);            
-            uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
-            uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
-            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-            gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
-            DBG_DIRECT("----------gap_sched_params_set\r\n------\r\n");
-			gap_sched_scan(true); 
-			
-			// mesh配网30s后才进入
-			// 一定在上报配网信息后，否则APP没有设备信息。
             blemesh_unprov_ctrl_dlps(true); 
             break;
         }
-        case test_light_TIMEOUT:
+        case test_light_TIMEOUT:                    //灯控定时器
             SkyLed_Timeout_cb_handel(NULL);
             break;
 		
@@ -1285,16 +1277,16 @@ extern void SkyBleMesh_unBind_complete(void)
 static void SkyBleMesh_Reset_Timeout_cb(void *timer)
 {
     if(mIotManager.process_state == 0x55){
-        if( ++g_skybleresetcnt > SKYBLERESET_MAXCNT ){		
+//        if( ++g_skybleresetcnt > SKYBLERESET_MAXCNT ){		
             if(skyblereset_timer){
                 plt_timer_delete(skyblereset_timer, 0);
                 skyblereset_timer = NULL;
             }		
             #if USE_DOOR_FOR_SKYIOT
-            HAL_BlinkProLed_Disable();
+//            HAL_BlinkProLed_Disable();
             #endif
             HAL_ResetBleDevice(); 
-        } 
+//        } 
     }else{
         if( ++g_skybleresetcnt > SKYBLERESET_MINCNT ){		
             if(skyblereset_timer){
@@ -1302,7 +1294,7 @@ static void SkyBleMesh_Reset_Timeout_cb(void *timer)
                 skyblereset_timer = NULL;
             }		
             #if USE_DOOR_FOR_SKYIOT
-            HAL_BlinkProLed_Disable();
+//            HAL_BlinkProLed_Disable();
             #endif
             HAL_ResetBleDevice(); 
         } 
@@ -1578,7 +1570,7 @@ static void Reset_iotmanager_para(void)
 static void Sky_listendoorstate(void)
 {
      uint8_t skystatu = ReadStatus();
-    DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
+//    DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
     switch (skystatu)
     {
         case 0:
@@ -1603,12 +1595,19 @@ static void Sky_listendoorstate(void)
     {
         mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
         oldstate.alm = mIotManager.mLightManager.alm;
+        HAL_Lighting_ON();
+        SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,0);
+        DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
     }
     if(oldstate.stu != mIotManager.mLightManager.stu)
     {
         mIotManager.report_flag |= BLEMESH_REPORT_FLAG_STU;
         oldstate.stu = mIotManager.mLightManager.stu;
+        HAL_Lighting_ON();
+        SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,0);
+        DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
     }
+    door_flag = 0;
 }
 static void Main_Event_Handle(void)
 {
@@ -1789,7 +1788,7 @@ static void Main_Upload_State(void)
 
 		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_ALM){							// 门磁状态发生改变
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_ALM;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_SW1, mIotManager.mLightManager.alm, mIotManager.sw1_seq);	
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_ALM, mIotManager.mLightManager.alm, mIotManager.sw1_seq);	
 			mIotManager.sw1_seq = 0;
 		}
 		
@@ -1858,7 +1857,8 @@ extern void test_update_attr(void)
 
 
 extern void SkyBleMesh_MainLoop(void)
-{					
+{
+  
 	if(IsSkyAppInited==false){
 		return;
 	}
@@ -1875,7 +1875,7 @@ extern void SkyBleMesh_MainLoop(void)
 	#endif
 	
 	bool isprov = SkyBleMesh_IsProvision_Sate();     // 联网状态
-//    Sky_listendoorstate();              
+    Sky_listendoorstate();              
 	if(isprov==true && mIotManager.batt_rank!=BATT_WARING){
 		
 		//recv message	
@@ -2081,6 +2081,8 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 		}else{
 			if(batt_val > (BATT_WARIN_RANK+150)){ // 电压大于预警值150mv，解除预警
 				mIotManager.batt_rank = BATT_NORMAL;
+                gap_sched_scan(true); 
+                beacon_start();
 			}
 		}
 		

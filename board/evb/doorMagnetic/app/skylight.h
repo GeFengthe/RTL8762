@@ -68,6 +68,7 @@ extern void HAL_Light_Init(void);
 extern void HAL_LightToggle(void);
 extern void SkyLed_Timeout_cb_handel(void *timer);
 extern void SkyLed_Ctrl(LED_MODE_e mode,uint8_t cnt);
+extern void HAL_Lighting_ON( void );
 
 
 #endif

@@ -86,6 +86,7 @@ static uint8_t datatrans_sample_data[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x
 void app_handle_io_msg(T_IO_MSG io_msg)
 {
     uint16_t msg_type = io_msg.type;
+//    DBG_DIRECT("ap-handle type=%d,subtype=%d,\r\n",io_msg.type,io_msg.subtype);
     switch (msg_type)
     {
 		case IO_MSG_TYPE_BT_STATUS:{
@@ -112,7 +113,6 @@ void app_handle_io_msg(T_IO_MSG io_msg)
 			break;
 		}
 		case IO_MSG_TYPE_TIMER:{
-//                DBG_DIRECT("--------timer-io_msg= %d-------\r\n",io_msg.subtype);
 				SkyBleMesh_Handle_SwTmr_msg(&io_msg); // 
 			break;
 		}

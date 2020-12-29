@@ -20,22 +20,21 @@
 plt_timer_t LEDCtrl_timer = NULL;
 
 // #define APP_DBG_PRINTF(fmt, ...)
-static SkyLightManager *mLightManager=NULL;
+//static SkyLightManager *mLightManager=NULL;
 
 #if 1
 
 #define PIN_INVALID       0xff
 
-#define LED_WHITE					P4_1			// LED_1(PWM) ºì
-#define LED_YELLOW					P0_6			// LED_2(PWM)
+#define LED_WHITE					P4_1			// LED_1(PWM) ÂÌ
+#define LED_YELLOW					P0_6			// LED_2(PWM) ºì
 
 #define LEDG_Pin            GPIO_GetPin(LED_WHITE)
 #define LEDR_Pin            GPIO_GetPin(LED_YELLOW)
-#define LEDRPOWER_CLOSE      ((BitAction)0)
-#define LEDRPOWER_OPEN       ((BitAction)1)
+#define LEDPOWER_CLOSE      ((BitAction)0)
+#define LEDPOWER_OPEN       ((BitAction)1)
 
-#define LEDGPOWER_CLOSE      ((BitAction)0)
-#define LEDGPOWER_OPEN       ((BitAction)1)
+
 
 uint32_t time;
 uint8_t lightcount = 0;
@@ -79,36 +78,19 @@ void HAL_Light_Init(void)
     GPIO_InitStruct.GPIO_ITCmd = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
 
-    GPIO_WriteBit(LEDR_Pin,LEDRPOWER_CLOSE);
-    GPIO_WriteBit(LEDG_Pin,LEDRPOWER_CLOSE);
+    GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
+    GPIO_WriteBit(LEDG_Pin,LEDPOWER_CLOSE);
 }
 
 
 void HAL_Lighting_OFF(void)
 {
-    GPIO_WriteBit(LEDR_Pin,LEDRPOWER_CLOSE);
+    GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
 }
 void HAL_Lighting_ON( void )
 {
-   
+   GPIO_WriteBit(LEDR_Pin,LEDPOWER_OPEN);
 }
-void HAL_LightToggle(void)
-{
-    for(uint8_t i=0;i<5;i++)
-    {
-        
-        if(GPIO_ReadOutputDataBit(LEDR_Pin)==1)
-        {
-            GPIO_WriteBit(LEDR_Pin,(BitAction)0);
-        }else{
-            GPIO_WriteBit(LEDR_Pin,(BitAction)1);
-        }
-        os_delay(500);
-    }
-
-}
-
-
 /*
 ** PWM
 */
@@ -132,9 +114,9 @@ void SkyLed_Timeout_cb_handel(void *timer)
             {
                 if((mLightMonitor.linkcnt &0x01) == 1)
                 {
-                    GPIO_WriteBit(LEDR_Pin,LEDRPOWER_CLOSE);
+                    GPIO_WriteBit(LEDG_Pin,LEDPOWER_CLOSE);
                 }else{
-                    GPIO_WriteBit(LEDR_Pin,LEDRPOWER_OPEN);
+                    GPIO_WriteBit(LEDG_Pin,LEDPOWER_OPEN);
                 }
                 mLightMonitor.linktime = 0;
                 mLightMonitor.linkcnt--;
@@ -151,9 +133,9 @@ void SkyLed_Timeout_cb_handel(void *timer)
             {
                 if((mLightMonitor.linkcnt & 0x01) == 1)
                 {
-                    GPIO_WriteBit(LEDR_Pin,LEDRPOWER_CLOSE);
+                    GPIO_WriteBit(LEDG_Pin,LEDPOWER_CLOSE);
                 }else{
-                    GPIO_WriteBit(LEDR_Pin,LEDRPOWER_OPEN);
+                    GPIO_WriteBit(LEDG_Pin,LEDPOWER_OPEN);
                 }
                 mLightMonitor.linktime = 0;
                 mLightMonitor.linkcnt--;
@@ -166,6 +148,9 @@ void SkyLed_Timeout_cb_handel(void *timer)
             }
             break;
         case LED_MODE_NORMAL_BRIGHT:
+            GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
+            mLightMonitor.mode = LED_MODE_UNKOWN;
+            Delete_LED_Timer();
             break;
         default:
             break;
@@ -182,7 +167,7 @@ void SkyLed_Timeout_cb(void)
 void Start_LED_Timer(void)
 {
 	if(LEDCtrl_timer == NULL){
-//		LEDCtrl_timer = plt_timer_create("ledtest", 100, true, 0, (void*)SkyLed_Timeout_cb); 
+		LEDCtrl_timer = plt_timer_create("ledtest", 100, true, 0, (void*)SkyLed_Timeout_cb); 
 		if(LEDCtrl_timer != NULL){
 			Led_Relay_tmr_ctrl_dlps(false);
 			plt_timer_start(LEDCtrl_timer, 0);
