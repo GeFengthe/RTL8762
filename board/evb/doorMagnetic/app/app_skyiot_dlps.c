@@ -30,7 +30,7 @@ static void SkyBleMesh_Wakeup_Timeout_cb(void *timer)
 {
  
     DBG_DIRECT("------Waketime --------\r\n");
-	APP_DBG_PRINTF(" %s %d",__func__, dlpsstatu);
+//	APP_DBG_PRINTF(" %s %d",__func__, dlpsstatu);
 	if(dlpsstatu == 1){
 		// 没能进DLPS，恢复关闭的tmr等
 		SkyBleMesh_ExitDlps_cfg(false);
@@ -47,7 +47,7 @@ static void SkyBleMesh_StopWakeup_tmr(void)
 static void SkyBleMesh_StartWakeup_tmr(void)
 {	
 	if(skyblewakeup_timer == NULL){		
-		skyblewakeup_timer = plt_timer_create("WAKEUP", 90000, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
+		skyblewakeup_timer = plt_timer_create("WAKEUP", 50000, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
 		if (skyblewakeup_timer != NULL){
 			plt_timer_start(skyblewakeup_timer, 0);
 		}
@@ -99,7 +99,7 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 void SkyBleMesh_EnterDlps_timer(void)
 {	
 	if(skybleenterdlps_timer == NULL){ 	
-		skybleenterdlps_timer = plt_timer_create("dlps", 60, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
+		skybleenterdlps_timer = plt_timer_create("dlps", 160, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
 		if (skybleenterdlps_timer != NULL){
 			plt_timer_start(skybleenterdlps_timer, 0);
 		}
@@ -109,13 +109,11 @@ void SkyBleMesh_EnterDlps_timer(void)
 void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
 	dlpsstatu = 1; // ready
-	
 	SkyBleMesh_StopMainLoop_tmr();	
 	// ble 
 	beacon_stop();
     gap_sched_scan(false);    
 	// sw timer
-	
     SkyBleMesh_StartWakeup_tmr();
 }
 
@@ -148,8 +146,9 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 //	beacon_start();  	
 	// ble
 	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisioned且电量正常
+        beacon_start(); // 配网才会打开，这个要验证下，未配网不广播
         gap_sched_scan(true);
-		beacon_start(); // 配网才会打开，这个要验证下，未配网不广播
+
 	}	
 	
 	// sw timer

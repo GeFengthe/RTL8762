@@ -55,8 +55,8 @@ uint8_t  ackattrsval=0;
 #define BLEMESH_COMMAND_WAIT_MS   (500) /* WAIT 250MS FOR Report ack */	
 #define DEFAULT_WAKEUP_ALIVE_CNT  (3)
 
-#define DEFAULT_SKYIOT_ALIVE_MS   (60000*5)  // qlj 需要一个定时器来换算
-#define DEFAULT_GATEWAY_ALIVE_MS  (60000*6)
+#define DEFAULT_SKYIOT_ALIVE_MS   (60000)  // qlj 需要一个定时器来换算
+#define DEFAULT_GATEWAY_ALIVE_MS  (60000)
 #define DEFAULT_GATEWAY_SENQ_MS   (5000)
 
 
@@ -720,7 +720,6 @@ static void BleMesh_Vendor_Ack_Packet(uint8_t eventid, uint16_t attrID, uint32_t
 				if( attrID == tmpid ){						
 					switch(attrID){
 						case ATTR_CLUSTER_ID_ALM:
-//						case ATTR_CLUSTER_ID_SW2:
 						case ATTR_CLUSTER_ID_BAT:
                         case ATTR_CLUSTER_ID_STU:
 							value = MeshTxAttrStruct[i].buf[TX_ATTR_VAL_POS];
@@ -1680,7 +1679,7 @@ static void Main_Event_Handle(void)
 				break;
 
 			case EVENT_TYPE_REPORT_PROPERTY_ACK:
-				BleMesh_Vendor_Ack_Packet(event.event_id, event.prop_ID, event.prop_value);
+				BleMesh_Vendor_Ack_Packet(event.event_id, event.prop_ID, event.prop_value);     //
 				break;
 		}	
 	}
@@ -1732,12 +1731,12 @@ static bool Main_Check_Online(void)
 	if (alivetimecnt >= 150){  // 30*50ms
 		if (mIotManager.alive_wakeup_cnt < DEFAULT_WAKEUP_ALIVE_CNT){
 			if (mIotManager.alive_status == 0){
-//				APP_DBG_PRINTF1("Main_Check_Online wakeupcnt %d\n", mIotManager.alive_wakeup_cnt);
+				APP_DBG_PRINTF1("Main_Check_Online wakeupcnt %d\n", mIotManager.alive_wakeup_cnt);
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
 			}else{
-				sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);
-				// APP_DBG_PRINTF2("Main_Check_Online wakeupcnt %d %d\n", mIotManager.alive_wakeup_cnt, sub_timeout_ms);
+				sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);     //
+				 APP_DBG_PRINTF2("Main_Check_Online wakeupcnt %d %d\n", mIotManager.alive_wakeup_cnt, sub_timeout_ms);
 				if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
 					SkyIotSendKeepAlivePacket();
 					mIotManager.send_alive_tick = tick;
@@ -1747,7 +1746,7 @@ static bool Main_Check_Online(void)
 		}else {
 			sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.send_alive_tick, tick);
 			if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
-//				APP_DBG_PRINTF1("Main_Check_Online sub_timeout_ms %d\n", sub_timeout_ms);
+				APP_DBG_PRINTF1("Main_Check_Online sub_timeout_ms %d\n", sub_timeout_ms);
 				//SEND ALIVE PACKET
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
@@ -1903,7 +1902,7 @@ extern void SkyBleMesh_MainLoop(void)
         }
         if(mIotManager.batt_rank == BATT_WARING){   
 //			if(HAL_CalculateTickDiff(battadctick, newtick) >= 30000 ){// 30000 ms 
-//	            SkyBleMesh_Batterval_Lightsense(true);		
+	            SkyBleMesh_Batterval_Lightsense(true);		
 //				battadctick = newtick;
 //			}
         }else{
@@ -2076,7 +2075,7 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 				mIotManager.batt_rank = BATT_WARING;				
 				beacon_stop();  	
 				gap_sched_scan(false);
-				APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 3.1V \n");
+				APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 2.4V \n");
 			}
 		}else{
 			if(batt_val > (BATT_WARIN_RANK+150)){ // 电压大于预警值150mv，解除预警
@@ -2090,7 +2089,6 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 	// }
 
 }
-
 
 extern uint8_t SkyBleMesh_Batt_Station(void)
 {
