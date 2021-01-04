@@ -78,8 +78,8 @@ void HAL_Light_Init(void)
     GPIO_InitStruct.GPIO_ITCmd = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
 
-    GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
-    GPIO_WriteBit(LEDG_Pin,LEDPOWER_CLOSE);
+//    GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
+//    GPIO_WriteBit(LEDG_Pin,LEDPOWER_CLOSE);
 }
 
 
@@ -109,6 +109,7 @@ void SkyLed_Timeout_cb_handel(void *timer)
     switch(mLightMonitor.mode)
     {
         case LED_MODE_SLOW_BLINK:
+        {
             mLightMonitor.linktime +=100;
             if(mLightMonitor.linktime >=LED_SLOW_BLINK_PERIOD)
             {
@@ -127,8 +128,10 @@ void SkyLed_Timeout_cb_handel(void *timer)
                 }
                 DBG_DIRECT("----------m_linkcnt=%d---------\r\n",mLightMonitor.linkcnt);
             }
+        }
             break;
         case LED_MODE_FAST_BLINK:
+            mLightMonitor.linktime +=100;
             if(mLightMonitor.linktime >=LED_FAST_BLINK_PERIOD)
             {
                 if((mLightMonitor.linkcnt & 0x01) == 1)
@@ -191,8 +194,8 @@ void HAL_Light_Dlps_Control(bool isenter)
         Pad_Config(LED_WHITE, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_LOW);
         Pad_Config(LED_YELLOW, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_LOW);
     }else{
-        Pad_Config(LED_WHITE, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-        Pad_Config(LED_YELLOW, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+        Pad_Config(LED_WHITE, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+        Pad_Config(LED_YELLOW, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);
     }
 }
 

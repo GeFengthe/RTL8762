@@ -143,12 +143,35 @@ void app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t cause)
     {
         if (new_state.gap_init_state == GAP_INIT_STATE_STACK_READY)
         {
-            APP_PRINT_INFO0("GAP stack ready");
+            DBG_DIRECT("GAP stack ready");
             uint8_t bt_addr[6];
             gap_get_param(GAP_PARAM_BD_ADDR, bt_addr);
-            data_uart_debug("bt addr: 0x%02x%02x%02x%02x%02x%02x\r\n>",
-                            bt_addr[5], bt_addr[4], bt_addr[3],
-                            bt_addr[2], bt_addr[1], bt_addr[0]);
+//            data_uart_debug("bt addr: 0x%02x%02x%02x%02x%02x%02x\r\n>",
+//                            bt_addr[5], bt_addr[4], bt_addr[3],
+//                            bt_addr[2], bt_addr[1], bt_addr[0]);
+        }
+    }
+    if (gap_dev_state.gap_adv_state != new_state.gap_adv_state)
+    {
+        if(new_state.gap_adv_state == GAP_ADV_STATE_STOP)
+        {
+            DBG_DIRECT(" GAP_ADV_STOP--------\r\n");
+        }
+        if(new_state.gap_adv_state == GAP_ADV_STATE_START)
+        {
+            DBG_DIRECT(" GAP_ADV_start-------\r\n");
+        }
+    }
+    if(gap_dev_state.gap_scan_state !=new_state.gap_scan_state)
+    {
+        DBG_DIRECT("GAP_ADV=%d-----\r\n",new_state.gap_scan_state);
+        if(new_state.gap_scan_state == GAP_SCAN_STATE_STOP)
+        {
+            DBG_DIRECT(" GAP_SCAN_STOP--------\r\n");
+        }
+        if(new_state.gap_scan_state == GAP_SCAN_STATE_START)
+        {
+            DBG_DIRECT("GAP_SCAN_start--------\r\n");
         }
     }
     gap_dev_state = new_state;
@@ -351,7 +374,7 @@ void app_handle_gap_msg(T_IO_MSG *p_gap_msg)
     uint8_t conn_id;
     memcpy(&gap_msg, &p_gap_msg->u.param, sizeof(p_gap_msg->u.param));
 
-    APP_PRINT_TRACE1("app_handle_gap_msg: sub_type %d", p_gap_msg->subtype);
+    DBG_DIRECT("app_handle_gap_msg: sub_type %d", p_gap_msg->subtype);
     mesh_inner_msg_t mesh_inner_msg;
     mesh_inner_msg.type = MESH_BT_STATUS_UPDATE;
     mesh_inner_msg.sub_type = p_gap_msg->subtype;

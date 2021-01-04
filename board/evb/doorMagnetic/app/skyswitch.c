@@ -120,7 +120,7 @@ void HAL_Skymag_Dlps_Control(bool isenter)
             System_WakeUpPinEnable(SWITCH_STU_GPIO,PAD_WAKEUP_POL_LOW,0);
         }else
         {
-            Pad_Config(SWITCH_STU_GPIO,PAD_SW_MODE,PAD_IS_PWRON,PAD_PULL_DOWN,PAD_OUT_DISABLE,PAD_OUT_LOW);
+            Pad_Config(SWITCH_STU_GPIO,PAD_SW_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_LOW);
             System_WakeUpPinEnable(SWITCH_STU_GPIO,PAD_WAKEUP_POL_HIGH,0);
         }
         
@@ -133,7 +133,26 @@ void HAL_Skymag_Dlps_Control(bool isenter)
         Pad_ClearWakeupINTPendingBit(SWITCH_STU_GPIO);
         System_WakeUpPinDisable(SWITCH_STU_GPIO);
     }
-}    
+}
+uint8_t sky_findPin(void)
+{
+    uint8_t flag=0;
+    if(System_WakeUpInterruptValue(SWITCH_STU_GPIO) == 1)
+    {
+        flag |= 1<<0;
+        
+    }
+    if(System_WakeUpInterruptValue(SWITCH_ALM_GPIO) == 1)
+    {
+        flag |= 1<<1;
+        
+    }
+    if(System_WakeUpInterruptValue(SWITCH1_GPIO) == 1)
+    {
+        flag |= 1<<2;
+    }
+    return flag;
+}
 
 void HAL_SwitchKey_Dlps_Control(bool isenter)
 {
