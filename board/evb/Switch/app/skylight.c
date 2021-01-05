@@ -109,6 +109,7 @@ void SkyLed_Timeout_cb_handel(void *timer)
     switch(mLightMonitor.mode)
     {
         case LED_MODE_SLOW_BLINK:
+        {
             mLightMonitor.linktime +=100;
             if(mLightMonitor.linktime >=LED_SLOW_BLINK_PERIOD)
             {
@@ -128,7 +129,10 @@ void SkyLed_Timeout_cb_handel(void *timer)
                 DBG_DIRECT("----------m_linkcnt=%d---------\r\n",mLightMonitor.linkcnt);
             }
             break;
+        }
         case LED_MODE_FAST_BLINK:
+        {
+            mLightMonitor.linktime +=100;
             if(mLightMonitor.linktime >=LED_FAST_BLINK_PERIOD)
             {
                 if((mLightMonitor.linkcnt & 0x01) == 1)
@@ -147,10 +151,17 @@ void SkyLed_Timeout_cb_handel(void *timer)
                 DBG_DIRECT("----------m_linkcnt=%d---------\r\n",mLightMonitor.linkcnt);
             }
             break;
+        }
         case LED_MODE_NORMAL_BRIGHT:
-            GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
-            mLightMonitor.mode = LED_MODE_UNKOWN;
-            Delete_LED_Timer();
+            if(mLightMonitor.linkcnt>0)
+            {
+                GPIO_WriteBit(LEDG_Pin,~(GPIO_ReadOutputDataBit(LEDG_Pin)));
+                mLightMonitor.linkcnt--;
+            }else{
+                GPIO_WriteBit(LEDG_Pin,~(GPIO_ReadOutputDataBit(LEDG_Pin)));
+                mLightMonitor.mode = LED_MODE_UNKOWN;
+                Delete_LED_Timer();
+            }
             break;
         default:
             break;

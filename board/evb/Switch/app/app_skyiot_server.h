@@ -17,7 +17,6 @@
 
 #ifndef _APP_SKYIOT_SERVER_H
 #define _APP_SKYIOT_SERVER_H
-
 #include "app_msg.h"
 #include "skyswitch.h"
 #include "skylight.h"
@@ -59,43 +58,45 @@ typedef enum
 #define FLASH_USERDATA_SAVE_LEN        	(64)    
 #define MESH_DEV_UUID_LEN              	(16)
 
-#define NIGHT_LIMIT_VOL					160		    // 20lux limit val
-#define LIGHT_DEFAULT_WAY				(0x00)	    // 光暗时灯亮
+
 #define LED_NORMAL_VER                  2           // LED正常版本
 #define LIGHT_DAYTIME                   (0x02)      // 白天
 //#define ENV_DETECT_TIME                 (1*60*1000) // 默认1min检测一次环境
 #define WRITE_DEFAULT_TIME              (5*1000)   	// 默认每5s据状态写flash
-#define APP_UNREACT_MODE_N              0
-#define APP_REACT_MODE_M                1
-#define APP_REACT_MODE_S                2
-#define APP_REACT_MODE_A                3
+
 #define BATT_NORMAL                     0           // 电压正常
 #define BATT_WARING                     1           // 警戒电压
-#define BATT_WARIN_RANK                 2400        // 警戒电压等级1对应的电压值
+#define BATT_WARING_RANK                2400        // 警戒电压等级1对应的电压值
 #define BATT_THRESHOLD_VAL              100         // 电压判定误差范畴
 #define BATT_TIMEOUT                    10*60*1000  // 电压采集时间周期
 
 #define BLEMESH_REPORT_FLAG_ALM         0x01
-#define BLEMESH_REPORT_FLAG_STU         0x02
 #define BLEMESH_REPORT_FLAG_BAT         0x04
 
 typedef enum
 {
-    MAINLOOP_TIMEOUT,
-    ENTER_DLPS_TIMEOUT,
-    UNPROV_TIMEOUT,
-    PROV_SUCCESS_TIMEOUT,
-    test_light_TIMEOUT,
+    MAINLOOP_TIMEOUT,           //主定时器超时标志
+    ENTER_DLPS_TIMEOUT,         //低功耗定时器
+    UNPROV_TIMEOUT,             //未入网定时器
+    PROV_SUCCESS_TIMEOUT,       //入网成功定时器
+    test_light_TIMEOUT,         //亮灯定时器
 } SW_TIMER_MSG_TYPE;
 
 typedef enum
 {
-    MESH_PROVISION_STATE_START,         //0
+    MESH_PROVISION_STATE_START,         //0 开始入网
     MESH_PROVISION_STATE_FAILED,        //1
     MESH_PROVISION_STATE_SUCCEED,       //2
-    MESH_PROVISION_STATE_UNPROV,
+    MESH_PROVISION_STATE_UNPROV,        //未入网    
     MESH_PROVISION_STATE_PROVED,        //已配网
 } MESH_PROVISION_STATE_e;
+typedef enum{
+    ALM_KEY_INIT = 0x00,
+    ALM_KEY_ONE,
+    ALM_KEY_TWO,
+    ALM_KEY_LONG,
+}ALM_KEY_STATUS_e;
+
 extern MESH_PROVISION_STATE_e mesh_provison_state;
 
 extern bool Hal_Get_Ble_MacAddr(uint8_t* mac);

@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 
-#define USE_DOOR_FOR_SKYIOT  		1
+#define USE_SWITCH_FOR_SKYIOT  		1
 
 #define SKY_NIGHTLIGHT_TYPE         1   // 
 
@@ -26,8 +26,7 @@
 #endif
 
 enum SKY_SWITCH_INDEX_ENUM{
-    SKYSWITC1_ENUM = 0x00,	
-    SKYSWITC_STU_ENUM ,	
+    SKYSWITC1_ENUM = 0x00,		
     SKYSWITC_ALM_ENUM ,
     SKYSWITC_NUMBERS,	
 };
@@ -44,6 +43,12 @@ typedef struct {
 	uint8_t keyval;     // bit0:user switch bit1:PCB check switch   ; 1:press
 	uint8_t keymode;    // KEY_PRESS_MODE_e	
 }SkySwitchManager;
+typedef struct {
+    uint8_t almval;
+    uint8_t almmode;
+}AlmSwitch;
+extern uint8_t almkeystatue;
+
 extern uint8_t door_flag;
 
 extern bool HAL_Switch_Init(SkySwitchManager *manager);
@@ -62,7 +67,8 @@ extern bool HAL_Switch_Is_Relese(void);
 extern uint8_t Read_ZVD_Statu(void);
 extern uint8_t ReadStatus(void);
 extern void HAL_Skymag_Dlps_Control(bool isenter);
-extern uint8_t sky_findPin(void);
+//extern uint8_t sky_findPin(void);
+extern void Scan_almboard_Function(void);
 
 #endif //
 

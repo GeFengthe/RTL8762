@@ -55,8 +55,8 @@ uint8_t  ackattrsval=0;
 #define BLEMESH_COMMAND_WAIT_MS   (500) /* WAIT 250MS FOR Report ack */	
 #define DEFAULT_WAKEUP_ALIVE_CNT  (3)
 
-#define DEFAULT_SKYIOT_ALIVE_MS   (60000)  // qlj 需要一个定时器来换算
-#define DEFAULT_GATEWAY_ALIVE_MS  (60000)
+#define DEFAULT_SKYIOT_ALIVE_MS   (50000)  // qlj 需要一个定时器来换算
+#define DEFAULT_GATEWAY_ALIVE_MS  (50000)
 #define DEFAULT_GATEWAY_SENQ_MS   (5000)
 
 
@@ -151,9 +151,8 @@ typedef struct {
 	uint8_t  reppack_len;
 	
 	//设备字段
-	#if USE_DOOR_FOR_SKYIOT
-		uint8_t sw1_seq;
-		uint8_t saf_seq;
+	#if USE_SWITCH_FOR_SKYIOT
+		uint8_t alm_seq;
 		uint8_t bat_seq;
 		SkySwitchManager mSwitchManager;
 		SkyLightManager  mLightManager;
@@ -168,9 +167,8 @@ typedef struct {
 	
 typedef struct {
 
-	#if USE_DOOR_FOR_SKYIOT
+	#if USE_SWITCH_FOR_SKYIOT
     uint8_t alm;
-    uint8_t stu;
     uint8_t bat;
 	#endif
 
@@ -196,6 +194,7 @@ static plt_timer_t skybleprosuccess_timer = NULL;
 static plt_timer_t skyblemainloop_timer = NULL;
 static plt_timer_t skyble_unprov_timer = NULL;
 static plt_timer_t skyble_changescan_timer = NULL;
+
 
 // FIFO
 static main_msg_fifo_t MainMsg_fifo={
@@ -1018,9 +1017,8 @@ static void SkyBleMesh_Prov_Success_Timeout_cb(void *timer)
 		#endif
 	}else{
 		if(skybleprovsucesscnt == (SKYBLEPROVSUCCESS_MAXCNT+1)){			
-			#if USE_DOOR_FOR_SKYIOT		
+					
             SkyLed_Ctrl(LED_MODE_FAST_BLINK,10);      // 入网成功，闪烁5次（5*2）。
-			#endif	
             DBG_DIRECT("-------PROV_SUCCESS--------\r\n");
 			// 闪灯结束后延时10s，触发配网成功事件。 
 			plt_timer_change_period(skybleprosuccess_timer, SKYBLEPROVSUCCESS_TIMEOUT, 10000);
@@ -1144,63 +1142,6 @@ static void SkyBleMesh_ChangeScan_Timeout_cb(void *ptimer)
     app_send_msg_to_apptask(&unprov_timeout_msg);
 }
 
-static uint8_t Hal_Check_Influence(uint32_t newtick)
-{
-	uint8_t infstatu = 0xff;
-	uint8_t retinf = 0xff; // invalid
-	static uint8_t infcnt = 0;  
-	static uint8_t  calledcnt2 = 0;  
-	static uint32_t oldtick=0; 
-
-	if(HAL_ReadInf_Power() == 1){		
-		infstatu = HAL_ReadInf_Statu();		
-		if(infstatu == SKYIOT_INF_HAVE_BODY){
-			infcnt++;
-		}
-
-		if( HAL_CalculateTickDiff(oldtick, newtick) >= 1000){
-			if(infcnt >= 2){           // 1s内2个信号
-				retinf = SKYIOT_INF_HAVE_BODY;
-				infcnt = 0;
-				calledcnt2 = 0;
-				APP_DBG_PRINTF3("%s SKYIOT_INF_HAVE_BODY", __func__);
-			}else if(infcnt == 0){
-				calledcnt2++;
-				if(calledcnt2 >= 5){ // 5s内0个信号
-					retinf = SKYIOT_INF_NO_BODY;
-					calledcnt2 = 0;
-				APP_DBG_PRINTF3("%s SKYIOT_INF_NO_BODY", __func__);
-				}
-			}else{
-				infcnt = 0;
-				calledcnt2 = 0;
-			}
-			
-			oldtick = newtick;
-		}
-		
-	}else{
-		infcnt = 0;
-		oldtick = newtick;
-		calledcnt2 = 0;
-
-	}
-	if(infwakeupflag  == true){
-		infcnt = 0;
-		calledcnt2 = 0;
-		oldtick = newtick;
-		
-		retinf = SKYIOT_INF_HAVE_BODY;
-
-		infwakeupflag = false;
-		APP_DBG_PRINTF3("%s infwakeupflag %d", __func__, infwakeupflag);
-	}
-	
-	
-	return retinf;
-}
-
- 
 
 void SkyBleMesh_ChangeScan_timer(uint8_t multi)
 {
@@ -1221,7 +1162,7 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
     {
 		case MAINLOOP_TIMEOUT:{
              SkyBleMesh_MainLoop();
-			 #if USE_DOOR_FOR_SKYIOT
+			 #if USE_SWITCH_FOR_SKYIOT
 			 HAL_Switch_HandleTimer(NULL);
              Reenter_tmr_ctrl_dlps(false);
 			 #endif
@@ -1281,9 +1222,6 @@ static void SkyBleMesh_Reset_Timeout_cb(void *timer)
                 plt_timer_delete(skyblereset_timer, 0);
                 skyblereset_timer = NULL;
             }		
-            #if USE_DOOR_FOR_SKYIOT
-//            HAL_BlinkProLed_Disable();
-            #endif
             HAL_ResetBleDevice(); 
 //        } 
     }else{
@@ -1292,9 +1230,6 @@ static void SkyBleMesh_Reset_Timeout_cb(void *timer)
                 plt_timer_delete(skyblereset_timer, 0);
                 skyblereset_timer = NULL;
             }		
-            #if USE_DOOR_FOR_SKYIOT
-//            HAL_BlinkProLed_Disable();
-            #endif
             HAL_ResetBleDevice(); 
         } 
     }
@@ -1328,7 +1263,6 @@ static void SkyBleMesh_Save_Params(uint32_t newtick)
 	static uint32_t oldtick=0;
 	if(HAL_CalculateTickDiff(oldtick, newtick) >= WRITE_DEFAULT_TIME){
 		if(	mIotSaveParams.alm != mIotManager.mLightManager.alm
-			|| mIotSaveParams.stu != mIotManager.mLightManager.stu
 			|| mIotSaveParams.bat != mIotManager.mLightManager.bat){
 
 			SkyBleMesh_WriteConfig();
@@ -1336,7 +1270,6 @@ static void SkyBleMesh_Save_Params(uint32_t newtick)
 			APP_DBG_PRINTF0("SkyBleMesh_Save_Params \n"); 
 
 			mIotSaveParams.alm = mIotManager.mLightManager.alm;
-			mIotSaveParams.stu = mIotManager.mLightManager.stu;
 			mIotSaveParams.bat = mIotManager.mLightManager.bat;
 		}
 		
@@ -1387,10 +1320,6 @@ extern int SkyBleMesh_WriteConfig(void)
 	memcpy(buffer + offset, &(mIotManager.mLightManager.alm), 1);
 	offset += 1;
 	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.alm), 1);
-	
-	memcpy(buffer + offset, &(mIotManager.mLightManager.stu), 1);
-	offset += 1;
-	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.stu), 1);
 	
 	memcpy(buffer + offset, &(mIotManager.mLightManager.bat), 1);
 	offset += 1;
@@ -1463,10 +1392,6 @@ static int SkyBleMesh_ReadConfig(void)
 	offset += 1;
 	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.alm), 1);
 	//
-	memcpy(&(mIotManager.mLightManager.stu), buffer + offset, 1);	
-	offset += 1;
-	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.stu), 1);
-	//
 	memcpy(&(mIotManager.mLightManager.bat), buffer + offset, 1);	
 	offset += 1;
 	utils_md5_update(context, (unsigned char*)&(mIotManager.mLightManager.bat), 1);
@@ -1493,13 +1418,11 @@ static int SkyBleMesh_ReadConfig(void)
 static void SkyiotManager_Default_Config(bool sychsaveparam)
 {
     mIotManager.mLightManager.alm = 0;
-    mIotManager.mLightManager.stu = 0;
     oldstate.alm = 0;
-    oldstate.stu = 0;
+
 //	
 	if(sychsaveparam == true){		
         mIotSaveParams.alm = mIotManager.mLightManager.alm;
-        mIotSaveParams.stu = mIotManager.mLightManager.stu;
 	}
 }
 
@@ -1520,12 +1443,12 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 
    	if(key_mode == KEY_SINGLE_MODE || key_mode == KEY_SHORTPRESS_MODE ){
 		
-        if(mIotManager.process_state == 0x55){
-            mIotManager.process_state = 0xff;
-            SkyBleMesh_WriteConfig();	
-            HAL_ResetBleDevice();
-			return;
-        }	
+//        if(mIotManager.process_state == 0x55){
+//            mIotManager.process_state = 0xff;
+//            SkyBleMesh_WriteConfig();	
+//            HAL_ResetBleDevice();
+//			return;
+//        }	
    	}
 	if(key_mode == KEY_SINGLE_MODE){
             DBG_DIRECT("------KEY_SINGLE_MODE--------\r\n");
@@ -1555,58 +1478,13 @@ static void Reset_iotmanager_para(void)
 	mIotManager.alive_status        = 1;//set device to online status
 	mIotManager.recv_alive_tick     = HAL_GetTickCount();
 
-#if USE_DOOR_FOR_SKYIOT
+#if USE_SWITCH_FOR_SKYIOT
 	// 上报设置项，做同步
 	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
-	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_STU;
 	mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
-	mIotManager.sw1_seq = 0;
-    mIotManager.saf_seq = 0;
+	mIotManager.alm_seq = 0;
     mIotManager.bat_seq = 0;
 #endif
-}
-
-static void Sky_listendoorstate(void)
-{
-     uint8_t skystatu = ReadStatus();
-//    DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
-    switch (skystatu)
-    {
-        case 0:
-            mIotManager.mLightManager.alm = 0;
-            mIotManager.mLightManager.stu = 0;
-            break;
-        case 1:
-            mIotManager.mLightManager.alm = 1;
-            mIotManager.mLightManager.stu = 0;
-            break;
-        case 2:
-            mIotManager.mLightManager.alm = 0;
-            mIotManager.mLightManager.stu = 1;
-            break;
-        case 3:
-            mIotManager.mLightManager.alm = 1;
-            mIotManager.mLightManager.stu = 1;
-            break;
-            
-    }
-    if(oldstate.alm !=mIotManager.mLightManager.alm)
-    {
-        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
-        oldstate.alm = mIotManager.mLightManager.alm;
-        HAL_Lighting_ON();
-        SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,0);
-        DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
-    }
-    if(oldstate.stu != mIotManager.mLightManager.stu)
-    {
-        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_STU;
-        oldstate.stu = mIotManager.mLightManager.stu;
-        HAL_Lighting_ON();
-        SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,0);
-        DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
-    }
-    door_flag = 0;
 }
 static void Main_Event_Handle(void)
 {
@@ -1620,9 +1498,8 @@ static void Main_Event_Handle(void)
 		tick = HAL_GetTickCount();
 		if(delayreport <= HAL_CalculateTickDiff(oldtick, tick)){
 			delayreport = 0;
-		#if USE_DOOR_FOR_SKYIOT
+		#if USE_SWITCH_FOR_SKYIOT
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
-			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_STU;
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
 
 
@@ -1669,10 +1546,9 @@ static void Main_Event_Handle(void)
 					Reset_iotmanager_para();
 				}
 				if(mIotManager.alive_status == 1){		
-#if USE_DOOR_FOR_SKYIOT
+#if USE_SWITCH_FOR_SKYIOT
 					// 网关请求属性上传
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
-					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_STU;
 					mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
 #endif
 				}		
@@ -1683,7 +1559,7 @@ static void Main_Event_Handle(void)
 				break;
 		}	
 	}
-#if USE_DOOR_FOR_SKYIOT
+#if USE_SWITCH_FOR_SKYIOT
 //     
 	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
 		if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch	
@@ -1702,7 +1578,7 @@ static void Main_Event_Handle(void)
 static void Main_WithoutNet_Handle(void)
 {	
 	
-#if USE_DOOR_FOR_SKYIOT
+#if USE_SWITCH_FOR_SKYIOT
 	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
 		if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch	
 			SkySwitch_Handle(mIotManager.mSwitchManager.keymode, false);
@@ -1767,7 +1643,7 @@ static bool Main_Check_Online(void)
 				memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
 				mIotManager.reppack_len = 0;
 				
-			#if USE_DOOR_FOR_SKYIOT
+			#if USE_SWITCH_FOR_SKYIOT
 //				mIotManager.swt1_seqnum = 0;
 			#endif
 			}
@@ -1783,18 +1659,12 @@ static bool Main_Check_Online(void)
 static void Main_Upload_State(void)
 {
 	if (mIotManager.alive_status == 1){	
-#if USE_DOOR_FOR_SKYIOT
+#if USE_SWITCH_FOR_SKYIOT
 
-		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_ALM){							// 门磁状态发生改变
+		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_ALM){							// 开关状态发生改变
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_ALM;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_ALM, mIotManager.mLightManager.alm, mIotManager.sw1_seq);	
-			mIotManager.sw1_seq = 0;
-		}
-		
-		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_STU){							// 防拆开关状态
-			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_STU;
-			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_STU, mIotManager.mLightManager.stu,mIotManager.saf_seq);	
-			mIotManager.saf_seq = 0;
+			SkyIotReportPropertyPacket(ATTR_CLUSTER_ID_ALM, mIotManager.mLightManager.alm, mIotManager.alm_seq);	
+			mIotManager.alm_seq = 0;
 		}
 		
 		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_BAT){							// 入网主动上传，或阶段性上传
@@ -1854,6 +1724,35 @@ extern void test_update_attr(void)
 }
 #endif
 
+void Hal_alm(void)
+{
+    DBG_DIRECT("----almkeystatue=%d--\r\n",almkeystatue);
+    switch(almkeystatue)
+    {
+        case ALM_KEY_ONE:{
+            mIotManager.mLightManager.alm =1;
+            mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
+            mIotManager.alm_seq = 0;
+            SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,1);
+            break;
+        }
+        case ALM_KEY_TWO:{
+            mIotManager.mLightManager.alm = 2;
+            mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
+            mIotManager.alm_seq = 0;
+            SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,2);
+            break;
+        }
+        case ALM_KEY_LONG:{
+            mIotManager.mLightManager.alm = 3;
+            mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
+            mIotManager.alm_seq = 0;
+            break;
+        }
+    }
+    almkeystatue = ALM_KEY_INIT;
+
+}
 
 extern void SkyBleMesh_MainLoop(void)
 {
@@ -1872,9 +1771,10 @@ extern void SkyBleMesh_MainLoop(void)
 //		return;
 //	}
 	#endif
-	
-	bool isprov = SkyBleMesh_IsProvision_Sate();     // 联网状态
-    Sky_listendoorstate();              
+//	SkyBleMesh_Batterval_Lightsense(true);
+    Scan_almboard_Function();
+    Hal_alm();
+	bool isprov = SkyBleMesh_IsProvision_Sate();     // 联网状态              
 	if(isprov==true && mIotManager.batt_rank!=BATT_WARING){
 		
 		//recv message	
@@ -2033,20 +1933,12 @@ extern uint8_t SkyBleMesh_App_Init(void)
 		
 	BleMesh_Packet_Init();
 	
-	#if USE_DOOR_FOR_SKYIOT 
-	mIotManager.sw1_seq = 0;
-    mIotManager.saf_seq = 0;
+	#if USE_SWITCH_FOR_SKYIOT 
+	mIotManager.alm_seq = 0;
     mIotManager.bat_seq = 0;
     HAL_Light_Init();
     HAL_Switch_Init(&mIotManager.mSwitchManager);
-    Sky_ADC_POWER_Init();
-
-	// use save
-//	mIotSaveParams.statu[SKY_LED1_STATUS] = mIotManager.mLightManager.statu[SKY_LED1_STATUS];
-//	mIotSaveParams.statu[SKY_LED2_STATUS] = mIotManager.mLightManager.statu[SKY_LED2_STATUS];
-//	mIotSaveParams.amb      = mIotManager.mLightManager.amb;
-//	mIotSaveParams.bri_time = mIotManager.mLightManager.bri_time;
-//	mIotSaveParams.mode     = mIotManager.mLightManager.mode;	
+    Sky_ADC_POWER_Init();	
 	
 	#endif
 
@@ -2071,14 +1963,18 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 				
 		HAL_SkyAdc_Sample(&batt_val);	
 		if(mIotManager.batt_rank == BATT_NORMAL){	
-			if(batt_val <= BATT_WARIN_RANK){
-				mIotManager.batt_rank = BATT_WARING;				
-				beacon_stop();  	
-				gap_sched_scan(false);
-				APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 2.4V \n");
+			if(batt_val <= BATT_WARING_RANK+100){
+                //添加上报电池低电量信息
+                if(batt_val <= BATT_WARING_RANK)
+                {
+                    mIotManager.batt_rank = BATT_WARING;				
+                    beacon_stop();  	
+                    gap_sched_scan(false);
+                    APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 2.4V \n");
+                }
 			}
 		}else{
-			if(batt_val > (BATT_WARIN_RANK+150)){ // 电压大于预警值150mv，解除预警
+			if(batt_val > (BATT_WARING_RANK)){ // 电压大于预警值150mv，解除预警
 				mIotManager.batt_rank = BATT_NORMAL;
                 gap_sched_scan(true); 
                 beacon_start();

@@ -17,7 +17,7 @@ typedef union
         uint32_t unprov:  1; // unprov or proved
         uint32_t report:  1; // report attr,FIFO\FLAG
         uint32_t ledtmr:  1; // led relay timer1
-        uint32_t inf:     1; // inf
+        uint32_t alm:     1; // inf
         uint32_t factory: 1; // PCB & device check
         uint32_t rsvd:    24;        //24
     } bit;

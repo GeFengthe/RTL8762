@@ -44,12 +44,9 @@ typedef enum{
 
 
 typedef struct {
-	//µÆÅÝ×´Ì¬×Ö¶Î
-#if USE_DOOR_FOR_SKYIOT
     uint8_t alm;
-    uint8_t stu;
     uint8_t bat;
-#endif	
+
 }SkyLightManager;
 
 

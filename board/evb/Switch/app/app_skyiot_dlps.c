@@ -99,7 +99,7 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 void SkyBleMesh_EnterDlps_timer(void)
 {	
 	if(skybleenterdlps_timer == NULL){ 	
-		skybleenterdlps_timer = plt_timer_create("dlps", 160, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
+		skybleenterdlps_timer = plt_timer_create("dlps", 1000, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
 		if (skybleenterdlps_timer != NULL){
 			plt_timer_start(skybleenterdlps_timer, 0);
 		}
@@ -122,14 +122,12 @@ void SkyBleMesh_EnterDlps_cfg(void)
 	// APP_DBG_PRINTF(" SkyBleMesh_EnterDlps_cfg");
 	dlpsstatu = 2; // enter
 	
-	// switch1
-    HAL_Skymag_Dlps_Control(true);
+
 	HAL_SwitchKey_Dlps_Control(true);
     
 	// light 维持IO电平，视电路和单前状态标志而定，
 	SkyBleMesh_DlpsLight_Handle(true);
-//    HAL_INF_Dlps_Control(true);
-//    HAL_Adc_Dlps_Control(true);
+
 }
 
 void SkyBleMesh_ExitDlps_cfg(bool norexit)
@@ -141,7 +139,7 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 		HAL_SwitchKey_Dlps_Control(false);
 		// light
 		SkyBleMesh_DlpsLight_Handle(false);
-        HAL_Skymag_Dlps_Control(false);
+//        HAL_Skymag_Dlps_Control(false);
 	}
 //	beacon_start();  	
 	// ble
@@ -220,9 +218,9 @@ void Led_Relay_tmr_ctrl_dlps(bool allowenter)
 void inf_ctrl_dlps(bool allowenter)
 {
     if(allowenter){
-        DlpsCtrlStatu_t.bit.inf = 0;
+        DlpsCtrlStatu_t.bit.alm = 0;
     }else{
-        DlpsCtrlStatu_t.bit.inf = 1;
+        DlpsCtrlStatu_t.bit.alm = 1;
     }
 }
 void blemesh_factory_ctrl_dlps(bool allowenter)
