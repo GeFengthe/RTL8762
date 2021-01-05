@@ -18,6 +18,7 @@
 
 
 plt_timer_t LEDCtrl_timer = NULL;
+plt_timer_t RLEDCrl_timer = NULL;
 
 // #define APP_DBG_PRINTF(fmt, ...)
 //static SkyLightManager *mLightManager=NULL;
@@ -78,8 +79,8 @@ void HAL_Light_Init(void)
     GPIO_InitStruct.GPIO_ITCmd = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
 
-//    GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
-//    GPIO_WriteBit(LEDG_Pin,LEDPOWER_CLOSE);
+    GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
+    GPIO_WriteBit(LEDG_Pin,LEDPOWER_CLOSE);
 }
 
 
@@ -101,11 +102,19 @@ void SkyLed_Ctrl(LED_MODE_e mode,uint8_t cnt)
     Start_LED_Timer();
 }
 
-
+void SkyR_Ctrl_Timeout_cb(void * timer)
+{
+    GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
+    plt_timer_delete(RLEDCrl_timer,0);
+    RLEDCrl_timer = NULL;
+    Led_Relay_tmr_ctrl_dlps(true);
+    
+}
 
 
 void SkyLed_Timeout_cb_handel(void *timer)
 {
+   DBG_DIRECT("-------mLightMon=%d\r\n",mLightMonitor.mode);
     switch(mLightMonitor.mode)
     {
         case LED_MODE_SLOW_BLINK:
@@ -151,7 +160,7 @@ void SkyLed_Timeout_cb_handel(void *timer)
             }
             break;
         case LED_MODE_NORMAL_BRIGHT:
-            GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
+//            GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
             mLightMonitor.mode = LED_MODE_UNKOWN;
             Delete_LED_Timer();
             break;
@@ -177,7 +186,17 @@ void Start_LED_Timer(void)
 		}
 	}
 }
-
+void start_rled_timer(void)
+{
+   if(RLEDCrl_timer == NULL){
+       RLEDCrl_timer = plt_timer_create("rled",100,true,0,(void*)SkyR_Ctrl_Timeout_cb);
+       if(RLEDCrl_timer !=NULL)
+       {
+           Led_Relay_tmr_ctrl_dlps(false);
+           plt_timer_start(RLEDCrl_timer,0);
+       }
+   }
+}
 void Delete_LED_Timer(void)
 {
 	if(LEDCtrl_timer){
@@ -191,8 +210,8 @@ void HAL_Light_Dlps_Control(bool isenter)
 {
     if(isenter)
     {
-        Pad_Config(LED_WHITE, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_LOW);
-        Pad_Config(LED_YELLOW, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_LOW);
+        Pad_Config(LED_WHITE, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+        Pad_Config(LED_YELLOW, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
     }else{
         Pad_Config(LED_WHITE, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);
         Pad_Config(LED_YELLOW, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);

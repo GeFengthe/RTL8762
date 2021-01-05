@@ -19,7 +19,9 @@ typedef union
         uint32_t ledtmr:  1; // led relay timer1
         uint32_t inf:     1; // inf
         uint32_t factory: 1; // PCB & device check
-        uint32_t rsvd:    24;        //24
+        uint32_t alive:   1;
+        uint32_t door:    1;
+        uint32_t rsvd:    23;        //24
     } bit;
 } DLPS_CTRL_STATU_T;
 extern DLPS_CTRL_STATU_T DlpsCtrlStatu_t;
@@ -38,12 +40,14 @@ extern void Reenter_tmr_ctrl_dlps(bool allowenter);
 extern void Led_Relay_tmr_ctrl_dlps(bool allowenter);
 extern void inf_ctrl_dlps(bool allowenter);
 extern void blemesh_factory_ctrl_dlps(bool allowenter);
+extern void door_alive_ctrl_dlps(bool allowenter);
 
 
 
 extern void SkyBleMesh_ReadyEnterDlps_cfg(void);
 extern void SkyBleMesh_EnterDlps_cfg(void);
 extern void SkyBleMesh_ExitDlps_cfg(bool norexit);
+extern void door_door_ctrl_dlps(bool allowenter);
 
 
 #endif // 

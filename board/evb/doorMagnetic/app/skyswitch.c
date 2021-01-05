@@ -104,7 +104,7 @@ void HAL_Skymag_Dlps_Control(bool isenter)
 {
     if(isenter)
     {
-        DBG_DIRECT("---SKYMAG stu=%d,alm=%d",GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_STU_ENUM])) == 1,GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1);
+//        DBG_DIRECT("---SKYMAG stu=%d,alm=%d",GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_STU_ENUM])) == 1,GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1);
         if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1)
         {
             Pad_Config(SWITCH_ALM_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
@@ -127,7 +127,7 @@ void HAL_Skymag_Dlps_Control(bool isenter)
     }else{
         Pad_Config(SWITCH_ALM_GPIO,PAD_PINMUX_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_LOW);
         Pad_Config(SWITCH_STU_GPIO,PAD_PINMUX_MODE,PAD_IS_PWRON,PAD_PULL_UP,PAD_OUT_DISABLE,PAD_OUT_HIGH);
-        door_flag=1;
+        door_door_ctrl_dlps(false);
         Pad_ClearWakeupINTPendingBit(SWITCH_ALM_GPIO);
         System_WakeUpPinDisable(SWITCH_ALM_GPIO);
         Pad_ClearWakeupINTPendingBit(SWITCH_STU_GPIO);
@@ -318,8 +318,10 @@ bool HAL_Switch_Is_Relese(void)
 	uint8_t keypress=0;
 	if(mSwitchManager->keyval==0 && mSwitchManager->keymode==0) {  // 没有未处理键值
 		
-		keypress = ReadKeyStatu();		
+		keypress = ReadKeyStatu();
+        DBG_DIRECT("-----keypress=%d---\r\n",keypress);
 		if(IsSwitchInited==true && keystatus==SCAN_KEY_INIT && keypress==0){ // 按键释放
+            
 			return true;
 		} 
 	}  

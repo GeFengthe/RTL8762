@@ -55,8 +55,8 @@ uint8_t  ackattrsval=0;
 #define BLEMESH_COMMAND_WAIT_MS   (500) /* WAIT 250MS FOR Report ack */	
 #define DEFAULT_WAKEUP_ALIVE_CNT  (3)
 
-#define DEFAULT_SKYIOT_ALIVE_MS   (1000*60*5)  // qlj 需要一个定时器来换算
-#define DEFAULT_GATEWAY_ALIVE_MS  (1000*60*5)
+#define DEFAULT_SKYIOT_ALIVE_MS   (1000*60*4)  // qlj 需要一个定时器来换算
+#define DEFAULT_GATEWAY_ALIVE_MS  (1000*60*4)
 #define DEFAULT_GATEWAY_SENQ_MS   (5000)
 
 
@@ -196,6 +196,7 @@ static plt_timer_t skybleprosuccess_timer = NULL;
 static plt_timer_t skyblemainloop_timer = NULL;
 static plt_timer_t skyble_unprov_timer = NULL;
 static plt_timer_t skyble_changescan_timer = NULL;
+static plt_timer_t skyble_cleanflag_timer = NULL;
 
 // FIFO
 static main_msg_fifo_t MainMsg_fifo={
@@ -1087,6 +1088,27 @@ extern bool SkyBleMesh_IsProvision_Sate(void)
 
 	return ret;
 }
+static void SkyBle_cleanflag_cb(void * timer)
+{
+    DBG_DIRECT("-----SkyBle_clean_----\r\n");
+    if(DlpsCtrlStatu_t.bit.alive == 1)
+    {
+        door_alive_ctrl_dlps(true);
+    }
+    plt_timer_delete(skyble_cleanflag_timer,0);
+}
+
+static void SkyBle_clean_time(void)
+{
+    if(skyble_cleanflag_timer == NULL)
+    {
+        plt_timer_create("clean",4000,true,0,SkyBle_cleanflag_cb);
+    }
+    if(skyble_cleanflag_timer != NULL)
+    {
+        plt_timer_start(skyble_cleanflag_timer,0);
+    }
+}
 
 /*
 ** unprovision advertising timeout, deinit something.
@@ -1247,6 +1269,9 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 				mIotManager.process_state = 0xff;
 				SkyBleMesh_WriteConfig();	
 			}
+            beacon_start();
+            gap_sched_scan(false);
+            gap_sched_scan(true);
             blemesh_unprov_ctrl_dlps(true); 
             break;
         }
@@ -1595,7 +1620,8 @@ static void Sky_listendoorstate(void)
         mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
         oldstate.alm = mIotManager.mLightManager.alm;
         HAL_Lighting_ON();
-        SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,0);
+        start_rled_timer();
+        door_door_ctrl_dlps(true);
         DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
     }
     if(oldstate.stu != mIotManager.mLightManager.stu)
@@ -1603,10 +1629,11 @@ static void Sky_listendoorstate(void)
         mIotManager.report_flag |= BLEMESH_REPORT_FLAG_STU;
         oldstate.stu = mIotManager.mLightManager.stu;
         HAL_Lighting_ON();
-        SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,0);
+        start_rled_timer();
+        door_door_ctrl_dlps(true);
         DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
     }
-    door_flag = 0;
+    
 }
 static void Main_Event_Handle(void)
 {
@@ -1631,7 +1658,7 @@ static void Main_Event_Handle(void)
 	}
 			
 	if(Pop_Msg_From_FIFO(&event)){
-		APP_DBG_PRINTF4("Main_Event_Handle %X %d %X %04X \n",
+		DBG_DIRECT("Main_Event_Handle %X %d %X %04X \n",
 			event.event_id , event.seqence_num , event.prop_value, event.prop_ID );
 
 		switch(event.event_id){
@@ -1653,7 +1680,9 @@ static void Main_Event_Handle(void)
 				}else {
 					mIotManager.recv_alive_tick = HAL_GetTickCount();	
 					APP_DBG_PRINTF1("Main_Event_Handle recv keepalive tick: %d!\n", mIotManager.recv_alive_tick);
-				}			
+				}
+                door_alive_ctrl_dlps(true);
+                plt_timer_delete(skyble_cleanflag_timer,0);
 				break;
 				
 			case EVENT_TYPE_UPDATE_PROPERTY:
@@ -1680,6 +1709,7 @@ static void Main_Event_Handle(void)
 
 			case EVENT_TYPE_REPORT_PROPERTY_ACK:
 				BleMesh_Vendor_Ack_Packet(event.event_id, event.prop_ID, event.prop_value);     //
+                door_door_ctrl_dlps(true);
 				break;
 		}	
 	}
@@ -1726,20 +1756,24 @@ static bool Main_Check_Online(void)
 		alivetick = HAL_GetTickCount();	
 		return true; 
 	}
-
+    DBG_DIRECT("-------alive=%d------\r\n",mIotManager.alive_status);
 	alivetimecnt = HAL_CalculateTickDiff(alivetick, tick);
-	if (alivetimecnt >= 1000*58){  // 30*50ms
+	if (alivetimecnt >= 30*50){  // 30*50ms
 		if (mIotManager.alive_wakeup_cnt < DEFAULT_WAKEUP_ALIVE_CNT){
 			if (mIotManager.alive_status == 0){
 				APP_DBG_PRINTF1("Main_Check_Online wakeupcnt %d\n", mIotManager.alive_wakeup_cnt);
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
+                door_alive_ctrl_dlps(false);
+                SkyBle_clean_time();
 			}else{
 				sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);     //
 				 APP_DBG_PRINTF2("Main_Check_Online wakeupcnt %d %d\n", mIotManager.alive_wakeup_cnt, sub_timeout_ms);
 				if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
 					SkyIotSendKeepAlivePacket();
 					mIotManager.send_alive_tick = tick;
+                    door_alive_ctrl_dlps(false);
+                    SkyBle_clean_time();
 				}
 			}
 			mIotManager.alive_wakeup_cnt++;
@@ -1750,11 +1784,11 @@ static bool Main_Check_Online(void)
 				//SEND ALIVE PACKET
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
-				
+				door_alive_ctrl_dlps(false);
+                SkyBle_clean_time();
 				mIotManager.alive_wakeup_cnt   = 1;	// 默认都会去发3次，有心跳应答会把计数清掉 			
 			}
 		}
-
 		//判断路由器是否在线
 		if (mIotManager.alive_status == 1){
 			int sub_timeout_ms;
@@ -1766,7 +1800,6 @@ static bool Main_Check_Online(void)
 				mIotManager.recv_alive_tick     = 0;
 				memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
 				mIotManager.reppack_len = 0;
-				
 			#if USE_DOOR_FOR_SKYIOT
 //				mIotManager.swt1_seqnum = 0;
 			#endif
@@ -1872,14 +1905,13 @@ extern void SkyBleMesh_MainLoop(void)
 //		return;
 //	}
 	#endif
-	
-	bool isprov = SkyBleMesh_IsProvision_Sate();     // 联网状态
-    Sky_listendoorstate();              
+	SkyBleMesh_Batterval_Lightsense(true);
+    Sky_listendoorstate(); 
+	bool isprov = SkyBleMesh_IsProvision_Sate();     // 联网状态          
 	if(isprov==true && mIotManager.batt_rank!=BATT_WARING){
 		
 		//recv message	
 		Main_Event_Handle();
-//		SkyFunction_Handle(newtick);
 		
 		//判断设备是否离线
 		if(Main_Check_Online() == true){
@@ -1900,15 +1932,11 @@ extern void SkyBleMesh_MainLoop(void)
             memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
             mIotManager.reppack_len = 0;
         }
-        if(mIotManager.batt_rank == BATT_WARING){   
-//			if(HAL_CalculateTickDiff(battadctick, newtick) >= 30000 ){// 30000 ms 
-	            SkyBleMesh_Batterval_Lightsense(true);		
-//				battadctick = newtick;
-//			}
-        }else{
+
+	            		
+
 			Main_WithoutNet_Handle();
-//			SkyFunction_Handle(newtick);		
-		}
+
         
         
 	}
@@ -2060,31 +2088,41 @@ extern uint8_t SkyBleMesh_App_Init(void)
 	}else{
 		blemesh_factory_ctrl_dlps(false);
 	}
-
-	
 	return 0; 
 }
-	
+uint16_t batt_old = 3300;	
 extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 {
 	uint16_t batt_val=0;
-				
-		HAL_SkyAdc_Sample(&batt_val);	
+	HAL_SkyAdc_Sample(&batt_val);
+    if((batt_old-batt_val>100)&&(mIotManager.alive_status ==1))
+    {
+        if(batt_val >BATT_WARIN_RANK+200)
+        {
+            mIotManager.mLightManager.bat = 1;
+        }else{
+            mIotManager.mLightManager.bat = 0;
+        }
+        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
+        mIotManager.bat_seq= 0;
+        batt_old = batt_val;
+    }
+    DBG_DIRECT("----batt_val=%d----\r\n",batt_val);
 		if(mIotManager.batt_rank == BATT_NORMAL){	
-			if(batt_val <= BATT_WARIN_RANK){
-				mIotManager.batt_rank = BATT_WARING;				
-				beacon_stop();  	
-				gap_sched_scan(false);
-				APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 2.4V \n");
-			}
+                if(batt_val <= BATT_WARIN_RANK)
+                {
+                    mIotManager.batt_rank = BATT_WARING;                 
+                    beacon_stop();  	
+                    gap_sched_scan(false);
+                    APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 2.4V \n");
+                }
+			
 		}else{
-			if(batt_val > (BATT_WARIN_RANK+150)){ // 电压大于预警值150mv，解除预警
+            if(batt_val > BATT_WARIN_RANK)
+            {
 				mIotManager.batt_rank = BATT_NORMAL;
-                gap_sched_scan(true); 
-                beacon_start();
-			}
+            }
 		}
-		
 		APP_DBG_PRINTF3("batt_val:%d, lp_dat:%d\r\n", batt_val);
 	// }
 

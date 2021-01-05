@@ -210,8 +210,8 @@ void app_le_gap_init(void)
     uint16_t auth_sec_req_flags = GAP_AUTHEN_BIT_BONDING_FLAG;
 
     /* Setup the GAP Bond Manager */
-    uint16_t scan_interval = 0x320;  //!< 280ms     500ms
-    uint16_t scan_window   = 0x40; //!< 30 30ms     08 20ms
+    uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
+    uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
     gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
     gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
     gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(auth_pair_mode), &auth_pair_mode);
@@ -290,17 +290,15 @@ void driver_init(void)
 	Hal_Timer_init();
 	OS_WDTInit();
 	#endif
-//	 gap_sched_scan(true); 
-//     beacon_start();
+     gap_sched_scan(true);
 	 SkyBleMesh_Batterval_Lightsense(true);
 	 uint8_t batt_station = SkyBleMesh_Batt_Station();
 	// 要在 mesh_stack_init后获取，后面整理下
     mesh_node_state_t node_state = mesh_node_state_restore();
     if (node_state == UNPROV_DEVICE){
         if(batt_station == BATT_NORMAL){
-//		gap_sched_scan(false); 
+        beacon_start();
 		gap_sched_scan(true); 
-        DBG_DIRECT("----------UNPORV--gap_sched_params_set\r\n------\r\n");
 		if(SkyBleMesh_Device_Active_Sate()==true){
 			SkyBleMesh_Unprov_timer();
 		}

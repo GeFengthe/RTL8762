@@ -173,7 +173,7 @@ void HAL_SkyAdc_Sample(uint16_t *bat_dat)
         batt_data[i] = calc_avg(vol, 0, 16);
 	}
 	*bat_dat = calc_avg(batt_data, 0, 16);
-    DBG_DIRECT("--------VBAT-------bat_dat=%d-----------------\r\n",(*bat_dat));
+//    DBG_DIRECT("--------VBAT-------bat_dat=%d-----------------\r\n",(*bat_dat));
 }
 
 

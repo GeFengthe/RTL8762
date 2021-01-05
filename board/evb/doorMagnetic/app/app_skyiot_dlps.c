@@ -47,7 +47,7 @@ static void SkyBleMesh_StopWakeup_tmr(void)
 static void SkyBleMesh_StartWakeup_tmr(void)
 {	
 	if(skyblewakeup_timer == NULL){		
-		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*60, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
+		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*25, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
 		if (skyblewakeup_timer != NULL){
 			plt_timer_start(skyblewakeup_timer, 0);
 		}
@@ -62,17 +62,14 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 	}else{
 		blemesh_report_ctrl_dlps(false);		
 	}
-	if(HAL_Switch_Is_Relese() == true ||door_flag ==0){		
+	if(HAL_Switch_Is_Relese() == true){		
 		switch_io_ctrl_dlps(true);
 	}else{
 		switch_io_ctrl_dlps(false);
 	}
-    
-
     DBG_DIRECT("DlpsCtrl=0x%x",DlpsCtrlStatu_t);
 	if(DlpsCtrlStatu_t.dword == DLPS_JUST_WAITING_TMR){
 		SkyBleMesh_ReadyEnterDlps_cfg();
-//		DBG_DIRECT("enter DLPS_cfg\r\n");
 		if(skybleenterdlps_timer){
 			plt_timer_delete(skybleenterdlps_timer, 0);
 			skybleenterdlps_timer = NULL;
@@ -111,7 +108,7 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 	dlpsstatu = 1; // ready
 	SkyBleMesh_StopMainLoop_tmr();	
 	// ble 
-	beacon_stop();
+//	beacon_stop();
     gap_sched_scan(false);    
 	// sw timer
     SkyBleMesh_StartWakeup_tmr();
@@ -231,6 +228,22 @@ void blemesh_factory_ctrl_dlps(bool allowenter)
         DlpsCtrlStatu_t.bit.factory = 0;
     }else{
         DlpsCtrlStatu_t.bit.factory = 1;
+    }
+}
+void door_alive_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.alive = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.alive = 1;
+    }
+}
+void door_door_ctrl_dlps(bool allowenter)
+{
+    if(allowenter){
+        DlpsCtrlStatu_t.bit.door = 0;
+    }else{
+        DlpsCtrlStatu_t.bit.door = 1;
     }
 }
 
