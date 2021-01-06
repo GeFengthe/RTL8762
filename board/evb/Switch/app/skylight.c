@@ -31,9 +31,11 @@ plt_timer_t LEDCtrl_timer = NULL;
 
 #define LEDG_Pin            GPIO_GetPin(LED_WHITE)
 #define LEDR_Pin            GPIO_GetPin(LED_YELLOW)
-#define LEDPOWER_CLOSE      ((BitAction)0)
-#define LEDPOWER_OPEN       ((BitAction)1)
+//#define LEDPOWER_CLOSE      ((BitAction)0)
+//#define LEDPOWER_OPEN       ((BitAction)1)
 
+#define LED_OPEN		    ((BitAction)1)
+#define LED_CLOSE			((BitAction)0)
 
 
 uint32_t time;
@@ -42,6 +44,7 @@ typedef struct {
     LED_MODE_e mode;
     uint32_t linktime;
     uint32_t linkcnt;
+    uint8_t g_rflag;
 }LightMonitor;
 
 static LightMonitor mLightMonitor={
@@ -78,45 +81,63 @@ void HAL_Light_Init(void)
     GPIO_InitStruct.GPIO_ITCmd = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
 
-    GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
-    GPIO_WriteBit(LEDG_Pin,LEDPOWER_CLOSE);
+    GPIO_WriteBit(LEDR_Pin,LED_CLOSE);
+    GPIO_WriteBit(LEDG_Pin,LED_CLOSE);
 }
 
 
-void HAL_Lighting_OFF(void)
+void HAL_Lighting_OFF(uint8_t flag)
 {
-    GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
+    if(flag == 0)
+    {
+        GPIO_WriteBit(LEDG_Pin,LED_CLOSE);
+    }else{
+        GPIO_WriteBit(LEDR_Pin,LED_CLOSE);
+    }
+    
 }
-void HAL_Lighting_ON( void )
+void HAL_Lighting_ON(uint8_t flag)
 {
-   GPIO_WriteBit(LEDR_Pin,LEDPOWER_OPEN);
+    if(flag == 0)
+    {
+        GPIO_WriteBit(LEDG_Pin,LED_OPEN);
+    }else
+    {
+        GPIO_WriteBit(LEDR_Pin,LED_OPEN);
+    }
 }
 /*
 ** PWM
 */
-void SkyLed_Ctrl(LED_MODE_e mode,uint8_t cnt)
+void SkyLed_Ctrl(LED_MODE_e mode,uint8_t cnt,uint8_t flag)
 {
     mLightMonitor.mode = mode;
     mLightMonitor.linkcnt = cnt;
+    mLightMonitor.g_rflag = flag;
+    if(flag == 0)
+    {
+        GPIO_WriteBit(LEDR_Pin,LED_CLOSE);
+    }else
+    {
+        GPIO_WriteBit(LEDG_Pin,LED_CLOSE);
+    }
     Start_LED_Timer();
 }
-
-
-
 
 void SkyLed_Timeout_cb_handel(void *timer)
 {
     switch(mLightMonitor.mode)
     {
         case LED_MODE_SLOW_BLINK:
+        {
             mLightMonitor.linktime +=100;
             if(mLightMonitor.linktime >=LED_SLOW_BLINK_PERIOD)
             {
                 if((mLightMonitor.linkcnt &0x01) == 1)
                 {
-                    GPIO_WriteBit(LEDG_Pin,LEDPOWER_CLOSE);
+                    GPIO_WriteBit(LEDG_Pin,LED_CLOSE);
                 }else{
-                    GPIO_WriteBit(LEDG_Pin,LEDPOWER_OPEN);
+                    GPIO_WriteBit(LEDG_Pin,LED_OPEN);
                 }
                 mLightMonitor.linktime = 0;
                 mLightMonitor.linkcnt--;
@@ -128,14 +149,17 @@ void SkyLed_Timeout_cb_handel(void *timer)
                 DBG_DIRECT("----------m_linkcnt=%d---------\r\n",mLightMonitor.linkcnt);
             }
             break;
+        }
         case LED_MODE_FAST_BLINK:
+        {
+            mLightMonitor.linktime +=100;
             if(mLightMonitor.linktime >=LED_FAST_BLINK_PERIOD)
             {
                 if((mLightMonitor.linkcnt & 0x01) == 1)
                 {
-                    GPIO_WriteBit(LEDG_Pin,LEDPOWER_CLOSE);
+                    GPIO_WriteBit(LEDG_Pin,LED_CLOSE);
                 }else{
-                    GPIO_WriteBit(LEDG_Pin,LEDPOWER_OPEN);
+                    GPIO_WriteBit(LEDG_Pin,LED_OPEN);
                 }
                 mLightMonitor.linktime = 0;
                 mLightMonitor.linkcnt--;
@@ -147,15 +171,40 @@ void SkyLed_Timeout_cb_handel(void *timer)
                 DBG_DIRECT("----------m_linkcnt=%d---------\r\n",mLightMonitor.linkcnt);
             }
             break;
+        }
         case LED_MODE_NORMAL_BRIGHT:
-            GPIO_WriteBit(LEDR_Pin,LEDPOWER_CLOSE);
-            mLightMonitor.mode = LED_MODE_UNKOWN;
-            Delete_LED_Timer();
+            if(mLightMonitor.linkcnt >0)
+            {
+                if(mLightMonitor.g_rflag ==0)
+                {
+                    if(GPIO_ReadInputDataBit(LEDG_Pin)==LED_OPEN)
+                    {
+                        GPIO_WriteBit(LEDG_Pin,LED_CLOSE);
+                    }else{
+                        GPIO_WriteBit(LEDG_Pin,LED_OPEN);
+                    }
+                }else{
+                    if(GPIO_ReadInputDataBit(LEDR_Pin) == LED_OPEN)
+                    {
+                        GPIO_WriteBit(LEDR_Pin,LED_CLOSE);
+                    }else{
+                        GPIO_WriteBit(LEDR_Pin,LED_OPEN);
+                    }
+                }
+                 mLightMonitor.linkcnt --;
+            }
+            if(mLightMonitor.linkcnt == 0)
+            {
+                mLightMonitor.mode = LED_MODE_UNKOWN;
+                Delete_LED_Timer();
+            }
             break;
         default:
             break;
     }
 }
+
+
 void SkyLed_Timeout_cb(void)
 {      
     T_IO_MSG msg;
@@ -188,11 +237,24 @@ void HAL_Light_Dlps_Control(bool isenter)
 {
     if(isenter)
     {
-        Pad_Config(LED_WHITE, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_LOW);
-        Pad_Config(LED_YELLOW, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_LOW);
+        if( GPIO_ReadOutputDataBit(LEDG_Pin) == LED_CLOSE)
+        {
+            Pad_Config(LED_WHITE,  PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+        }else{
+            Pad_Config(LED_WHITE,  PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+            
+        }
+        if (GPIO_ReadOutputDataBit(LEDR_Pin) == LED_CLOSE)
+        {
+            Pad_Config(LED_YELLOW, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
+        }else
+        {
+            Pad_Config(LED_YELLOW, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+        }
+        
     }else{
-        Pad_Config(LED_WHITE, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-        Pad_Config(LED_YELLOW, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+        Pad_Config(LED_WHITE, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+        Pad_Config(LED_YELLOW, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);
     }
 }
 

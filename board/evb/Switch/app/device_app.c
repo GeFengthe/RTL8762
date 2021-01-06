@@ -155,23 +155,23 @@ void app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t cause)
     {
         if(new_state.gap_adv_state == GAP_ADV_STATE_STOP)
         {
-            DBG_DIRECT(" GAP_ADV_STOP--------\r\n");
+//            DBG_DIRECT(" GAP_ADV_STOP--------\r\n");
         }
         if(new_state.gap_adv_state == GAP_ADV_STATE_START)
         {
-            DBG_DIRECT(" GAP_ADV_start-------\r\n");
+//            DBG_DIRECT(" GAP_ADV_start-------\r\n");
         }
     }
     if(gap_dev_state.gap_scan_state !=new_state.gap_scan_state)
     {
-        DBG_DIRECT("GAP_ADV=%d-----\r\n",new_state.gap_scan_state);
+//        DBG_DIRECT("GAP_ADV=%d-----\r\n",new_state.gap_scan_state);
         if(new_state.gap_scan_state == GAP_SCAN_STATE_STOP)
         {
-            DBG_DIRECT(" GAP_SCAN_STOP--------\r\n");
+//            DBG_DIRECT(" GAP_SCAN_STOP--------\r\n");
         }
         if(new_state.gap_scan_state == GAP_SCAN_STATE_START)
         {
-            DBG_DIRECT("GAP_SCAN_start--------\r\n");
+//            DBG_DIRECT("GAP_SCAN_start--------\r\n");
         }
     }
     gap_dev_state = new_state;
@@ -876,7 +876,7 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
             // mesh_model_bind_all_key();
 			SkyBleMesh_Unprov_timer_delet();
 			SkyBleMesh_ChangeScan_timer(6);
-			DBG_DIRECT("-------PROV_CB_TYPE_COMPLETE-------\r\n");
+//			DBG_DIRECT("-------PROV_CB_TYPE_COMPLETE-------\r\n");
             prov_data_p pprov_data = cb_data.pprov_data;
             data_uart_debug("been prov-ed with addr 0x%04x!\r\n", pprov_data->unicast_address);
 			SkyBleMesh_Provision_State(MESH_PROVISION_STATE_SUCCEED);

@@ -28,24 +28,12 @@
 #define ADC_CHANNEL_4              	4
 #define ADC_CHANNEL_5         		5
 
-//#define BATT_DETECT					P2_4			// Battery Detect(Adc)
-//#define ALS_DETECT					P2_5			// Ambient Light Sensor Detect(Adc)
-//#define ALS_POWER					P3_2			// Ambient Light Sensor Power(IO--O)
+
 #define ALS_POWER_PIN 				GPIO_GetPin(ALS_POWER)
 #define ADCPOWER_OPEN               ((BitAction)1)
 #define ADCPOWER_CLOSE              ((BitAction)0)
 
 
-//static void Board_ADC_init()
-//{
-//    Pad_Config(BATT_DETECT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE,
-//               PAD_OUT_LOW);
-//    Pad_Config(ALS_DETECT, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE,
-//               PAD_OUT_LOW);
-//	
-//    Pinmux_Config(BATT_DETECT, IDLE_MODE);
-//    Pinmux_Config(ALS_DETECT, IDLE_MODE);
-//}
 
 
 static void Driver_ADC_init()
@@ -68,49 +56,6 @@ static void Driver_ADC_init()
 }
 
 
-//static void Board_ADCPower_init(void)
-//{
-//    Pad_Config(ALS_POWER, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE,
-//               PAD_OUT_LOW);
-//	Pinmux_Config(ALS_POWER, DWGPIO);
-//}
-
-//static void Driver_ADCPower_init(void)
-//{
-//    /* Initialize GPIO peripheral */
-//    RCC_PeriphClockCmd(APBPeriph_GPIO, APBPeriph_GPIO_CLOCK, ENABLE);
-//	
-//    GPIO_InitTypeDef GPIO_InitStruct;
-//	
-//	// GPIO---Output Init
-//    GPIO_StructInit(&GPIO_InitStruct);
-//    GPIO_InitStruct.GPIO_Pin    = ALS_POWER_PIN; 
-//    GPIO_InitStruct.GPIO_Mode   = GPIO_Mode_OUT;
-//    GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
-//    GPIO_Init(&GPIO_InitStruct);
-//    
-//    GPIO_WriteBit(ALS_POWER_PIN, ADCPOWER_CLOSE);
-//}
-
-//uint8_t HAL_ReadAmbient_Power(void)
-//{
-//    uint8_t pwr = 0;
-//	
-//	if(GPIO_ReadOutputDataBit(ALS_POWER_PIN) == 1){
-//		pwr = 1;
-//	} 	
-//	
-//	return pwr; 
-//}
-
-//void HAL_Set_Ambient_Power(uint8_t val)
-//{
-//	if(val){
-//		GPIO_WriteBit(ALS_POWER_PIN, ADCPOWER_OPEN);
-//	}else{
-//		GPIO_WriteBit(ALS_POWER_PIN, ADCPOWER_CLOSE);
-//	}
-//}
 
 static void SkyAdc_Init(void)
 {
@@ -173,26 +118,9 @@ void HAL_SkyAdc_Sample(uint16_t *bat_dat)
         batt_data[i] = calc_avg(vol, 0, 16);
 	}
 	*bat_dat = calc_avg(batt_data, 0, 16);
-    DBG_DIRECT("--------VBAT-------bat_dat=%d-----------------\r\n",(*bat_dat));
+//    DBG_DIRECT("--------VBAT-------bat_dat=%d-----------------\r\n",(*bat_dat));
 }
 
 
-//void HAL_Adc_Dlps_Control(bool isenter)
-//{
-//    PAD_OUTPUT_VAL outval;
-//	
-//	uint8_t val = 0; 
-//    val = GPIO_ReadOutputDataBit();
-//	if(val){
-//		outval = PAD_OUT_HIGH;
-//	}else{
-//		outval = PAD_OUT_LOW;
-//	}
-//    
-//    if(isenter){
-//		Pad_Config(, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);
-//    }else{
-//        Pad_Config(ALS_POWER, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, outval);	
-//    }
-// }
+
 

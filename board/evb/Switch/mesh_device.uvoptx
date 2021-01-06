@@ -120,7 +120,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
-          <Name>d</Name>
+          <Name></Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -157,18 +157,34 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>1710</LineNumber>
+          <LineNumber>348</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8474676</Address>
+          <Address>8481080</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_doorMagnetic\board\evb\doorMagnetic\app\app_skyiot_server.c</Filename>
+          <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_Switch\board\evb\Switch\app\skyswitch.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\app\app/app_skyiot_server.c\1710</Expression>
+          <Expression>\\app\app/skyswitch.c\348</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>1652</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>8473678</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_Switch\board\evb\Switch\app\app_skyiot_server.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\app\app/app_skyiot_server.c\1652</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -595,7 +611,7 @@
 
   <Group>
     <GroupName>model</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>

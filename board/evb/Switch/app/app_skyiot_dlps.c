@@ -19,6 +19,7 @@
 
 DLPS_CTRL_STATU_T DlpsCtrlStatu_t={(DLPS_JUST_SYSINIT_OK|DLPS_JUST_WAITING_TMR)};
 static plt_timer_t skybleenterdlps_timer=NULL;
+static plt_timer_t skyalmenterdlps_timer=NULL;
 
 static plt_timer_t skyblewakeup_timer=NULL;
 static uint8_t dlpsstatu = 0; // 1:ready 2:enter 3:exit other:invalid
@@ -47,7 +48,7 @@ static void SkyBleMesh_StopWakeup_tmr(void)
 static void SkyBleMesh_StartWakeup_tmr(void)
 {	
 	if(skyblewakeup_timer == NULL){		
-		skyblewakeup_timer = plt_timer_create("WAKEUP", 50000, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
+		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*25, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
 		if (skyblewakeup_timer != NULL){
 			plt_timer_start(skyblewakeup_timer, 0);
 		}
@@ -62,17 +63,14 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 	}else{
 		blemesh_report_ctrl_dlps(false);		
 	}
-	if(HAL_Switch_Is_Relese() == true ||door_flag ==0){		
+	if(HAL_Switch_Is_Relese() == true ){		
 		switch_io_ctrl_dlps(true);
 	}else{
 		switch_io_ctrl_dlps(false);
 	}
-    
-
     DBG_DIRECT("DlpsCtrl=0x%x",DlpsCtrlStatu_t);
 	if(DlpsCtrlStatu_t.dword == DLPS_JUST_WAITING_TMR){
 		SkyBleMesh_ReadyEnterDlps_cfg();
-//		DBG_DIRECT("enter DLPS_cfg\r\n");
 		if(skybleenterdlps_timer){
 			plt_timer_delete(skybleenterdlps_timer, 0);
 			skybleenterdlps_timer = NULL;
@@ -99,7 +97,7 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 void SkyBleMesh_EnterDlps_timer(void)
 {	
 	if(skybleenterdlps_timer == NULL){ 	
-		skybleenterdlps_timer = plt_timer_create("dlps", 160, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
+		skybleenterdlps_timer = plt_timer_create("dlps", 70, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
 		if (skybleenterdlps_timer != NULL){
 			plt_timer_start(skybleenterdlps_timer, 0);
 		}
@@ -109,11 +107,9 @@ void SkyBleMesh_EnterDlps_timer(void)
 void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
 	dlpsstatu = 1; // ready
-	SkyBleMesh_StopMainLoop_tmr();	
-	// ble 
-	beacon_stop();
-    gap_sched_scan(false);    
-	// sw timer
+//    beacon_stop();
+    gap_sched_scan(false); 
+    SkyBleMesh_StopMainLoop_tmr();
     SkyBleMesh_StartWakeup_tmr();
 }
 
@@ -122,36 +118,48 @@ void SkyBleMesh_EnterDlps_cfg(void)
 	// APP_DBG_PRINTF(" SkyBleMesh_EnterDlps_cfg");
 	dlpsstatu = 2; // enter
 	
-	// switch1
-    HAL_Skymag_Dlps_Control(true);
+
 	HAL_SwitchKey_Dlps_Control(true);
     
 	// light 维持IO电平，视电路和单前状态标志而定，
 	SkyBleMesh_DlpsLight_Handle(true);
-//    HAL_INF_Dlps_Control(true);
-//    HAL_Adc_Dlps_Control(true);
+
 }
+void SkyBleMesh_timerout_cb(void * timer)
+{
+    plt_timer_delete(skyalmenterdlps_timer,0);
+    alm_ctrl_dlps(true);
+}
+
 
 void SkyBleMesh_ExitDlps_cfg(bool norexit)
 {
+    uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
+    uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
 	dlpsstatu = 3; // exit
-
+    if(System_WakeUpInterruptValue(P4_2) == 1)
+    {
+        alm_ctrl_dlps(false);
+        if(skyalmenterdlps_timer == NULL)
+        {
+            skyalmenterdlps_timer = plt_timer_create("alm",3000,false,0,SkyBleMesh_timerout_cb);
+        }
+        plt_timer_start(skyalmenterdlps_timer,0);
+    }
 	if(norexit == true){ // 正常退出DLPS
 
 		HAL_SwitchKey_Dlps_Control(false);
 		// light
 		SkyBleMesh_DlpsLight_Handle(false);
-        HAL_Skymag_Dlps_Control(false);
 	}
-//	beacon_start();  	
-	// ble
 	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisioned且电量正常
         beacon_start(); // 配网才会打开，这个要验证下，未配网不广播
+        gap_sched_scan(false);
+        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
         gap_sched_scan(true);
 
 	}	
-	
-	// sw timer
 	SkyBleMesh_StartMainLoop_tmr();
 	SkyBleMesh_EnterDlps_timer();
 //	Reenter_tmr_ctrl_dlps(false);
@@ -217,12 +225,31 @@ void Led_Relay_tmr_ctrl_dlps(bool allowenter)
     }
 }
 
-void inf_ctrl_dlps(bool allowenter)
+void alm_ctrl_dlps(bool allowenter)
 {
     if(allowenter){
-        DlpsCtrlStatu_t.bit.inf = 0;
+        DlpsCtrlStatu_t.bit.alm = 0;
     }else{
-        DlpsCtrlStatu_t.bit.inf = 1;
+        DlpsCtrlStatu_t.bit.alm = 1;
+    }
+}
+void alm_alive_dlps(bool allowenter)
+{
+    if(allowenter)
+    {
+        DlpsCtrlStatu_t.bit.alive =0;
+    }else{
+        DlpsCtrlStatu_t.bit.alive =1;
+    }
+}
+void alm_attri_dlps(bool allowenter)
+{
+    if(allowenter)
+    {
+        DlpsCtrlStatu_t.bit.attri = 0;
+    }else
+    {
+        DlpsCtrlStatu_t.bit.attri = 1;
     }
 }
 void blemesh_factory_ctrl_dlps(bool allowenter)

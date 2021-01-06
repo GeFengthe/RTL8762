@@ -15,8 +15,7 @@
 //frequency = 20MHZ / PWM_FREQUENCY = 4KHZ
 
 
-#define LED_OPEN					1
-#define LED_CLOSE					0
+
 
 typedef enum{
 	LED_MODE_UNKOWN = 0,
@@ -44,12 +43,9 @@ typedef enum{
 
 
 typedef struct {
-	//µÆÅÝ×´Ì¬×Ö¶Î
-#if USE_DOOR_FOR_SKYIOT
     uint8_t alm;
-    uint8_t stu;
     uint8_t bat;
-#endif	
+
 }SkyLightManager;
 
 
@@ -62,13 +58,13 @@ void HAL_Light_Dlps_Control(bool isenter);
 void Start_LED_Timer(void);
 void Delete_LED_Timer(void);
 void SkyLed_LightEffective_CTL(bool blink, uint32_t mode, uint16_t blinkcnt);
-extern void HAL_Lighting_OFF(void);
-extern void HAL_Lighting_ON( void );
+extern void HAL_Lighting_OFF(uint8_t flag);
+extern void HAL_Lighting_ON(uint8_t flag);
 extern void HAL_Light_Init(void);
 extern void HAL_LightToggle(void);
 extern void SkyLed_Timeout_cb_handel(void *timer);
-extern void SkyLed_Ctrl(LED_MODE_e mode,uint8_t cnt);
-extern void HAL_Lighting_ON( void );
+extern void SkyLed_Ctrl(LED_MODE_e mode,uint8_t cnt,uint8_t flag);
+//extern void HAL_Lighting_ON( void );
 
 
 #endif
