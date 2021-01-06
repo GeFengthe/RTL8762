@@ -1760,7 +1760,8 @@ extern void SkyBleMesh_MainLoop(void)
 	if(IsSkyAppInited==false){
 		return;
 	}
-
+	
+	
 	static uint32_t battadctick=0;
 	uint32_t newtick = HAL_GetTickCount();
 //	SkyBleMesh_Save_Params(newtick);
@@ -1816,7 +1817,7 @@ extern void SkyBleMesh_MainLoop(void)
 }
 
 
-
+#include "skydisplay.h"
 static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
 {		
 	#if USE_SOFT_WATCHDOG
@@ -1828,6 +1829,13 @@ static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
     msg.type = IO_MSG_TYPE_TIMER;
     msg.subtype = MAINLOOP_TIMEOUT;
     app_send_msg_to_apptask(&msg);
+	
+	
+	static uint8_t cnt=0;
+	if(++cnt >= 100){
+		displaymain();
+		cnt=0;
+	}
 }
 
 extern void SkyBleMesh_MainLoop_timer(void)
@@ -1941,12 +1949,16 @@ extern uint8_t SkyBleMesh_App_Init(void)
     Sky_ADC_POWER_Init();	
 	
 	#endif
+	uint8_t senddata[10]={0xF0,0xF0,0xF0,0xF0,0xF0, 0xF0,0xF0,0xF0,0xF0,0xF0};
+	BL55072A_Init(senddata, 10);
+	BL55072A_DisplayOn();
+
 
 	// SkyBleMesh_MainLoop_timer(); // called in app_task
 
 	mIotManager.release_flag = SKYIOT_ACTIVE_RELEASE ;        // 自测用，为了不产测，也可以进低功耗
 	IsSkyAppInited = true;
-	blemesh_sysinit_ctrl_dlps(true);
+	// blemesh_sysinit_ctrl_dlps(true);
 	if(SkyBleMesh_Device_Active_Sate() == true){
 		blemesh_factory_ctrl_dlps(true);
 	}else{

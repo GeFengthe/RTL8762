@@ -519,6 +519,11 @@
               <FileType>1</FileType>
               <FilePath>..\..\..\src\mcu\peripheral\rtl876x_adc.c</FilePath>
             </File>
+            <File>
+              <FileName>rtl876x_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\mcu\peripheral\rtl876x_i2c.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -688,6 +693,11 @@
               <FileName>skyadc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\app\skyadc.c</FilePath>
+            </File>
+            <File>
+              <FileName>skydisplay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\app\skydisplay.c</FilePath>
             </File>
           </Files>
         </Group>

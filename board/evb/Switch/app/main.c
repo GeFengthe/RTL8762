@@ -275,8 +275,10 @@ void app_le_profile_init(void)
  *           should be peformed with the IO initializing.
  * @return   void
  */
+#include "skydisplay.h"
 void board_init(void)
 {
+	Display_IIC_Init();
 }
 
 /**
