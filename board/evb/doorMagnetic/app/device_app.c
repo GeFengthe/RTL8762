@@ -155,11 +155,11 @@ void app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t cause)
     {
         if(new_state.gap_adv_state == GAP_ADV_STATE_STOP)
         {
-            DBG_DIRECT(" GAP_ADV_STOP--------\r\n");
+//            DBG_DIRECT(" GAP_ADV_STOP--------\r\n");
         }
         if(new_state.gap_adv_state == GAP_ADV_STATE_START)
         {
-            DBG_DIRECT(" GAP_ADV_start-------\r\n");
+//            DBG_DIRECT(" GAP_ADV_start-------\r\n");
         }
     }
     if(gap_dev_state.gap_scan_state !=new_state.gap_scan_state)
@@ -167,11 +167,11 @@ void app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t cause)
         DBG_DIRECT("GAP_ADV=%d-----\r\n",new_state.gap_scan_state);
         if(new_state.gap_scan_state == GAP_SCAN_STATE_STOP)
         {
-            DBG_DIRECT(" GAP_SCAN_STOP--------\r\n");
+//            DBG_DIRECT(" GAP_SCAN_STOP--------\r\n");
         }
         if(new_state.gap_scan_state == GAP_SCAN_STATE_START)
         {
-            DBG_DIRECT("GAP_SCAN_start--------\r\n");
+//            DBG_DIRECT("GAP_SCAN_start--------\r\n");
         }
     }
     gap_dev_state = new_state;

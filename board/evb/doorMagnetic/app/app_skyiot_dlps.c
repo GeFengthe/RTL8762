@@ -131,6 +131,8 @@ void SkyBleMesh_EnterDlps_cfg(void)
 
 void SkyBleMesh_ExitDlps_cfg(bool norexit)
 {
+    uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
+    uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
 	dlpsstatu = 3; // exit
 
 	if(norexit == true){ // 正常退出DLPS
@@ -144,6 +146,9 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 	// ble
 	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisioned且电量正常
         beacon_start(); // 配网才会打开，这个要验证下，未配网不广播
+        gap_sched_scan(false);
+        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
         gap_sched_scan(true);
 
 	}	

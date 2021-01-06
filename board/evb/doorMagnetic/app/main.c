@@ -290,6 +290,7 @@ void driver_init(void)
 	Hal_Timer_init();
 	OS_WDTInit();
 	#endif
+     beacon_start();
      gap_sched_scan(true);
 	 SkyBleMesh_Batterval_Lightsense(true);
 	 uint8_t batt_station = SkyBleMesh_Batt_Station();
@@ -298,6 +299,7 @@ void driver_init(void)
     if (node_state == UNPROV_DEVICE){
         if(batt_station == BATT_NORMAL){
         beacon_start();
+        gap_sched_scan(false);
 		gap_sched_scan(true); 
 		if(SkyBleMesh_Device_Active_Sate()==true){
 			SkyBleMesh_Unprov_timer();

@@ -1102,11 +1102,13 @@ static void SkyBle_clean_time(void)
 {
     if(skyble_cleanflag_timer == NULL)
     {
-        plt_timer_create("clean",4000,true,0,SkyBle_cleanflag_cb);
+        plt_timer_create("clean",3000,false,0,SkyBle_cleanflag_cb);
     }
     if(skyble_cleanflag_timer != NULL)
     {
         plt_timer_start(skyble_cleanflag_timer,0);
+    }else{
+        DBG_DIRECT("----SkyBle_clean is fail--\r\n");
     }
 }
 
@@ -1269,7 +1271,6 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 				mIotManager.process_state = 0xff;
 				SkyBleMesh_WriteConfig();	
 			}
-            beacon_start();
             gap_sched_scan(false);
             gap_sched_scan(true);
             blemesh_unprov_ctrl_dlps(true); 
@@ -1520,7 +1521,7 @@ static void SkyiotManager_Default_Config(bool sychsaveparam)
     mIotManager.mLightManager.alm = 0;
     mIotManager.mLightManager.stu = 0;
     oldstate.alm = 0;
-    oldstate.stu = 0;
+    oldstate.stu = 1;
 //	
 	if(sychsaveparam == true){		
         mIotSaveParams.alm = mIotManager.mLightManager.alm;
@@ -1594,7 +1595,6 @@ static void Reset_iotmanager_para(void)
 static void Sky_listendoorstate(void)
 {
      uint8_t skystatu = ReadStatus();
-//    DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
     switch (skystatu)
     {
         case 0:
@@ -1633,7 +1633,7 @@ static void Sky_listendoorstate(void)
         door_door_ctrl_dlps(true);
         DBG_DIRECT("----------skystatu=%d--------\r\n",skystatu);
     }
-    
+    door_door_ctrl_dlps(true);
 }
 static void Main_Event_Handle(void)
 {
@@ -1643,7 +1643,6 @@ static void Main_Event_Handle(void)
 	req_event_t event;
 	
 	if(delayreport){
-
 		tick = HAL_GetTickCount();
 		if(delayreport <= HAL_CalculateTickDiff(oldtick, tick)){
 			delayreport = 0;
@@ -2093,21 +2092,21 @@ extern uint8_t SkyBleMesh_App_Init(void)
 uint16_t batt_old = 3300;	
 extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
 {
+    static uint32_t batt_tick =0 ;
 	uint16_t batt_val=0;
 	HAL_SkyAdc_Sample(&batt_val);
-    if((batt_old-batt_val>100)&&(mIotManager.alive_status ==1))
+    if(batt_val < BATT_WARIN_RANK+100)
     {
-        if(batt_val >BATT_WARIN_RANK+200)
-        {
-            mIotManager.mLightManager.bat = 1;
-        }else{
-            mIotManager.mLightManager.bat = 0;
-        }
-        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
-        mIotManager.bat_seq= 0;
-        batt_old = batt_val;
+        mIotManager.mLightManager.bat =1;
+    }else{
+        mIotManager.mLightManager.bat = 0;
     }
-    DBG_DIRECT("----batt_val=%d----\r\n",batt_val);
+    if(++batt_tick>20*30)
+    {
+        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
+        batt_tick =0;
+//        mIotManager.bat_seq = 0;
+    }
 		if(mIotManager.batt_rank == BATT_NORMAL){	
                 if(batt_val <= BATT_WARIN_RANK)
                 {
@@ -2116,7 +2115,6 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
                     gap_sched_scan(false);
                     APP_DBG_PRINTF0("[BATT WARING] battery voltage is below 2.4V \n");
                 }
-			
 		}else{
             if(batt_val > BATT_WARIN_RANK)
             {
