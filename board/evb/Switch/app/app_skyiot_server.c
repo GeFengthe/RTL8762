@@ -1833,7 +1833,7 @@ static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
 	
 	static uint8_t cnt=0;
 	if(++cnt >= 100){
-		displaymain();
+//		displaymain();
 		cnt=0;
 	}
 }

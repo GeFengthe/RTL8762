@@ -33,7 +33,7 @@
  * @brief    pinmux configuration
  * @return   void
  */
-void PINMUX_Configuration(void)
+static void PINMUX_Configuration(void)
 {
     Pinmux_Config(I2C0_SCL_PIN, I2C0_CLK);
     Pinmux_Config(I2C0_SDA_PIN, I2C0_DAT);
@@ -43,7 +43,7 @@ void PINMUX_Configuration(void)
  * @brief    pad configuration
  * @return   void
  */
-void PAD_Configuration(void)
+static void PAD_Configuration(void)
 {
     Pad_Config(I2C0_SCL_PIN, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);
     Pad_Config(I2C0_SDA_PIN, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);
@@ -54,7 +54,7 @@ void PAD_Configuration(void)
  * @brief    rcc configuration
  * @return   void
  */
-void RCC_Configuration(void)
+static void RCC_Configuration(void)
 {
     /* Enable I2C clock */
     RCC_PeriphClockCmd(APBPeriph_I2C0, APBPeriph_I2C0_CLOCK, ENABLE);
@@ -66,7 +66,7 @@ void RCC_Configuration(void)
   * @param   No parameter.
   * @return  void
   */
-void I2C0_Configuration(void)
+static void I2C0_Configuration(void)
 {
     /* Initialize I2C */
     I2C_InitTypeDef  I2C_InitStructure;
@@ -86,7 +86,7 @@ void I2C0_Configuration(void)
  *           should be peformed with the IO initializing.
  * @return   void
  */
-void Display_IIC_Init(void)
+void BL55072A_IIC_Init(void)
 {
 	RCC_Configuration();
 	PAD_Configuration();
@@ -97,14 +97,17 @@ void Display_IIC_Init(void)
 
 
 //==========================================================================================================//
-I2C_Status retstatu=I2C_ERR_TIMEOUT;
 void BL55072A_Init(uint8_t* data, uint8_t len)
 {
 	uint8_t initdata[30]={0xFF, 0xC8, 0xEA, 0xBE, 0xE8, 0x00};
 	if(len <= 18){
-		memcpy( &initdata[6], data, len);	
-		retstatu = I2C_MasterWrite(I2C0, initdata, 6+len);	
-		retstatu=I2C_ERR_TIMEOUT;
+		memset( &initdata[6], 0, 18);
+		if(len){
+			memcpy( &initdata[6], data, len);
+			I2C_MasterWrite(I2C0, initdata, 6+len);
+		}else{
+			I2C_MasterWrite(I2C0, initdata, 24);
+		}
 	}
 }
 
@@ -112,25 +115,25 @@ void BL55072A_DisplayOn(void)
 {
 	uint8_t senddata[4]={0xBE, 0xF0, 0xFC, 0xC8};
 
-	retstatu = I2C_MasterWrite(I2C0, senddata, 4);	
-	retstatu=I2C_ERR_TIMEOUT;
+	I2C_MasterWrite(I2C0, senddata, 4);	
 }
 
 void BL55072A_DisplayOff(void)
 {
 	uint8_t senddata[1]={0xC0};
 
-	retstatu = I2C_MasterWrite(I2C0, senddata, 1);	
-	retstatu=I2C_ERR_TIMEOUT;
+	I2C_MasterWrite(I2C0, senddata, 1);	
 }
 
 void BL55072A_WriteDisplay(uint8_t* data, uint8_t len)
 {
 	uint8_t senddata[30]={0xBE, 0xF0, 0xFC, 0xC8, 0xE8, 0x00};
 	if(len <= 18){
-		memcpy( &senddata[6], data, len);	
-		retstatu = I2C_MasterWrite(I2C0, senddata, 6+len);	
-		retstatu=I2C_ERR_TIMEOUT;
+		memset( &senddata[6], 0, 18);
+		if(len){
+			memcpy( &senddata[6], data, len);	
+		}	
+		I2C_MasterWrite(I2C0, senddata, 6+len);	
 	}
 }
 //----------------------------------------------------------------------------------------------------------//
@@ -144,14 +147,14 @@ typedef union
     } half;
     struct
     {
-        uint32_t B0: 1; // 
-        uint32_t B1: 1; // 
-        uint32_t B2: 1; // 
-        uint32_t B3: 1; // 
-        uint32_t B4: 1; // 
-        uint32_t B5: 1; // 
-        uint32_t B6: 1; // 
-        uint32_t B7: 1; //   
+        uint8_t B0: 1; // 
+        uint8_t B1: 1; // 
+        uint8_t B2: 1; // 
+        uint8_t B3: 1; // 
+        uint8_t B4: 1; // 
+        uint8_t B5: 1; // 
+        uint8_t B6: 1; // 
+        uint8_t B7: 1; //   
     } bit;
 }UNION_BYTE2BIT_T;
 typedef  struct
@@ -159,11 +162,11 @@ typedef  struct
 	char    chara;
 	uint8_t val;	
 }DisContent_t; 
-#define TOTAL_DISCONTENT_NUM 13
+#define TOTAL_DISCONTENT_NUM 12
 const DisContent_t DisContent[TOTAL_DISCONTENT_NUM+1] = {
-	{'0',0x3F}, {'1',0x06}, {'2',0x5B}, {'3',0x4F}, {'4',0x66}, {'5',0x6D},
-	{'6',0x7D}, {'7',0x07}, {'8',0x7F}, {'9',0x6F}, {' ',0x00}, {'*',0x9F},
-	{'-',0x40}, {' ',0x00} // when not find
+	{'0',0x5F}, {'1',0x06}, {'2',0x3D}, {'3',0x2F}, {'4',0x66}, {'5',0x6B},
+	{'6',0x7B}, {'7',0x0E}, {'8',0x7F}, {'9',0x6F}, {' ',0x00}, {'*',0x9F},
+	{' ',0x00} // when not find
 }; // 码值可以调整
 static uint8_t Find_Display_character(char chara, bool showdot)
 {
@@ -203,12 +206,12 @@ void SkyIot_Display(uint32_t humidity, int temperature, uint8_t rssi, uint8_t ba
 	tmpbattery = (battery+10) / 20;
 	
 	if(tmprssi > 4){
-		data2.bit.B0 = 1;
+		data2.bit.B3 = 1;
 	}
 	data2.bit.B1 = 1;
 	data2.bit.B2 = 1;
 	if(tmpbattery>=5){
-		data2.bit.B3 = 1;
+		data2.bit.B0 = 1;
 		data2.bit.B4 = 1;
 		data2.bit.B5 = 1;
 		data2.bit.B6 = 1;
@@ -230,45 +233,72 @@ void SkyIot_Display(uint32_t humidity, int temperature, uint8_t rssi, uint8_t ba
 	}
 	
 	// 
-	disdata[0].byte = Find_Display_character(humidity/100    , true);
-	disdata[1].byte = Find_Display_character((humidity/10)%10, true);
-	disdata[2].byte = Find_Display_character(humidity%10     , true); // 与上2个不一样
+	disdata[0].byte = Find_Display_character(0x30+humidity/100    , true);
+	disdata[1].byte = Find_Display_character(0x30+(humidity/10)%10, true);
+	disdata[2].byte = Find_Display_character(0x30+humidity%10     , true); // 与上2个不一样	
+	tmp.byte = disdata[2].byte;
+	disdata[2].bit.B7 = tmp.bit.B6;
+	disdata[2].bit.B6 = tmp.bit.B5;
+	disdata[2].bit.B5 = tmp.bit.B4;
+	disdata[2].bit.B4 = tmp.bit.B7;
 	
 	if(tmprssi > 0){		
-		data1.bit.B4 = 1;		
+		data1.bit.B7 = 1;		
 	}
-	data1.bit.B6 = 1;
-	data1.bit.B7 = 1;	
+	data1.bit.B5 = 1;
+	data1.bit.B4 = 1;	
 	
 	if(temperature < 0){
-		data1.bit.B5 = 1;
+		data1.bit.B6 = 1;
 		temperature *= (-1);
 	}
 	
 	//	
 	disdata[3].byte = data1.byte;
-	tmp.byte = Find_Display_character(temperature/100    , (tmprssi>=2));
+	tmp.byte = Find_Display_character(0x30+temperature/100    , (tmprssi>=2));
 	disdata[3].half.L = tmp.half.H;
 	disdata[4].half.H = tmp.half.L;
-	tmp.byte = Find_Display_character((temperature/10)%10, (tmprssi>=3));
+	tmp.byte = Find_Display_character(0x30+(temperature/10)%10, (tmprssi>=3));
 	disdata[4].half.L = tmp.half.H;
 	disdata[5].half.H = tmp.half.L;
-	tmp.byte = Find_Display_character(temperature%10     , true); // 与上2个不一样
-	disdata[5].half.L = tmp.half.H;	
+	tmp.byte = Find_Display_character(0x30+temperature%10     , true); // 与上2个不一样
+	// disdata[5].half.L = tmp.half.H;	
+	disdata[5].bit.B3 = tmp.bit.B6;	
+	disdata[5].bit.B2 = tmp.bit.B5;	
+	disdata[5].bit.B1 = tmp.bit.B4;	
+	disdata[5].bit.B0 = tmp.bit.B7;	
 	disdata[6].half.H = tmp.half.L;
 		
 	disdata[6].half.L = data2.half.H;	
 	disdata[7].half.H = data2.half.L;
 	
-	memset((uint8_t*)disdata, 0xF0, 18);
+	
 	BL55072A_WriteDisplay((uint8_t*)disdata, 18);
 }
 
 //==========================================================================================================//
-
+// 测试代码
 void displaymain(void)
 {
-   SkyIot_Display(123, 456, 100, 100);
+	uint32_t humidity;
+	int temperature;
+	uint8_t rssi;
+	uint8_t battery;
+	
+	static uint8_t tmp=0;
+	if(++tmp >= 10){
+		tmp = 0;
+	}
+	humidity = 111*tmp;
+	if(tmp&0x01){	
+		temperature = -111*tmp;
+	}else{
+		temperature = 111*tmp;
+	}
+	rssi = 10*tmp;
+	battery = 10*tmp;
+	
+   SkyIot_Display(humidity, temperature, rssi, battery);
 
 }
 

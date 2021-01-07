@@ -7,7 +7,7 @@
 #include <string.h>
 
 
-extern void Display_IIC_Init(void);
+extern void BL55072A_IIC_Init(void);
 extern void BL55072A_Init(uint8_t* data, uint8_t len);
 extern void BL55072A_DisplayOn(void);
 

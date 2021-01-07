@@ -162,10 +162,10 @@ void app_main_task(void *p_param)
     mesh_start(EVENT_MESH, EVENT_IO_TO_APP, evt_queue_handle, io_queue_handle);
 	
 	// i2c_demo_init();
-	Display_IIC_Init();
+	BL55072A_IIC_Init();
 	 os_delay(5);
 	memset(data, 0xF0, 18);
-	BL55072A_Init( data, 18);
+	BL55072A_Init( data, 0);
 	 os_delay(5);
 	BL55072A_DisplayOn();
 	
