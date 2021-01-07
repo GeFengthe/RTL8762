@@ -48,6 +48,7 @@ extern void SkyBleMesh_ReadyEnterDlps_cfg(void);
 extern void SkyBleMesh_EnterDlps_cfg(void);
 extern void SkyBleMesh_ExitDlps_cfg(bool norexit);
 extern void door_door_ctrl_dlps(bool allowenter);
+extern void Sky_alive_dlps(void);
 
 
 #endif // 

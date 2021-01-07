@@ -47,7 +47,7 @@ static void SkyBleMesh_StopWakeup_tmr(void)
 static void SkyBleMesh_StartWakeup_tmr(void)
 {	
 	if(skyblewakeup_timer == NULL){		
-		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*25, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
+		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*19, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
 		if (skyblewakeup_timer != NULL){
 			plt_timer_start(skyblewakeup_timer, 0);
 		}
@@ -96,7 +96,7 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 void SkyBleMesh_EnterDlps_timer(void)
 {	
 	if(skybleenterdlps_timer == NULL){ 	
-		skybleenterdlps_timer = plt_timer_create("dlps", 160, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
+		skybleenterdlps_timer = plt_timer_create("dlps", 61, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);     //进入低功耗定时器时间可能会影响是否会出现删除主定时器而未进低功耗模式(100)
 		if (skybleenterdlps_timer != NULL){
 			plt_timer_start(skybleenterdlps_timer, 0);
 		}
@@ -125,8 +125,6 @@ void SkyBleMesh_EnterDlps_cfg(void)
     
 	// light 维持IO电平，视电路和单前状态标志而定，
 	SkyBleMesh_DlpsLight_Handle(true);
-//    HAL_INF_Dlps_Control(true);
-//    HAL_Adc_Dlps_Control(true);
 }
 
 void SkyBleMesh_ExitDlps_cfg(bool norexit)
@@ -161,6 +159,22 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 
 
 }
+void Sky_alive_dlps(void)
+{
+    static uint32_t alive_cnt = 0;
+    if(DlpsCtrlStatu_t.bit.alive == 1)
+    {
+        alive_cnt ++;
+        if(alive_cnt == 60)
+        {
+            door_alive_ctrl_dlps(true);
+            alive_cnt =0;
+        }
+    }else{
+        alive_cnt =0;
+    }
+}
+
 bool switch_check_dlps_statu(void)
 {
     if (DlpsCtrlStatu_t.dword == 0){

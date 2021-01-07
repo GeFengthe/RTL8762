@@ -157,8 +157,6 @@ void app_main_task(void *p_param)
 //		uart_test_init();
 	}	
 	#endif 
-	
-	
 	SkyBleMesh_MainLoop_timer();	
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);

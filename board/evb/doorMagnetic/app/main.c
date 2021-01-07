@@ -291,6 +291,7 @@ void driver_init(void)
 	OS_WDTInit();
 	#endif
      beacon_start();
+     gap_sched_scan(false);
      gap_sched_scan(true);
 	 SkyBleMesh_Batterval_Lightsense(true);
 	 uint8_t batt_station = SkyBleMesh_Batt_Station();

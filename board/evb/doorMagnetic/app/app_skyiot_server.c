@@ -1271,6 +1271,7 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 				mIotManager.process_state = 0xff;
 				SkyBleMesh_WriteConfig();	
 			}
+            beacon_start();
             gap_sched_scan(false);
             gap_sched_scan(true);
             blemesh_unprov_ctrl_dlps(true); 
@@ -1674,13 +1675,14 @@ static void Main_Event_Handle(void)
 					mIotManager.report_flag = 0;
 					delayreport = (uint32_t)(rand()%80)*50 + 50; // 50~4000ms
 					oldtick = HAL_GetTickCount();	
-					
+					door_alive_ctrl_dlps(true);
 					APP_DBG_PRINTF0("Main_Event_Handle device online!\n");
 				}else {
 					mIotManager.recv_alive_tick = HAL_GetTickCount();	
 					APP_DBG_PRINTF1("Main_Event_Handle recv keepalive tick: %d!\n", mIotManager.recv_alive_tick);
+                    door_alive_ctrl_dlps(true);
 				}
-                door_alive_ctrl_dlps(true);
+//                door_alive_ctrl_dlps(true);
                 plt_timer_delete(skyble_cleanflag_timer,0);
 				break;
 				
@@ -1764,7 +1766,7 @@ static bool Main_Check_Online(void)
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
                 door_alive_ctrl_dlps(false);
-                SkyBle_clean_time();
+//                SkyBle_clean_time();
 			}else{
 				sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);     //
 				 APP_DBG_PRINTF2("Main_Check_Online wakeupcnt %d %d\n", mIotManager.alive_wakeup_cnt, sub_timeout_ms);
@@ -1772,7 +1774,7 @@ static bool Main_Check_Online(void)
 					SkyIotSendKeepAlivePacket();
 					mIotManager.send_alive_tick = tick;
                     door_alive_ctrl_dlps(false);
-                    SkyBle_clean_time();
+//                    SkyBle_clean_time();
 				}
 			}
 			mIotManager.alive_wakeup_cnt++;
@@ -1784,7 +1786,7 @@ static bool Main_Check_Online(void)
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
 				door_alive_ctrl_dlps(false);
-                SkyBle_clean_time();
+//                SkyBle_clean_time();
 				mIotManager.alive_wakeup_cnt   = 1;	// 默认都会去发3次，有心跳应答会把计数清掉 			
 			}
 		}
@@ -1911,6 +1913,7 @@ extern void SkyBleMesh_MainLoop(void)
 		
 		//recv message	
 		Main_Event_Handle();
+        Sky_alive_dlps();
 		
 		//判断设备是否离线
 		if(Main_Check_Online() == true){
@@ -2101,11 +2104,10 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
     }else{
         mIotManager.mLightManager.bat = 0;
     }
-    if(++batt_tick>20*30)
+    if(++batt_tick>20*60)
     {
         mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
         batt_tick =0;
-//        mIotManager.bat_seq = 0;
     }
 		if(mIotManager.batt_rank == BATT_NORMAL){	
                 if(batt_val <= BATT_WARIN_RANK)
