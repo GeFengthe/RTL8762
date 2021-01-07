@@ -21,11 +21,11 @@
 
 #define SKYDISPLAY_PRINTF   DBG_DIRECT 
 
-#define I2C0_SCL_PIN                P2_7        //C9: 0
-#define I2C0_SDA_PIN                P2_6 // P5_0        //C9: 1
-
-#define BL55072A_SLAVE_ADDR         0x7C    // DISPLAY
-#define SHCT3_SLAVE_ADDR            0xE0    // SENOR  0X70<<1
+#define I2C0_SCL_PIN                P2_7        // 
+#define I2C0_SDA_PIN                P2_6        // 
+// 7bit addr
+#define BL55072A_SLAVE_ADDR         0x3E    // DISPLAY 0x7C>>1
+#define SHCT3_SLAVE_ADDR            0x70    // SENOR  
 
 
 
@@ -74,7 +74,7 @@ static void I2C0_Configuration(void)
     I2C_InitStructure.I2C_ClockSpeed   = 100000;
     I2C_InitStructure.I2C_DeviveMode   = I2C_DeviveMode_Master;
     I2C_InitStructure.I2C_AddressMode  = I2C_AddressMode_7BIT;
-    I2C_InitStructure.I2C_SlaveAddress = (BL55072A_SLAVE_ADDR>>1);
+    I2C_InitStructure.I2C_SlaveAddress = BL55072A_SLAVE_ADDR;
     I2C_InitStructure.I2C_Ack          = I2C_Ack_Enable;
     I2C_Init(I2C0, &I2C_InitStructure);
     I2C_Cmd(I2C0, ENABLE);
@@ -193,7 +193,7 @@ static uint8_t Find_Display_character(char chara, bool showdot)
 	rssi 信号强度%
 	battery 电池电量%	
 */
-void SkyIot_Display(uint32_t humidity, int temperature, uint8_t rssi, uint8_t battery)
+void SkyIot_Lcd_Display(uint32_t humidity, int temperature, uint8_t rssi, uint8_t battery)
 {
 	UNION_BYTE2BIT_T disdata[18];
 	UNION_BYTE2BIT_T data1, data2, tmp;
@@ -206,16 +206,16 @@ void SkyIot_Display(uint32_t humidity, int temperature, uint8_t rssi, uint8_t ba
 	tmpbattery = (battery+10) / 20;
 	
 	if(tmprssi > 4){
-		data2.bit.B3 = 1;
+		data2.bit.B3 = 1; // T9
 	}
-	data2.bit.B1 = 1;
-	data2.bit.B2 = 1;
+	data2.bit.B1 = 1; // T6
+	data2.bit.B2 = 1; // T5
 	if(tmpbattery>=5){
-		data2.bit.B0 = 1;
-		data2.bit.B4 = 1;
-		data2.bit.B5 = 1;
-		data2.bit.B6 = 1;
-		data2.bit.B7 = 1;		
+		data2.bit.B0 = 1; // R5
+		data2.bit.B4 = 1; // R4
+		data2.bit.B5 = 1; // R3
+		data2.bit.B6 = 1; // R2
+		data2.bit.B7 = 1; // R1		
 	}else if(tmpbattery==4){
 		data2.bit.B4 = 1;
 		data2.bit.B5 = 1;
@@ -233,32 +233,32 @@ void SkyIot_Display(uint32_t humidity, int temperature, uint8_t rssi, uint8_t ba
 	}
 	
 	// 
-	disdata[0].byte = Find_Display_character(0x30+humidity/100    , true);
-	disdata[1].byte = Find_Display_character(0x30+(humidity/10)%10, true);
+	disdata[0].byte = Find_Display_character(0x30+humidity/100    , true); // T12
+	disdata[1].byte = Find_Display_character(0x30+(humidity/10)%10, true); // T2
 	disdata[2].byte = Find_Display_character(0x30+humidity%10     , true); // 与上2个不一样	
 	tmp.byte = disdata[2].byte;
 	disdata[2].bit.B7 = tmp.bit.B6;
 	disdata[2].bit.B6 = tmp.bit.B5;
 	disdata[2].bit.B5 = tmp.bit.B4;
-	disdata[2].bit.B4 = tmp.bit.B7;
+	disdata[2].bit.B4 = tmp.bit.B7; // T1
 	
 	if(tmprssi > 0){		
-		data1.bit.B7 = 1;		
+		data1.bit.B7 = 1; // T6		
 	}
-	data1.bit.B5 = 1;
-	data1.bit.B4 = 1;	
+	data1.bit.B5 = 1;  // T11
+	data1.bit.B4 = 1;  // T3
 	
 	if(temperature < 0){
-		data1.bit.B6 = 1;
+		data1.bit.B6 = 1; // T10
 		temperature *= (-1);
 	}
 	
 	//	
 	disdata[3].byte = data1.byte;
-	tmp.byte = Find_Display_character(0x30+temperature/100    , (tmprssi>=2));
+	tmp.byte = Find_Display_character(0x30+temperature/100    , (tmprssi>=2)); // T7
 	disdata[3].half.L = tmp.half.H;
 	disdata[4].half.H = tmp.half.L;
-	tmp.byte = Find_Display_character(0x30+(temperature/10)%10, (tmprssi>=3));
+	tmp.byte = Find_Display_character(0x30+(temperature/10)%10, (tmprssi>=3)); // T8
 	disdata[4].half.L = tmp.half.H;
 	disdata[5].half.H = tmp.half.L;
 	tmp.byte = Find_Display_character(0x30+temperature%10     , true); // 与上2个不一样
@@ -266,7 +266,7 @@ void SkyIot_Display(uint32_t humidity, int temperature, uint8_t rssi, uint8_t ba
 	disdata[5].bit.B3 = tmp.bit.B6;	
 	disdata[5].bit.B2 = tmp.bit.B5;	
 	disdata[5].bit.B1 = tmp.bit.B4;	
-	disdata[5].bit.B0 = tmp.bit.B7;	
+	disdata[5].bit.B0 = tmp.bit.B7; // T4	
 	disdata[6].half.H = tmp.half.L;
 		
 	disdata[6].half.L = data2.half.H;	
@@ -298,7 +298,7 @@ void displaymain(void)
 	rssi = 10*tmp;
 	battery = 10*tmp;
 	
-   SkyIot_Display(humidity, temperature, rssi, battery);
+   SkyIot_Lcd_Display(humidity, temperature, rssi, battery);
 
 }
 

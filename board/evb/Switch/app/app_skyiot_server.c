@@ -1830,12 +1830,6 @@ static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
     msg.subtype = MAINLOOP_TIMEOUT;
     app_send_msg_to_apptask(&msg);
 	
-	
-	static uint8_t cnt=0;
-	if(++cnt >= 100){
-//		displaymain();
-		cnt=0;
-	}
 }
 
 extern void SkyBleMesh_MainLoop_timer(void)
@@ -1949,9 +1943,6 @@ extern uint8_t SkyBleMesh_App_Init(void)
     Sky_ADC_POWER_Init();	
 	
 	#endif
-	uint8_t senddata[10]={0xF0,0xF0,0xF0,0xF0,0xF0, 0xF0,0xF0,0xF0,0xF0,0xF0};
-	BL55072A_Init(senddata, 10);
-	BL55072A_DisplayOn();
 
 
 	// SkyBleMesh_MainLoop_timer(); // called in app_task

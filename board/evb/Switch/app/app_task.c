@@ -193,7 +193,7 @@ void app_main_task(void *p_param)
 	#endif 
 	
 	
-	SkyBleMesh_MainLoop_timer();	
+//	SkyBleMesh_MainLoop_timer();	
 	SkyBleMesh_EnterDlps_timer();
 	Reenter_tmr_ctrl_dlps(false);
     DBG_DIRECT("----------------compiler DATE: %s ------------------------------\r\n", __DATE__);
