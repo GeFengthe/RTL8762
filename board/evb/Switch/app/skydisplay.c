@@ -96,12 +96,17 @@ void RTL8762_IIC_Init(void)
 	I2C0_Configuration();
 }
 
+static void I2C0_Switch_SlaveAddr(uint8_t addr)
+{
+	I2C_SetSlaveAddress(I2C0, addr);
+}
 
 //==========================================================================================================//
 void BL55072A_Init(uint8_t* data, uint8_t len)
 {
 	uint8_t initdata[30]={0xFF, 0xC8, 0xEA, 0xBE, 0xE8, 0x00};
 	if(len <= 18){
+		I2C0_Switch_SlaveAddr(BL55072A_SLAVE_ADDR);
 		memset( &initdata[6], 0, 18);
 		if(len){
 			memcpy( &initdata[6], data, len);
@@ -116,6 +121,7 @@ void BL55072A_DisplayOn(void)
 {
 	uint8_t senddata[4]={0xBE, 0xF0, 0xFC, 0xC8};
 
+	I2C0_Switch_SlaveAddr(BL55072A_SLAVE_ADDR);
 	I2C_MasterWrite(I2C0, senddata, 4);	
 }
 
@@ -123,6 +129,7 @@ void BL55072A_DisplayOff(void)
 {
 	uint8_t senddata[1]={0xC0};
 
+	I2C0_Switch_SlaveAddr(BL55072A_SLAVE_ADDR);
 	I2C_MasterWrite(I2C0, senddata, 1);	
 }
 
@@ -130,6 +137,7 @@ void BL55072A_WriteDisplay(uint8_t* data, uint8_t len)
 {
 	uint8_t senddata[30]={0xBE, 0xF0, 0xFC, 0xC8, 0xE8, 0x00};
 	if(len <= 18){
+		I2C0_Switch_SlaveAddr(BL55072A_SLAVE_ADDR);
 		memset( &senddata[6], 0, 18);
 		if(len){
 			memcpy( &senddata[6], data, len);	
@@ -334,6 +342,8 @@ void SHTC3_Init(void)
 	uint8_t initdata[2];
 	uint8_t readid[2]={0,0};
 	
+	I2C0_Switch_SlaveAddr(SHCT3_SLAVE_ADDR);
+	
 	initdata[0] = ((SHTC3_WAKE_UP_CMD>>8) & 0xFF);
 	initdata[1] = (SHTC3_WAKE_UP_CMD & 0xFF);	
 	I2C_MasterWrite(I2C0, initdata, 2);	
@@ -363,6 +373,8 @@ uint8_t SHTC3_Read_Temp_Hum(int *gettemp, uint32_t *gethum)
 	
 	uint8_t ret = 0;
 	uint8_t timoutcnt = 0;
+	
+	I2C0_Switch_SlaveAddr(SHCT3_SLAVE_ADDR);
 	
 	setdata[0] = ((SHTC3_WAKE_UP_CMD>>8) & 0xFF);
 	setdata[1] = (SHTC3_WAKE_UP_CMD & 0xFF);	
@@ -431,26 +443,27 @@ void displaymain(void)
 {
 	uint32_t humidity;
 	int temperature;
-//	uint8_t rssi;
-//	uint8_t battery;
-//	
-//	static uint8_t tmp=0;
-//	if(++tmp >= 10){
-//		tmp = 0;
-//	}
+	uint8_t rssi;
+	uint8_t battery;
+	
+	static uint8_t tmp=0;
+	if(++tmp >= 10){
+		tmp = 0;
+	}
 //	humidity = 111*tmp;
 //	if(tmp&0x01){	
 //		temperature = -111*tmp;
 //	}else{
 //		temperature = 111*tmp;
 //	}
-//	rssi = 10*tmp;
-//	battery = 10*tmp;
-//	
+	rssi = 10*tmp;
+	battery = 10*tmp;
+	
 	
 	SHTC3_Read_Temp_Hum(&temperature , &humidity);
 	os_delay(5);
-//   SkyIot_Lcd_Display(humidity, temperature, rssi, battery);
+
+	SkyIot_Lcd_Display(humidity, temperature, rssi, battery);
 	
 	
 
