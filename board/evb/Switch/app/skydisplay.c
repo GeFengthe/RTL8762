@@ -74,7 +74,7 @@ static void I2C0_Configuration(void)
     I2C_InitStructure.I2C_ClockSpeed   = 100000;
     I2C_InitStructure.I2C_DeviveMode   = I2C_DeviveMode_Master;
     I2C_InitStructure.I2C_AddressMode  = I2C_AddressMode_7BIT;
-    I2C_InitStructure.I2C_SlaveAddress = BL55072A_SLAVE_ADDR;
+    I2C_InitStructure.I2C_SlaveAddress = SHCT3_SLAVE_ADDR; // BL55072A_SLAVE_ADDR;
     I2C_InitStructure.I2C_Ack          = I2C_Ack_Enable;
     I2C_Init(I2C0, &I2C_InitStructure);
     I2C_Cmd(I2C0, ENABLE);
@@ -86,7 +86,7 @@ static void I2C0_Configuration(void)
  *           should be peformed with the IO initializing.
  * @return   void
  */
-void BL55072A_IIC_Init(void)
+void RTL8762_IIC_Init(void)
 {
 	RCC_Configuration();
 	PAD_Configuration();
@@ -280,25 +280,28 @@ void SkyIot_Lcd_Display(uint32_t humidity, int temperature, uint8_t rssi, uint8_
 // 测试代码
 void displaymain(void)
 {
-	uint32_t humidity;
-	int temperature;
-	uint8_t rssi;
-	uint8_t battery;
+//	uint32_t humidity;
+//	int temperature;
+//	uint8_t rssi;
+//	uint8_t battery;
+//	
+//	static uint8_t tmp=0;
+//	if(++tmp >= 10){
+//		tmp = 0;
+//	}
+//	humidity = 111*tmp;
+//	if(tmp&0x01){	
+//		temperature = -111*tmp;
+//	}else{
+//		temperature = 111*tmp;
+//	}
+//	rssi = 10*tmp;
+//	battery = 10*tmp;
+//	
+//   SkyIot_Lcd_Display(humidity, temperature, rssi, battery);
 	
-	static uint8_t tmp=0;
-	if(++tmp >= 10){
-		tmp = 0;
-	}
-	humidity = 111*tmp;
-	if(tmp&0x01){	
-		temperature = -111*tmp;
-	}else{
-		temperature = 111*tmp;
-	}
-	rssi = 10*tmp;
-	battery = 10*tmp;
 	
-   SkyIot_Lcd_Display(humidity, temperature, rssi, battery);
+	
 
 }
 

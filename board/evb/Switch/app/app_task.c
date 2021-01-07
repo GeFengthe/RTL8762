@@ -161,13 +161,14 @@ void app_main_task(void *p_param)
 
     mesh_start(EVENT_MESH, EVENT_IO_TO_APP, evt_queue_handle, io_queue_handle);
 	
-	// i2c_demo_init();
-	BL55072A_IIC_Init();
+	RTL8762_IIC_Init();
 	 os_delay(5);
-	memset(data, 0xF0, 18);
-	BL55072A_Init( data, 0);
-	 os_delay(5);
-	BL55072A_DisplayOn();
+//	memset(data, 0xF0, 18);
+//	BL55072A_Init( data, 0);
+//	 os_delay(5);
+//	BL55072A_DisplayOn();
+	
+	
 	
 	SkyBleMesh_MainLoop_timer1();
 	

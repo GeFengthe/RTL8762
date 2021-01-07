@@ -278,7 +278,7 @@ void app_le_profile_init(void)
 #include "skydisplay.h"
 void board_init(void)
 {
-	// BL55072A_IIC_Init();
+	// RTL8762_IIC_Init();
 }
 
 /**
