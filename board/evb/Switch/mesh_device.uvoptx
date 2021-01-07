@@ -174,7 +174,7 @@
           <Type>0</Type>
           <LineNumber>1953</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8477562</Address>
+          <Address>8477512</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -188,18 +188,18 @@
         <Bp>
           <Number>2</Number>
           <Type>0</Type>
-          <LineNumber>167</LineNumber>
+          <LineNumber>402</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8462836</Address>
+          <Address>8484606</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>.\app\app_task.c</Filename>
+          <Filename>.\app\skydisplay.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\app\app/app_task.c\167</Expression>
+          <Expression>\\app\app/skydisplay.c\402</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -217,6 +217,31 @@
           <count>2</count>
           <WinNumber>1</WinNumber>
           <ItemText>tmpindex</ItemText>
+        </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>readdata</ItemText>
+        </Ww>
+        <Ww>
+          <count>4</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>readid</ItemText>
+        </Ww>
+        <Ww>
+          <count>5</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>tmpres</ItemText>
+        </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>res_temp</ItemText>
+        </Ww>
+        <Ww>
+          <count>7</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>res_hum</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>

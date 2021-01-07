@@ -168,7 +168,7 @@ void app_main_task(void *p_param)
 //	 os_delay(5);
 //	BL55072A_DisplayOn();
 	
-	
+	SHTC3_Init();
 	
 	SkyBleMesh_MainLoop_timer1();
 	
