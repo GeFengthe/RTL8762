@@ -13,6 +13,7 @@ extern void BL55072A_DisplayOn(void);
 extern void SkyIot_Lcd_Display(uint32_t humidity, int temperature, uint8_t rssi, uint8_t battery);
 
 extern void SHTC3_Init(void);
+extern uint8_t SHTC3_Read_Temp_Hum(int *gettemp, uint32_t *gethum);
 
 extern void displaymain(void);
 

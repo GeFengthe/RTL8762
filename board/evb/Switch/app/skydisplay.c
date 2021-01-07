@@ -337,43 +337,52 @@ void SHTC3_Init(void)
 	initdata[0] = ((SHTC3_WAKE_UP_CMD>>8) & 0xFF);
 	initdata[1] = (SHTC3_WAKE_UP_CMD & 0xFF);	
 	I2C_MasterWrite(I2C0, initdata, 2);	
+	os_delay(5); //  唤醒后需延时
 	
 	initdata[0] = ((SHTC3_SOFT_RESET_CMD>>8) & 0xFF);
 	initdata[1] = (SHTC3_SOFT_RESET_CMD & 0xFF);	
 	I2C_MasterWrite(I2C0, initdata, 2);	
-	os_delay(10);
+	os_delay(10); //  软复位后需延时
+	
 	initdata[0] = ((SHTC3_READ_ID_CMD>>8) & 0xFF);
 	initdata[1] = (SHTC3_READ_ID_CMD & 0xFF);	
 	I2C_RepeatRead(I2C0, initdata, 2, readid, 2);
 	os_delay(5);	
 }
 
-	int res_temp=0;
-	uint32_t res_hum=0;
-I2C_Status tmpres=9;
-void SHTC3_Read_Temp_Hum(void)
+uint8_t SHTC3_Read_Temp_Hum(int *gettemp, uint32_t *gethum)
 {
 	uint8_t setdata[2];
 	uint8_t readdata[6]={0,0,0,0,0,0};
 	uint8_t crc_temp=0, crc_hum=0;
 	uint16_t tmp_temp=0, tmp_hum=0;
-//	int res_temp=0;
-//	uint32_t res_hum=0;
+	
+	int res_temp=0;
+	uint32_t res_hum=0;
+	I2C_Status tmpres = I2C_ERR_TIMEOUT;
+	
+	uint8_t ret = 0;
+	uint8_t timoutcnt = 0;
 	
 	setdata[0] = ((SHTC3_WAKE_UP_CMD>>8) & 0xFF);
 	setdata[1] = (SHTC3_WAKE_UP_CMD & 0xFF);	
 	I2C_MasterWrite(I2C0, setdata, 2);
+	os_delay(5); //  唤醒后需延时
 	
 	setdata[0] = ((SHTC3_NOR_READ_TEMP_FIR_DIS_CMD>>8) & 0xFF);
 	setdata[1] = (SHTC3_NOR_READ_TEMP_FIR_DIS_CMD & 0xFF);	
 	I2C_MasterWrite(I2C0, setdata, 2);	
-	os_delay(10);
+	// os_delay(10);
 	
-	tmpres=9;
-	while(tmpres!=I2C_Success){
+	do{
+		os_delay(7); //  启动采集后需延时,理论需要11~20ms
 		tmpres = I2C_MasterRead(I2C0, readdata, 6);	
-		os_delay(15);
-	}
+		if(++timoutcnt >= 10){
+			ret = 2;
+			goto EXIT_LAB;
+		}
+	}while(tmpres!=I2C_Success);
+	
 	//SHTC3检测完成，开始读取数据，连CRC总共6个byte  
 	tmp_temp = readdata[0];               // 温度数值高8位
 	tmp_temp = (tmp_temp<<8)|readdata[1]; // 温度数值低8位
@@ -387,23 +396,32 @@ void SHTC3_Read_Temp_Hum(void)
 		res_temp = tmp_temp;
 		res_temp = ((res_temp*175*10)>>16) - 450; // 保留一位小数点*10
 		
+		*gettemp = res_temp;
 		if(res_temp >= 0){ // 正温度		
 			SKYDISPLAY_PRINTF("sample temperatrue is:%d\n",res_temp); 	
 		}else{
 			SKYDISPLAY_PRINTF("sample temperatrue is:- %d\n",res_temp); 
 		}	
+	}else{
+		ret = 1;
 	}
 	
 	if(SHTC3_crc_Check(tmp_hum, crc_hum) == 0){
 		res_hum = tmp_hum;
 		res_hum = ((res_hum*1000) >> 16); // 保留一位小数点*10
-				
+		
+		*gethum = res_hum;		
 		SKYDISPLAY_PRINTF("sample humidity is:%d\n",res_hum);    	
+	}else{
+		ret = 1;
 	}
 	
+EXIT_LAB:	
 	setdata[0] = ((SHTC3_SLEEP_CMD>>8) & 0xFF);
 	setdata[1] = (SHTC3_SLEEP_CMD & 0xFF);	
 	I2C_MasterWrite(I2C0, setdata, 2);
+	
+	return ret;
 }
 
 
@@ -411,8 +429,8 @@ void SHTC3_Read_Temp_Hum(void)
 // 测试代码
 void displaymain(void)
 {
-//	uint32_t humidity;
-//	int temperature;
+	uint32_t humidity;
+	int temperature;
 //	uint8_t rssi;
 //	uint8_t battery;
 //	
@@ -429,9 +447,11 @@ void displaymain(void)
 //	rssi = 10*tmp;
 //	battery = 10*tmp;
 //	
+	
+	SHTC3_Read_Temp_Hum(&temperature , &humidity);
+	os_delay(5);
 //   SkyIot_Lcd_Display(humidity, temperature, rssi, battery);
 	
 	
-	SHTC3_Read_Temp_Hum();
 
 }
