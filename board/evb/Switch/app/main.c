@@ -275,7 +275,7 @@ void app_le_profile_init(void)
  *           should be peformed with the IO initializing.
  * @return   void
  */
-#include "skydisplay.h"
+#include "skyIICdevice.h"
 void board_init(void)
 {
 	// RTL8762_IIC_Init();

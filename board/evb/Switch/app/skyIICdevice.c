@@ -2,11 +2,11 @@
 *********************************************************************************************************
 *               Copyright(c) 2016, Realtek Semiconductor Corporation. All rights reserved.
 **********************************************************************************************************
-* @file     main.c
+* @file     
 * @brief    This file provides demo code of I2C master mode.
 * @details
-* @author   lance
-* @date     2018-02-05
+* @author   
+* @date     
 * @version  v1.0
 *********************************************************************************************************
 */
@@ -18,16 +18,19 @@
 #include "rtl876x_gpio.h"
 
 #include "os_sched.h"
-#include "skydisplay.h"
+#include "skyIICdevice.h"
 
 #define SKYDISPLAY_PRINTF   DBG_DIRECT 
+
+/*
+本驱动、接口设计时未考虑互斥关系。单线程上操作OK。跨线程操作时需加互斥关系。
+*/
 
 #define I2C0_SCL_PIN                P2_7        // 
 #define I2C0_SDA_PIN                P2_6        // 
 // 7bit addr
 #define BL55072A_SLAVE_ADDR         0x3E    // DISPLAY 0x7C>>1
 #define SHCT3_SLAVE_ADDR            0x70    // SENOR  
-
 
 
 /**

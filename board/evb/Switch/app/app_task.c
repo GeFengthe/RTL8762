@@ -117,7 +117,7 @@ void uart_init(void)
 {
     data_uart_init(P3_0, P3_1, app_send_uart_msg);
 }
-#include "skydisplay.h"
+#include "skyIICdevice.h"
 void i2c_demo_init(void);
 void i2c_demo_read(void);
 static plt_timer_t skyblemainloop_timer1 = NULL;
@@ -163,11 +163,11 @@ void app_main_task(void *p_param)
 	
 	RTL8762_IIC_Init();
 	 os_delay(5);
-//	memset(data, 0xF0, 18);
-//	BL55072A_Init( data, 0);
-//	 os_delay(5);
-//	BL55072A_DisplayOn();
-	
+	memset(data, 0xF0, 18);
+	BL55072A_Init( data, 0);
+	 os_delay(5);
+	BL55072A_DisplayOn();
+	 os_delay(5);	
 	SHTC3_Init();
 	
 	SkyBleMesh_MainLoop_timer1();

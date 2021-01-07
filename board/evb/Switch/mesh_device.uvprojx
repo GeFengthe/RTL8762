@@ -700,9 +700,9 @@
               <FilePath>.\app\skyadc.c</FilePath>
             </File>
             <File>
-              <FileName>skydisplay.c</FileName>
+              <FileName>skyIICdevice.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\app\skydisplay.c</FilePath>
+              <FilePath>.\app\skyIICdevice.c</FilePath>
             </File>
           </Files>
         </Group>

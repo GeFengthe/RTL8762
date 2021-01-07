@@ -1817,7 +1817,6 @@ extern void SkyBleMesh_MainLoop(void)
 }
 
 
-#include "skydisplay.h"
 static void SkyBleMesh_MainLoop_Timeout_cb(void *time)
 {		
 	#if USE_SOFT_WATCHDOG

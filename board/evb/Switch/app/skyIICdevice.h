@@ -1,5 +1,5 @@
-#ifndef __SKYDISPLAY_HEAD__
-#define __SKYDISPLAY_HEAD__
+#ifndef __SKYIICDEVICE_HEAD__
+#define __SKYIICDEVICE_HEAD__
 
 #include <stddef.h>    // standard definitions
 #include <stdint.h>    // standard integer definition
