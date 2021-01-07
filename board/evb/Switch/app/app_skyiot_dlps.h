@@ -41,7 +41,7 @@ extern void Led_Relay_tmr_ctrl_dlps(bool allowenter);
 extern void alm_ctrl_dlps(bool allowenter);
 extern void blemesh_factory_ctrl_dlps(bool allowenter);
 extern void alm_alive_dlps(bool allowenter);
-
+extern void Sky_alive_dlps(void);
 
 
 extern void SkyBleMesh_ReadyEnterDlps_cfg(void);

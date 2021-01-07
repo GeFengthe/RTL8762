@@ -75,7 +75,6 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 			plt_timer_delete(skybleenterdlps_timer, 0);
 			skybleenterdlps_timer = NULL;
 		}
-		
 		Reenter_tmr_ctrl_dlps(true);    
 	}
 }
@@ -97,7 +96,7 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 void SkyBleMesh_EnterDlps_timer(void)
 {	
 	if(skybleenterdlps_timer == NULL){ 	
-		skybleenterdlps_timer = plt_timer_create("dlps", 70, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
+		skybleenterdlps_timer = plt_timer_create("dlps", 62, true, 0, SkyBleMesh_EnterDlps_Timeout_cb);
 		if (skybleenterdlps_timer != NULL){
 			plt_timer_start(skybleenterdlps_timer, 0);
 		}
@@ -128,14 +127,14 @@ void SkyBleMesh_EnterDlps_cfg(void)
 void SkyBleMesh_timerout_cb(void * timer)
 {
     plt_timer_delete(skyalmenterdlps_timer,0);
+    skyalmenterdlps_timer = NULL;
     alm_ctrl_dlps(true);
 }
 
 
 void SkyBleMesh_ExitDlps_cfg(bool norexit)
 {
-    uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
-    uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
+
 	dlpsstatu = 3; // exit
     if(System_WakeUpInterruptValue(P4_2) == 1)
     {
@@ -155,8 +154,6 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisioned且电量正常
         beacon_start(); // 配网才会打开，这个要验证下，未配网不广播
         gap_sched_scan(false);
-        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
         gap_sched_scan(true);
 
 	}	
@@ -167,6 +164,22 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 
 
 }
+void Sky_alive_dlps(void)
+{
+    static uint32_t alive_cnt = 0;
+    if(DlpsCtrlStatu_t.bit.alive == 1)
+    {
+        alive_cnt ++;
+        if(alive_cnt == 60)
+        {
+            alm_alive_dlps(true);
+            alive_cnt =0;
+        }
+    }else{
+        alive_cnt =0;
+    }
+}
+
 bool switch_check_dlps_statu(void)
 {
     if (DlpsCtrlStatu_t.dword == 0){

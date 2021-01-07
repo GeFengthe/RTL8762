@@ -374,7 +374,7 @@ void app_handle_gap_msg(T_IO_MSG *p_gap_msg)
     uint8_t conn_id;
     memcpy(&gap_msg, &p_gap_msg->u.param, sizeof(p_gap_msg->u.param));
 
-    DBG_DIRECT("app_handle_gap_msg: sub_type %d", p_gap_msg->subtype);
+//    DBG_DIRECT("app_handle_gap_msg: sub_type %d", p_gap_msg->subtype);
     mesh_inner_msg_t mesh_inner_msg;
     mesh_inner_msg.type = MESH_BT_STATUS_UPDATE;
     mesh_inner_msg.sub_type = p_gap_msg->subtype;

@@ -55,8 +55,8 @@ uint8_t  ackattrsval=0;
 #define BLEMESH_COMMAND_WAIT_MS   (500) /* WAIT 250MS FOR Report ack */	
 #define DEFAULT_WAKEUP_ALIVE_CNT  (3)
 
-#define DEFAULT_SKYIOT_ALIVE_MS   (1000*60*4)  // qlj 需要一个定时器来换算
-#define DEFAULT_GATEWAY_ALIVE_MS  (1000*60*4)
+#define DEFAULT_SKYIOT_ALIVE_MS   (1000*60*5-10)  // qlj 需要一个定时器来换算
+#define DEFAULT_GATEWAY_ALIVE_MS  (1000*60*10-10)
 #define DEFAULT_GATEWAY_SENQ_MS   (5000)
 
 
@@ -1542,18 +1542,18 @@ static void Main_Event_Handle(void)
 
 			case EVENT_TYPE_KEEPALIVE:
                 if (mIotManager.alive_status == 0){
-                        Reset_iotmanager_para();
-					
-					// used in delay report
+                    Reset_iotmanager_para();
 					mIotManager.report_flag = 0;
 					delayreport = (uint32_t)(rand()%80)*50 + 50; // 50~4000ms
-					oldtick = HAL_GetTickCount();	
+					oldtick = HAL_GetTickCount();
+                    alm_alive_dlps(true);                    
 					DBG_DIRECT("Main_Event_Handle device online!\n");
 				}else {
-					mIotManager.recv_alive_tick = HAL_GetTickCount();	
+					mIotManager.recv_alive_tick = HAL_GetTickCount();
+                    alm_alive_dlps(true);
 					APP_DBG_PRINTF1("Main_Event_Handle recv keepalive tick: %d!\n", mIotManager.recv_alive_tick);
 				}
-                alm_alive_dlps(true);
+//                alm_alive_dlps(true);
 				break;
 			case EVENT_TYPE_UPDATE_PROPERTY:
 				if(mIotManager.alive_status == 0){
@@ -1629,18 +1629,14 @@ static bool Main_Check_Online(void)
 	if (alivetimecnt >= 30*50){  // 30*50ms
 		if (mIotManager.alive_wakeup_cnt < DEFAULT_WAKEUP_ALIVE_CNT){
 			if (mIotManager.alive_status == 0){
-//				DBG_DIRECT("Main_Check_Online wakeupcnt %d\n", mIotManager.alive_wakeup_cnt);
                 alm_alive_dlps(false);
-//                SkyBleMesh_cleanflag_timer();
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
-                
 			}else{
 				sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);     //
 				 DBG_DIRECT("Main_Check_Online wakeupcnt %d %d\n", mIotManager.alive_wakeup_cnt, sub_timeout_ms);
 				if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
                     alm_alive_dlps(false);
-//                    SkyBleMesh_cleanflag_timer();
 					SkyIotSendKeepAlivePacket();
 					mIotManager.send_alive_tick = tick;
 				}
@@ -1650,7 +1646,6 @@ static bool Main_Check_Online(void)
 			sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.send_alive_tick, tick);
 			if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
 				APP_DBG_PRINTF1("Main_Check_Online sub_timeout_ms %d\n", sub_timeout_ms);
-//                gap_sched_scan(true);   //开扫描
 				//SEND ALIVE PACKET
                 alm_alive_dlps(false);
 //                SkyBleMesh_cleanflag_timer();
@@ -1671,7 +1666,6 @@ static bool Main_Check_Online(void)
 				mIotManager.recv_alive_tick     = 0;
 				memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
 				mIotManager.reppack_len = 0;
-				
 			#if USE_SWITCH_FOR_SKYIOT
 //				mIotManager.swt1_seqnum = 0;
 			#endif
@@ -1824,7 +1818,7 @@ extern void SkyBleMesh_MainLoop(void)
 		//recv message	
 		Main_Event_Handle();
 //		SkyFunction_Handle(newtick);
-		
+		Sky_alive_dlps();
 		//判断设备是否离线
 		if(Main_Check_Online() == true){
 			//状态上报 
@@ -2044,7 +2038,7 @@ extern uint8_t SkyBleMesh_Batt_Station(void)
 }
 extern void SkyBleMesh_lightctrl_ON(void)
 {
-    if((mIotManager.alive_status == 1)&&(mIotManager.batt_rank == BATT_NORMAL))
+    if((mIotManager.alive_status == 1)&&(mIotManager.mLightManager.bat == 0))
     {
         HAL_Lighting_ON(0);
     }else{
@@ -2054,7 +2048,7 @@ extern void SkyBleMesh_lightctrl_ON(void)
 
 extern void SkyBleMesh_lightctrl_OFF(void)
 {
-  if((mIotManager.alive_status == 1)&&(mIotManager.batt_rank == BATT_NORMAL))
+  if((mIotManager.alive_status == 1)&&(mIotManager.mLightManager.bat == 0))
     {
         HAL_Lighting_OFF(0);
     }else{
