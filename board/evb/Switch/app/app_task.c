@@ -117,6 +117,29 @@ void uart_init(void)
 {
     data_uart_init(P3_0, P3_1, app_send_uart_msg);
 }
+#include "skydisplay.h"
+void i2c_demo_init(void);
+void i2c_demo_read(void);
+static plt_timer_t skyblemainloop_timer1 = NULL;
+static void SkyBleMesh_MainLoop_Timeout_cb1(void *time)
+{			
+	static uint8_t cnt=0;
+	if(++cnt >= 1){
+		displaymain();
+		// i2c_demo_read();
+		cnt=0;
+	}
+}
+
+void SkyBleMesh_MainLoop_timer1(void)
+{	
+	if(skyblemainloop_timer1 == NULL){		
+		skyblemainloop_timer1 = plt_timer_create("main", 5000, true, 0, SkyBleMesh_MainLoop_Timeout_cb1);
+		if (skyblemainloop_timer1 != NULL){
+			plt_timer_start(skyblemainloop_timer1, 0);
+		}
+	}
+}
 
 /**
  * @brief        App task to handle events & messages
@@ -126,7 +149,8 @@ void uart_init(void)
 void app_main_task(void *p_param)
 {
     uint8_t event;
-
+	uint8_t data[18];
+	
 	#if USE_SOFT_WATCHDOG
 	SoftWdtInit(APPTASK_THREAD_SWDT_ID, 3000);    // config softwdt as 3000ms 
 	#endif
@@ -136,7 +160,17 @@ void app_main_task(void *p_param)
     gap_start_bt_stack(evt_queue_handle, io_queue_handle, MAX_NUMBER_OF_GAP_MESSAGE);
 
     mesh_start(EVENT_MESH, EVENT_IO_TO_APP, evt_queue_handle, io_queue_handle);
-	 
+	
+	// i2c_demo_init();
+	Display_IIC_Init();
+	 os_delay(5);
+	memset(data, 0xF0, 18);
+	BL55072A_Init( data, 18);
+	 os_delay(5);
+	BL55072A_DisplayOn();
+	
+	SkyBleMesh_MainLoop_timer1();
+	
 	#if 0 
 	// module test	
 	printi("TEST_MODE=%d",test_mode_value);

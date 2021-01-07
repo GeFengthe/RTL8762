@@ -162,14 +162,14 @@ void mesh_stack_init(void)
     health_server_reg(0, &health_server_model);
     health_server_set_company_id(&health_server_model, COMPANY_ID);
 	
-	SkyBleMesh_Vendormodel_init(0);
+	// SkyBleMesh_Vendormodel_init(0);
 
     compo_data_page0_header_t compo_data_page0_header = {COMPANY_ID, PRODUCT_ID, VERSION_ID};
     compo_data_page0_gen(&compo_data_page0_header);
 	
-	SkyBleMesh_App_Init();
-	SkyBleMesh_Get_UUID(dev_uuid, MESH_DEV_UUID_LEN);	// qlj 整理
-    device_uuid_set(dev_uuid);
+	// SkyBleMesh_App_Init();
+	// SkyBleMesh_Get_UUID(dev_uuid, MESH_DEV_UUID_LEN);	// qlj 整理
+    // device_uuid_set(dev_uuid);
 	
     /** init mesh stack */
     mesh_init();	
@@ -278,7 +278,7 @@ void app_le_profile_init(void)
 #include "skydisplay.h"
 void board_init(void)
 {
-	Display_IIC_Init();
+	// Display_IIC_Init();
 }
 
 /**

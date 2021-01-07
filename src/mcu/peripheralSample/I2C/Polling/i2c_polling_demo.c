@@ -19,8 +19,8 @@
 #include "trace.h"
 
 /* Defines ------------------------------------------------------------------*/
-#define I2C0_SCL_PIN                P3_2        //C9: 0
-#define I2C0_SDA_PIN                P1_2        //C9: 1
+#define I2C0_SCL_PIN                P3_3        //C9: 0
+#define I2C0_SDA_PIN                P3_2        //C9: 1
 
 /**
   * @brief  Initialization of pinmux settings and pad settings.
@@ -71,6 +71,20 @@ void i2c_demo(void)
 
     board_i2c_init();
     driver_i2c_init();
+
+    I2C_RepeatRead(I2C0, i2c_writeBuf, 4, i2c_readBuf, 4);
+}
+
+
+void i2c_demo_init(void)
+{
+    board_i2c_init();
+    driver_i2c_init();
+}
+void i2c_demo_read(void)
+{
+    uint8_t i2c_writeBuf[16] = {0x00, 0x00, 0x66, 0x68, 0x77, 0x88};
+    uint8_t i2c_readBuf[16] = {0};
 
     I2C_RepeatRead(I2C0, i2c_writeBuf, 4, i2c_readBuf, 4);
 }

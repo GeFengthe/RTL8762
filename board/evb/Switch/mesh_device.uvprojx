@@ -674,6 +674,11 @@
               <FileType>1</FileType>
               <FilePath>.\app\io_management.c</FilePath>
             </File>
+            <File>
+              <FileName>i2c_polling_demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\..\..\src\mcu\peripheralSample\I2C\Polling\i2c_polling_demo.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
