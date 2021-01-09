@@ -71,7 +71,7 @@ typedef enum
 #define APP_REACT_MODE_A                3
 #define BATT_NORMAL                     0           // 电压正常
 #define BATT_WARING                     1           // 警戒电压
-#define BATT_WARIN_RANK                 2500        // 警戒电压等级1对应的电压值
+#define BATT_WARIN_RANK                 2400        // 警戒电压等级1对应的电压值
 #define BATT_THRESHOLD_VAL              100         // 电压判定误差范畴
 #define BATT_TIMEOUT                    10*60*1000  // 电压采集时间周期
 

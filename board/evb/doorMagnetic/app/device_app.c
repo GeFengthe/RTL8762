@@ -875,7 +875,7 @@ bool prov_cb(prov_cb_type_t cb_type, prov_cb_data_t cb_data)
         {
             // mesh_model_bind_all_key();
 			SkyBleMesh_Unprov_timer_delet();
-			SkyBleMesh_ChangeScan_timer(6);
+			SkyBleMesh_ChangeScan_timer(7);
 			DBG_DIRECT("-------PROV_CB_TYPE_COMPLETE-------\r\n");
             prov_data_p pprov_data = cb_data.pprov_data;
             data_uart_debug("been prov-ed with addr 0x%04x!\r\n", pprov_data->unicast_address);

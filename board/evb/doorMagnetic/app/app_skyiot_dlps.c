@@ -47,7 +47,7 @@ static void SkyBleMesh_StopWakeup_tmr(void)
 static void SkyBleMesh_StartWakeup_tmr(void)
 {	
 	if(skyblewakeup_timer == NULL){		
-		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*19, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
+		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*2, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
 		if (skyblewakeup_timer != NULL){
 			plt_timer_start(skyblewakeup_timer, 0);
 		}
@@ -117,6 +117,7 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 void SkyBleMesh_EnterDlps_cfg(void)
 {	
 	// APP_DBG_PRINTF(" SkyBleMesh_EnterDlps_cfg");
+    SkyBleMesh_StopWakeup_tmr();
 	dlpsstatu = 2; // enter
 	
 	// switch1
@@ -129,10 +130,13 @@ void SkyBleMesh_EnterDlps_cfg(void)
 
 void SkyBleMesh_ExitDlps_cfg(bool norexit)
 {
-    uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
-    uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
+//    uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
+//    uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
 	dlpsstatu = 3; // exit
-
+    if(System_WakeUpInterruptValue(P4_2) == TRUE)
+    {
+        door_edpls_ctrl_dlps(false);
+    }
 	if(norexit == true){ // 正常退出DLPS
 
 		HAL_SwitchKey_Dlps_Control(false);
@@ -145,8 +149,8 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisioned且电量正常
         beacon_start(); // 配网才会打开，这个要验证下，未配网不广播
         gap_sched_scan(false);
-        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
+//        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
+//        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
         gap_sched_scan(true);
 
 	}	
@@ -263,6 +267,17 @@ void door_door_ctrl_dlps(bool allowenter)
         DlpsCtrlStatu_t.bit.door = 0;
     }else{
         DlpsCtrlStatu_t.bit.door = 1;
+    }
+}
+
+void door_edpls_ctrl_dlps(bool allowenter)
+{
+    if(allowenter)
+    {
+        DlpsCtrlStatu_t.bit.edlps = 0;
+    }else
+    {
+        DlpsCtrlStatu_t.bit.edlps = 1;
     }
 }
 

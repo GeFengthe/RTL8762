@@ -157,9 +157,9 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>1678</LineNumber>
+          <LineNumber>902</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8474594</Address>
+          <Address>8471830</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -168,7 +168,7 @@
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_doorMagnetic\board\evb\doorMagnetic\app\app_skyiot_server.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\app\app/app_skyiot_server.c\1678</Expression>
+          <Expression>\\app\app/app_skyiot_server.c\902</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -226,6 +226,11 @@
           <count>10</count>
           <WinNumber>1</WinNumber>
           <ItemText>vol</ItemText>
+        </Ww>
+        <Ww>
+          <count>11</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>cmd_type</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>

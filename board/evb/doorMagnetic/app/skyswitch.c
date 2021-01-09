@@ -33,8 +33,8 @@ static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO,SWITCH_STU_GPIO,SWITCH_A
 
 
 #define MINPRESSTIME_2S				(40)	
-#define MIDPRESSTIME_5S   			(100)  // 50ms定时器调用
-#define MAXPRESSTIME_8S             (160)
+#define MIDPRESSTIME_5S   			(80)  // 50ms定时器调用
+#define MAXPRESSTIME_8S             (200)
 typedef enum{
 	SCAN_KEY_INIT = 0x00,
 	SCAN_KEY_PRESS,    
@@ -104,7 +104,7 @@ void HAL_Skymag_Dlps_Control(bool isenter)
 {
     if(isenter)
     {
-//        DBG_DIRECT("---SKYMAG stu=%d,alm=%d",GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_STU_ENUM])) == 1,GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1);
+        DBG_DIRECT("---SKYMAG stu=%d,alm=%d",GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_STU_ENUM])) == 1,GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1);
         if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1)
         {
             Pad_Config(SWITCH_ALM_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
