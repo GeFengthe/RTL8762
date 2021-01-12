@@ -41,6 +41,10 @@
 //门磁传感器
 #define ATTR_CLUSTER_ID_STU (0x0205)    //1byte 防拆
 
+//温湿度传感器
+#define ATTR_HUMITURE_ID_TEM (0x0210)    //4byte 温度 float
+#define ATTR_HUMITURE_ID_HUM (0x0211)   // 4byte 
+
 
 // 这里的command是从网关角度来定义的
 
