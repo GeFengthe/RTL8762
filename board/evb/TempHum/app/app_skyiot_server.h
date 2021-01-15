@@ -140,9 +140,13 @@ extern void SkyBle_ReadSHTC3(void);
 extern void SkyBleMesh_BattWaringTx(uint32_t ms);
 extern void SkyBleMesh_DisPlayTempHum(void);
 extern void SkyLcd_Process(void);
-extern void SkyBleMesh_TempHumTx(uint32_t time_ms);
+extern void SkyBleMesh_TempHumTx(uint32_t time_ms,int temcnt,uint32_t humcnt);
 extern void SkyBleMesh_ReadOpentime(void);
 extern void SkyBleMesh_alivetimer(void);
+extern void SkyBleMesh_attrtimer(void);
+extern void SkyBleMesh_attrdelettimer(void);
+void SkyBleMesh_alivetimedelete(void);
+void Main_WithoutNet_Handle(void);
 
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx);
 

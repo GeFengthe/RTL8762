@@ -30,8 +30,8 @@ static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO};
 
 
 #define MINPRESSTIME_2S				(40)	
-#define MIDPRESSTIME_5S   			(100)  // 50ms定时器调用
-#define MAXPRESSTIME_8S             (160)
+#define MIDPRESSTIME_5S   			(90)  // 50ms定时器调用
+#define MAXPRESSTIME_8S             (200)
 
 #define MINALM_1S                   1000
 #define MAXALM_2S                   2000
