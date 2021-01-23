@@ -47,7 +47,7 @@ static void SkyBleMesh_StopWakeup_tmr(void)
 static void SkyBleMesh_StartWakeup_tmr(void)
 {	
 	if(skyblewakeup_timer == NULL){		
-		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*2, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
+		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*10, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
 		if (skyblewakeup_timer != NULL){
 			plt_timer_start(skyblewakeup_timer, 0);
 		}
@@ -57,6 +57,8 @@ static void SkyBleMesh_StartWakeup_tmr(void)
 
 void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 {
+    if(attrdlps == 0)
+    {
 	if(SkyBleMesh_Is_No_ReportMsg() == true){
 		blemesh_report_ctrl_dlps(true);		
 	}else{
@@ -74,9 +76,9 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 			plt_timer_delete(skybleenterdlps_timer, 0);
 			skybleenterdlps_timer = NULL;
 		}
-		
 		Reenter_tmr_ctrl_dlps(true);    
 	}
+    }
 }
 
 static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
@@ -106,18 +108,14 @@ void SkyBleMesh_EnterDlps_timer(void)
 void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
 	dlpsstatu = 1; // ready
-	SkyBleMesh_StopMainLoop_tmr();	
-	// ble 
-//	beacon_stop();
-    gap_sched_scan(false);    
-	// sw timer
-    SkyBleMesh_StartWakeup_tmr();
+    SkyBleMesh_StopMainLoop_tmr();
+    DBG_DIRECT("----DLPS-dlpsstatu=%d",dlpsstatu);
 }
 
 void SkyBleMesh_EnterDlps_cfg(void)
 {	
 	// APP_DBG_PRINTF(" SkyBleMesh_EnterDlps_cfg");
-    SkyBleMesh_StopWakeup_tmr();
+//    SkyBleMesh_StopWakeup_tmr();
 	dlpsstatu = 2; // enter
 	
 	// switch1
@@ -130,13 +128,7 @@ void SkyBleMesh_EnterDlps_cfg(void)
 
 void SkyBleMesh_ExitDlps_cfg(bool norexit)
 {
-//    uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
-//    uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
 	dlpsstatu = 3; // exit
-    if(System_WakeUpInterruptValue(P4_2) == TRUE)
-    {
-        door_edpls_ctrl_dlps(false);
-    }
 	if(norexit == true){ // 正常退出DLPS
 
 		HAL_SwitchKey_Dlps_Control(false);
@@ -144,14 +136,8 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 		SkyBleMesh_DlpsLight_Handle(false);
         HAL_Skymag_Dlps_Control(false);
 	}
-//	beacon_start();  	
-	// ble
 	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisioned且电量正常
         beacon_start(); // 配网才会打开，这个要验证下，未配网不广播
-        gap_sched_scan(false);
-//        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-//        gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
-        gap_sched_scan(true);
 
 	}	
 	
@@ -159,9 +145,7 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 	SkyBleMesh_StartMainLoop_tmr();
 	SkyBleMesh_EnterDlps_timer();
 //	Reenter_tmr_ctrl_dlps(false);
-	SkyBleMesh_StopWakeup_tmr();
-
-
+//	SkyBleMesh_StopWakeup_tmr();
 }
 void Sky_alive_dlps(void)
 {
@@ -237,12 +221,12 @@ void Led_Relay_tmr_ctrl_dlps(bool allowenter)
     }
 }
 
-void inf_ctrl_dlps(bool allowenter)
+void gap_ctrl_dlps(bool allowenter)
 {
     if(allowenter){
-        DlpsCtrlStatu_t.bit.inf = 0;
+        DlpsCtrlStatu_t.bit.gap = 0;
     }else{
-        DlpsCtrlStatu_t.bit.inf = 1;
+        DlpsCtrlStatu_t.bit.gap = 1;
     }
 }
 void blemesh_factory_ctrl_dlps(bool allowenter)
@@ -261,24 +245,16 @@ void door_alive_ctrl_dlps(bool allowenter)
         DlpsCtrlStatu_t.bit.alive = 1;
     }
 }
-void door_door_ctrl_dlps(bool allowenter)
-{
-    if(allowenter){
-        DlpsCtrlStatu_t.bit.door = 0;
-    }else{
-        DlpsCtrlStatu_t.bit.door = 1;
-    }
-}
-
-void door_edpls_ctrl_dlps(bool allowenter)
+void blemesh_key_dlps(bool allowenter)
 {
     if(allowenter)
     {
-        DlpsCtrlStatu_t.bit.edlps = 0;
+        DlpsCtrlStatu_t.bit.key = 0;
     }else
     {
-        DlpsCtrlStatu_t.bit.edlps = 1;
+        DlpsCtrlStatu_t.bit.key = 1;
     }
 }
+
 
 

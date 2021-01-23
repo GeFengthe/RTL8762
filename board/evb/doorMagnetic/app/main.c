@@ -290,9 +290,6 @@ void driver_init(void)
 	Hal_Timer_init();
 	OS_WDTInit();
 	#endif
-     beacon_start();
-     gap_sched_scan(false);
-     gap_sched_scan(true);
 	 SkyBleMesh_Batterval_Lightsense(true);
 	 uint8_t batt_station = SkyBleMesh_Batt_Station();
 	// 要在 mesh_stack_init后获取，后面整理下
@@ -345,7 +342,7 @@ void app_enter_dlps_config(void)
 void app_exit_dlps_config(void)
 {
 	 DBG_DIRECT("Exit DLPS\r\n");
-     DBG_DIRECT("wakeup =%d----\r\n",sky_findPin());
+//     DBG_DIRECT("wakeup =%d----\r\n",sky_findPin());
 	
 	SkyBleMesh_ExitDlps_cfg(true);
 	

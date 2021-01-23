@@ -40,6 +40,7 @@
 
 #include "user_cmd_parse.h"
 #include "app_skyiot_server.h"
+#include "app_skyiot_dlps.h"
 
 #if ENABLE_DLPS
 #include "io_management.h"
@@ -167,10 +168,12 @@ void app_handle_dev_state_evt(T_GAP_DEV_STATE new_state, uint16_t cause)
         DBG_DIRECT("GAP_ADV=%d-----\r\n",new_state.gap_scan_state);
         if(new_state.gap_scan_state == GAP_SCAN_STATE_STOP)
         {
+//                gap_ctrl_dlps(true);
 //            DBG_DIRECT(" GAP_SCAN_STOP--------\r\n");
         }
         if(new_state.gap_scan_state == GAP_SCAN_STATE_START)
         {
+//                gap_ctrl_dlps(false);
 //            DBG_DIRECT("GAP_SCAN_start--------\r\n");
         }
     }

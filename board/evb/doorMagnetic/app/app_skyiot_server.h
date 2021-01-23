@@ -86,7 +86,9 @@ typedef enum
     UNPROV_TIMEOUT,
     PROV_SUCCESS_TIMEOUT,
     test_light_TIMEOUT,
+    SWITCH_TIMEOUT,
 } SW_TIMER_MSG_TYPE;
+
 
 typedef enum
 {
@@ -97,6 +99,8 @@ typedef enum
     MESH_PROVISION_STATE_PROVED,        //已配网
 } MESH_PROVISION_STATE_e;
 extern MESH_PROVISION_STATE_e mesh_provison_state;
+
+extern uint8_t attrdlps;
 
 extern bool Hal_Get_Ble_MacAddr(uint8_t* mac);
 extern void SkyBleMesh_Get_DeviceName(char *name, uint8_t *len);
@@ -125,6 +129,8 @@ extern void SkyBleMesh_MainLoop(void);
 extern uint8_t SkyBleMesh_App_Init(void);
 extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt);
 extern uint8_t SkyBleMesh_Batt_Station(void);
+extern void SkyBleMesh_alivetimer(void);
+extern void SkySwitch_Handle(uint8_t key_mode, bool isprov);
 
 
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx);

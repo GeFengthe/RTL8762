@@ -145,7 +145,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>JL2CM3</Key>
-          <Name>-U59700618 -O78 -S5 -ZTIFSpeedSel1000 -A0 -C0 -JU1 -JI127.0.0.1 -JP0 -RST0 -N00("ARM CoreSight SW-DP") -D00(2BA01477) -L00(0) -TO18 -TC10000000 -TP21 -TDS8004 -TDT0 -TDC1F -TIEFFFFFFFF -TIP8 -TB1 -TFE0 -FO15 -FD200000 -FC4000 -FN2 -FF0RTL876x_SPI_FLASH -FS0800000 -FL0800000 -FF1RTL876x_LOG_TRACE -FS18000000 -FL11000000</Name>
+          <Name>-U20080643 -O78 -S5 -ZTIFSpeedSel1000 -A0 -C0 -JU1 -JI127.0.0.1 -JP0 -RST0 -N00("ARM CoreSight SW-DP") -D00(2BA01477) -L00(0) -TO18 -TC10000000 -TP21 -TDS8004 -TDT0 -TDC1F -TIEFFFFFFFF -TIP8 -TB1 -TFE0 -FO15 -FD200000 -FC4000 -FN2 -FF0RTL876x_SPI_FLASH -FS0800000 -FL0800000 -FF1RTL876x_LOG_TRACE -FS18000000 -FL11000000</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -157,9 +157,9 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>902</LineNumber>
+          <LineNumber>1119</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8471830</Address>
+          <Address>8472542</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -168,7 +168,39 @@
           <BreakIfRCount>1</BreakIfRCount>
           <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_doorMagnetic\board\evb\doorMagnetic\app\app_skyiot_server.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\app\app/app_skyiot_server.c\902</Expression>
+          <Expression>\\app\app/app_skyiot_server.c\1119</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>1184</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>8475012</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_doorMagnetic\board\evb\doorMagnetic\app\app_skyiot_server.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\app\app/app_skyiot_server.c\1184</Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>700</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>8471400</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_doorMagnetic\board\evb\doorMagnetic\app\app_skyiot_server.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\app\app/app_skyiot_server.c\700</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -180,42 +212,42 @@
         <Ww>
           <count>1</count>
           <WinNumber>1</WinNumber>
-          <ItemText>DlpsCtrlStatu_t.dword</ItemText>
+          <ItemText>DlpsCtrlStatu_t</ItemText>
         </Ww>
         <Ww>
           <count>2</count>
           <WinNumber>1</WinNumber>
-          <ItemText>DlpsCtrlStatu_t</ItemText>
+          <ItemText>mIotManager</ItemText>
         </Ww>
         <Ww>
           <count>3</count>
           <WinNumber>1</WinNumber>
-          <ItemText>mIotManager</ItemText>
+          <ItemText>pparse_value</ItemText>
         </Ww>
         <Ww>
           <count>4</count>
           <WinNumber>1</WinNumber>
-          <ItemText>pparse_value</ItemText>
+          <ItemText>p_data</ItemText>
         </Ww>
         <Ww>
           <count>5</count>
           <WinNumber>1</WinNumber>
-          <ItemText>p_data</ItemText>
+          <ItemText>data</ItemText>
         </Ww>
         <Ww>
           <count>6</count>
           <WinNumber>1</WinNumber>
-          <ItemText>data</ItemText>
+          <ItemText>vol</ItemText>
         </Ww>
         <Ww>
           <count>7</count>
           <WinNumber>1</WinNumber>
-          <ItemText>vol</ItemText>
+          <ItemText>sample_data[j]</ItemText>
         </Ww>
         <Ww>
           <count>8</count>
           <WinNumber>1</WinNumber>
-          <ItemText>sample_data[j]</ItemText>
+          <ItemText>vol</ItemText>
         </Ww>
         <Ww>
           <count>9</count>
@@ -224,11 +256,6 @@
         </Ww>
         <Ww>
           <count>10</count>
-          <WinNumber>1</WinNumber>
-          <ItemText>vol</ItemText>
-        </Ww>
-        <Ww>
-          <count>11</count>
           <WinNumber>1</WinNumber>
           <ItemText>cmd_type</ItemText>
         </Ww>

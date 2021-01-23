@@ -17,12 +17,11 @@ typedef union
         uint32_t unprov:  1; // unprov or proved
         uint32_t report:  1; // report attr,FIFO\FLAG
         uint32_t ledtmr:  1; // led relay timer1
-        uint32_t inf:     1; // inf
+        uint32_t gap:     1; // inf
         uint32_t factory: 1; // PCB & device check
         uint32_t alive:   1;
-        uint32_t door:    1;
-        uint32_t edlps:   1;
-        uint32_t rsvd:    22;        //24
+        uint32_t key:     1;        //配网按键
+        uint32_t rsvd:    23;        //24
     } bit;
 } DLPS_CTRL_STATU_T;
 extern DLPS_CTRL_STATU_T DlpsCtrlStatu_t;
@@ -39,7 +38,7 @@ extern void blemesh_unprov_ctrl_dlps(bool allowenter);
 extern void blemesh_report_ctrl_dlps(bool allowenter);
 extern void Reenter_tmr_ctrl_dlps(bool allowenter);
 extern void Led_Relay_tmr_ctrl_dlps(bool allowenter);
-extern void inf_ctrl_dlps(bool allowenter);
+extern void gap_ctrl_dlps(bool allowenter);
 extern void blemesh_factory_ctrl_dlps(bool allowenter);
 extern void door_alive_ctrl_dlps(bool allowenter);
 extern void door_edpls_ctrl_dlps(bool allowenter);
@@ -48,8 +47,9 @@ extern void door_edpls_ctrl_dlps(bool allowenter);
 extern void SkyBleMesh_ReadyEnterDlps_cfg(void);
 extern void SkyBleMesh_EnterDlps_cfg(void);
 extern void SkyBleMesh_ExitDlps_cfg(bool norexit);
-extern void door_door_ctrl_dlps(bool allowenter);
 extern void Sky_alive_dlps(void);
+
+extern void blemesh_key_dlps(bool allowenter);      //配网按键低功耗处理
 
 
 #endif // 

@@ -62,7 +62,7 @@ extern bool HAL_Switch_Is_Relese(void);
 extern uint8_t Read_ZVD_Statu(void);
 extern uint8_t ReadStatus(void);
 extern void HAL_Skymag_Dlps_Control(bool isenter);
-extern uint8_t sky_findPin(void);
+extern void Scan_Keyboard_Function(void);
 
 #endif //
 
