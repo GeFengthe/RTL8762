@@ -179,7 +179,7 @@ void SkyLed_Timeout_cb(void *timer)
 void Start_LED_Timer(void)
 {
 	if(LEDCtrl_timer == NULL){
-		LEDCtrl_timer = plt_timer_create("ledtest", 100, true, 0, (void*)SkyLed_Timeout_cb); 
+		LEDCtrl_timer = plt_timer_create("ledtest", 100, true, 0, SkyLed_Timeout_cb); 
 		if(LEDCtrl_timer != NULL){
 			Led_Relay_tmr_ctrl_dlps(false);
 			plt_timer_start(LEDCtrl_timer, 0);
@@ -189,7 +189,7 @@ void Start_LED_Timer(void)
 void start_rled_timer(void)
 {
    if(RLEDCrl_timer == NULL){
-       RLEDCrl_timer = plt_timer_create("rled",100,false,0,(void*)SkyR_Ctrl_Timeout_cb);
+       RLEDCrl_timer = plt_timer_create("rled",100,false,0,SkyR_Ctrl_Timeout_cb);
        if(RLEDCrl_timer !=NULL)
        {
            Led_Relay_tmr_ctrl_dlps(false);

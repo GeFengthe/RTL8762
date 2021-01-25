@@ -49,7 +49,7 @@ static SCAN_KEY_STATUS_e keystatus = SCAN_KEY_INIT;
 
 static SkySwitchManager *mSwitchManager=NULL;
 
-static plt_timer_t  skyble_switch_timer = NULL;     //按键定时器句柄
+//static plt_timer_t  skyble_switch_timer = NULL;     //按键定时器句柄
 
 
 
@@ -119,23 +119,35 @@ void HAL_Skymag_Dlps_Control(bool isenter)
     if(isenter)
     {
 //        DBG_DIRECT("---SKYMAG stu=%d,alm=%d",GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_STU_ENUM])) == 1,GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1);
-        if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1)
+        if(almdlps ==0)
+        {
+            if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_ALM_ENUM])) == 1)
+            {
+                Pad_Config(SWITCH_ALM_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_LOW);
+                System_WakeUpPinEnable(SWITCH_ALM_GPIO,PAD_WAKEUP_POL_LOW,0);
+            }else
+            {
+                Pad_Config(SWITCH_ALM_GPIO,PAD_SW_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_LOW);
+                System_WakeUpPinEnable(SWITCH_ALM_GPIO,PAD_WAKEUP_POL_HIGH,0);
+            }
+        }else
         {
             Pad_Config(SWITCH_ALM_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-            System_WakeUpPinEnable(SWITCH_ALM_GPIO,PAD_WAKEUP_POL_LOW,0);
-        }else
-        {
-            Pad_Config(SWITCH_ALM_GPIO,PAD_SW_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_LOW);
-            System_WakeUpPinEnable(SWITCH_ALM_GPIO,PAD_WAKEUP_POL_HIGH,0);
         }
-         if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_STU_ENUM])) == 1)
+        if(studlps == 0)
         {
-            Pad_Config(SWITCH_STU_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_HIGH);
-            System_WakeUpPinEnable(SWITCH_STU_GPIO,PAD_WAKEUP_POL_LOW,0);
+            if(GPIO_ReadInputDataBit(GPIO_GetPin(SwitchIO[SKYSWITC_STU_ENUM])) == 1)
+            {
+                Pad_Config(SWITCH_STU_GPIO, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_HIGH);
+                System_WakeUpPinEnable(SWITCH_STU_GPIO,PAD_WAKEUP_POL_LOW,0);
+            }else
+            {
+                Pad_Config(SWITCH_STU_GPIO,PAD_SW_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_HIGH);
+                System_WakeUpPinEnable(SWITCH_STU_GPIO,PAD_WAKEUP_POL_HIGH,0);
+            }
         }else
         {
-            Pad_Config(SWITCH_STU_GPIO,PAD_SW_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_LOW);
-            System_WakeUpPinEnable(SWITCH_STU_GPIO,PAD_WAKEUP_POL_HIGH,0);
+            Pad_Config(SWITCH_STU_GPIO,PAD_SW_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_HIGH);
         }
         
     }else{

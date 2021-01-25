@@ -210,10 +210,6 @@ void app_le_gap_init(void)
     uint16_t auth_sec_req_flags = GAP_AUTHEN_BIT_BONDING_FLAG;
 
     /* Setup the GAP Bond Manager */
-//    uint16_t scan_interval = 0x1C0;  //!< 280ms     500ms
-//    uint16_t scan_window   = 0x30; //!< 30 30ms     08 20ms
-//    gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_INTERVAL, &scan_interval, sizeof(scan_interval));
-//    gap_sched_params_set(GAP_SCHED_PARAMS_SCAN_WINDOW, &scan_window, sizeof(scan_window));
     gap_set_param(GAP_PARAM_BOND_PAIRING_MODE, sizeof(auth_pair_mode), &auth_pair_mode);
     gap_set_param(GAP_PARAM_BOND_AUTHEN_REQUIREMENTS_FLAGS, sizeof(auth_flags), &auth_flags);
     gap_set_param(GAP_PARAM_BOND_IO_CAPABILITIES, sizeof(auth_io_cap), &auth_io_cap);

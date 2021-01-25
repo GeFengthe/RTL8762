@@ -25,6 +25,8 @@ typedef union
     } bit;
 } DLPS_CTRL_STATU_T;
 extern DLPS_CTRL_STATU_T DlpsCtrlStatu_t;
+extern uint8_t almdlps;
+extern uint8_t studlps;
 
 
 
@@ -50,7 +52,8 @@ extern void SkyBleMesh_ExitDlps_cfg(bool norexit);
 extern void Sky_alive_dlps(void);
 
 extern void blemesh_key_dlps(bool allowenter);      //配网按键低功耗处理
-
+extern void sky_almdlps_timer(void);
+extern void skyble_stuctrl(bool allow);
 
 #endif // 
 

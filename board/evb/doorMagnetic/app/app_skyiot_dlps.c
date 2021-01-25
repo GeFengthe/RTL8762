@@ -20,45 +20,18 @@
 DLPS_CTRL_STATU_T DlpsCtrlStatu_t={(DLPS_JUST_SYSINIT_OK|DLPS_JUST_WAITING_TMR)};
 static plt_timer_t skybleenterdlps_timer=NULL;
 
-static plt_timer_t skyblewakeup_timer=NULL;
+//static plt_timer_t skyblewakeup_timer=NULL;
+static plt_timer_t skyblealmdlps_timer = NULL;
 static uint8_t dlpsstatu = 0; // 1:ready 2:enter 3:exit other:invalid
 
-uint32_t etime=0;
+uint8_t almdlps = 0;
+uint8_t studlps = 0;
 
-
-static void SkyBleMesh_Wakeup_Timeout_cb(void *timer)
-{
- 
-    DBG_DIRECT("------Waketime --------\r\n");
-//	APP_DBG_PRINTF(" %s %d",__func__, dlpsstatu);
-	if(dlpsstatu == 1){
-		// 没能进DLPS，恢复关闭的tmr等
-		SkyBleMesh_ExitDlps_cfg(false);
-	}
-}
-
-static void SkyBleMesh_StopWakeup_tmr(void)
-{	
-	if(skyblewakeup_timer){
-		plt_timer_delete(skyblewakeup_timer, 0);
-		skyblewakeup_timer = NULL;
-	}
-}
-static void SkyBleMesh_StartWakeup_tmr(void)
-{	
-	if(skyblewakeup_timer == NULL){		
-		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*10, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
-		if (skyblewakeup_timer != NULL){
-			plt_timer_start(skyblewakeup_timer, 0);
-		}
-	}
-}
 
 
 void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 {
-    if(attrdlps == 0)
-    {
+
 	if(SkyBleMesh_Is_No_ReportMsg() == true){
 		blemesh_report_ctrl_dlps(true);		
 	}else{
@@ -78,7 +51,7 @@ void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 		}
 		Reenter_tmr_ctrl_dlps(true);    
 	}
-    }
+
 }
 
 static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
@@ -109,13 +82,16 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
 	dlpsstatu = 1; // ready
     SkyBleMesh_StopMainLoop_tmr();
-    DBG_DIRECT("----DLPS-dlpsstatu=%d",dlpsstatu);
+    if(almdlps ==1)
+    {
+        sky_almdlps_timer();
+    }
+//    DBG_DIRECT("----DLPS-dlpsstatu=%d",dlpsstatu);
 }
 
 void SkyBleMesh_EnterDlps_cfg(void)
 {	
-	// APP_DBG_PRINTF(" SkyBleMesh_EnterDlps_cfg");
-//    SkyBleMesh_StopWakeup_tmr();
+
 	dlpsstatu = 2; // enter
 	
 	// switch1
@@ -129,10 +105,23 @@ void SkyBleMesh_EnterDlps_cfg(void)
 void SkyBleMesh_ExitDlps_cfg(bool norexit)
 {
 	dlpsstatu = 3; // exit
+	if(System_WakeUpInterruptValue(P4_2) == TRUE)      //是否是门磁唤醒判断
+	{
+		skyble_almctrl(true);
+	}else
+	{
+		skyble_almctrl(false);
+	}
+    if(System_WakeUpInterruptValue(P5_0) == TRUE)
+    {
+        skyble_stuctrl(true);
+    }else
+    {
+        skyble_stuctrl(false);
+    }
 	if(norexit == true){ // 正常退出DLPS
 
 		HAL_SwitchKey_Dlps_Control(false);
-		// light
 		SkyBleMesh_DlpsLight_Handle(false);
         HAL_Skymag_Dlps_Control(false);
 	}
@@ -144,23 +133,21 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 	// sw timer
 	SkyBleMesh_StartMainLoop_tmr();
 	SkyBleMesh_EnterDlps_timer();
-//	Reenter_tmr_ctrl_dlps(false);
-//	SkyBleMesh_StopWakeup_tmr();
 }
-void Sky_alive_dlps(void)
+void sky_almdlps_timer_cb(void * timer)
 {
-    static uint32_t alive_cnt = 0;
-    if(DlpsCtrlStatu_t.bit.alive == 1)
+    DBG_DIRECT("----alm_timer--\r\n");
+    SkyBleMesh_ExitDlps_cfg(true);
+}
+//门磁引脚定时器
+void sky_almdlps_timer(void)
+{
+    if(skyblealmdlps_timer == NULL)
     {
-        alive_cnt ++;
-        if(alive_cnt == 60)
-        {
-            door_alive_ctrl_dlps(true);
-            alive_cnt =0;
-        }
-    }else{
-        alive_cnt =0;
+        skyblealmdlps_timer = plt_timer_create("almdlps",2000,false,0,sky_almdlps_timer_cb);
     }
+    plt_timer_start(skyblealmdlps_timer,0);
+    
 }
 
 bool switch_check_dlps_statu(void)
@@ -255,6 +242,29 @@ void blemesh_key_dlps(bool allowenter)
         DlpsCtrlStatu_t.bit.key = 1;
     }
 }
-
+//alm属性唤醒低功耗控制函数
+void skyble_almctrl(bool allow)
+{
+	if(allow)
+	{
+		almdlps = 1;		
+	}else
+	{
+		almdlps  = 0;
+	}
+    DBG_DIRECT("----almdlps=%d\r\n",almdlps );
+}
+//stu属性唤醒低功耗
+void skyble_stuctrl(bool allow)
+{
+    if(allow)
+    {
+        studlps = 1;
+    }else
+    {
+        studlps = 0;
+    }
+    DBG_DIRECT("----studlps=%d\r\n",studlps);
+}
 
 

@@ -30,7 +30,7 @@
 #define PRODUCT_TYPE    				(123)		// TODO 修改为小夜灯:118
 #define PRODUCT_MODEL   				("RBDNM01") 	// LCAM01	
 #define PRODUCT_BRAND   				(11)	    // swaiot
-#define PRODUCT_VERSION 				("1.0.01")      // 注意同步给接口 uart_test_read_app_version  和 version.h中的 VERSION_MAJOR
+#define PRODUCT_VERSION 				("1.0.01")      // 注意同步给接�?uart_test_read_app_version  �?version.h中的 VERSION_MAJOR
 #endif
 
 // #define MESH_ADV_NAME_LEN (30)
@@ -42,7 +42,7 @@
 
 /* APP CONFIG DATA */
 // max size, 32bit alignment  .
-// ftl_save 考虑到ble保存的偏移（0xC00）. app层0~2000被mesh占用。故自定义数据从2000往后使用
+// ftl_save 考虑到ble保存的偏移（0xC00�? app�?~2000被mesh占用。故自定义数据从2000往后使�?
 #define FTLMAP_APPCFGDATA_OFFSET    	2000
 #define FTLMAP_APPCFGDATA_SIZE      	100  
 /* quick onoff */
@@ -59,21 +59,16 @@ typedef enum
 #define FLASH_USERDATA_SAVE_LEN        	(64)    
 #define MESH_DEV_UUID_LEN              	(16)
 
-#define NIGHT_LIMIT_VOL					160		    // 20lux limit val
-#define LIGHT_DEFAULT_WAY				(0x00)	    // 光暗时灯亮
-#define LED_NORMAL_VER                  2           // LED正常版本
-#define LIGHT_DAYTIME                   (0x02)      // 白天
-//#define ENV_DETECT_TIME                 (1*60*1000) // 默认1min检测一次环境
-#define WRITE_DEFAULT_TIME              (5*1000)   	// 默认每5s据状态写flash
-#define APP_UNREACT_MODE_N              0
-#define APP_REACT_MODE_M                1
-#define APP_REACT_MODE_S                2
-#define APP_REACT_MODE_A                3
-#define BATT_NORMAL                     0           // 电压正常
-#define BATT_WARING                     1           // 警戒电压
-#define BATT_WARIN_RANK                 2400        // 警戒电压等级1对应的电压值
-#define BATT_THRESHOLD_VAL              100         // 电压判定误差范畴
-#define BATT_TIMEOUT                    10*60*1000  // 电压采集时间周期
+
+
+
+#define WRITE_DEFAULT_TIME              (5*1000)   	// 5sдflash
+
+#define BATT_NORMAL                     0           // ��ѹ������־
+#define BATT_WARING                     1           // �͵�ѹ��־
+#define BATT_WARIN_RANK                 2000        // �͵�ѹֵ?
+#define BATT_VOL1                       200         //��ѹ����ֵ
+
 
 #define BLEMESH_REPORT_FLAG_ALM         0x01
 #define BLEMESH_REPORT_FLAG_STU         0x02
@@ -96,11 +91,12 @@ typedef enum
     MESH_PROVISION_STATE_FAILED,        //1
     MESH_PROVISION_STATE_SUCCEED,       //2
     MESH_PROVISION_STATE_UNPROV,
-    MESH_PROVISION_STATE_PROVED,        //已配网
+    MESH_PROVISION_STATE_PROVED,        //已配�?
 } MESH_PROVISION_STATE_e;
 extern MESH_PROVISION_STATE_e mesh_provison_state;
 
 extern uint8_t attrdlps;
+
 
 extern bool Hal_Get_Ble_MacAddr(uint8_t* mac);
 extern void SkyBleMesh_Get_DeviceName(char *name, uint8_t *len);
@@ -131,6 +127,8 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt);
 extern uint8_t SkyBleMesh_Batt_Station(void);
 extern void SkyBleMesh_alivetimer(void);
 extern void SkySwitch_Handle(uint8_t key_mode, bool isprov);
+extern void skyble_almctrl(bool allow);
+extern void skyblemesh_battCheck(void);
 
 
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx);
