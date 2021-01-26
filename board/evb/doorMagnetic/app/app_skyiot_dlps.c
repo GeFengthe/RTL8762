@@ -61,7 +61,6 @@ static void SkyBleMesh_EnterDlps_Timeout_cb(void *timer)
 		startdelay--; // when reset,check dlps after 5s 
 		return;
 	}
-	
     T_IO_MSG msg;
     msg.type = IO_MSG_TYPE_TIMER;
     msg.subtype = ENTER_DLPS_TIMEOUT;
@@ -82,6 +81,9 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 {	
 	dlpsstatu = 1; // ready
     SkyBleMesh_StopMainLoop_tmr();
+    beacon_stop();
+    gap_sched_scan(false);
+//    os_delay(10);
     if(almdlps ==1)
     {
         sky_almdlps_timer();

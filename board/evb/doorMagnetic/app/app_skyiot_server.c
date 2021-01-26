@@ -654,7 +654,8 @@ static void BleMesh_Vendor_Make_Packet(uint8_t *buf, uint8_t len, bool needack )
 	}
 }
 // pull
-#define SEND_MESH_PACKET_PERIOD  (800)   // ms
+#define SEND_MESH_PACKET_PERIOD  (1000)   // ms
+//重新写的发送函数
 static void BleMesh_Vendor_Send_Packet(void)
 {
 	uint8_t  i=0;
@@ -664,53 +665,102 @@ static void BleMesh_Vendor_Send_Packet(void)
 	if(MeshTxAttrStruct==NULL){
 		return;
 	}
-	
-
 	if(HAL_CalculateTickDiff(oldtick, tick) < SEND_MESH_PACKET_PERIOD){
 		return;
-	}else{
-		oldtick = tick;
 	}
-	
-	for(i=0; i<MAX_TX_BUF_DEEP; i++){
-		if( MeshTxAttrStruct[i].fullflag==1 && MeshTxAttrStruct[i].txcnt>0 ){
-			
-			if(MeshTxAttrStruct[i].txtick==0){
-				sub_timeout_ms=0;
-			}else{
-				sub_timeout_ms = HAL_CalculateTickDiff(MeshTxAttrStruct[i].txtick, tick);
-			}
-			
-			if( MeshTxAttrStruct[i].txtick==0 || sub_timeout_ms>=maxacktimout){
-				if(sub_timeout_ms>=maxacktimout){
-					maxacktimout = MAX_ACK_TIMEOUT - 100*(((uint32_t)rand())%11);
-				}
-				APP_DBG_PRINTF4("BleMesh_Vendor_Send_Packet opcode %02X  len%d time%d %d\n", MeshTxAttrStruct[i].buf[TX_OPENCODE_POS], MeshTxAttrStruct[i].len,sub_timeout_ms,maxacktimout);	
-				#if 1
-				for(int j=0; j<MeshTxAttrStruct[i].len ; j++){
-					APP_DBG_PRINTF1("%02X ", MeshTxAttrStruct[i].buf[j]);
-				}
-				#endif
-				#if MESH_TEST_PRESSURE == 1
-				if(MeshTxAttrStruct[i].buf[TX_OPENCODE_POS]==BLEMESH_SKYWORTH_OPCODE_PROPERTY ){
-					sendpackcnt++;
-				}
-				#endif
+	for(i=0; i<MAX_TX_BUF_DEEP; i++)
+    {
+        if(MeshTxAttrStruct[i].fullflag ==1 && MeshTxAttrStruct[i].txcnt>0)
+        {
+            APP_DBG_PRINTF4("BleMesh_Vendor_Send_Packet opcode %02X  len%d time%d %d\n", MeshTxAttrStruct[i].buf[TX_OPENCODE_POS], MeshTxAttrStruct[i].len,sub_timeout_ms,maxacktimout);	
+            #if 1
+            for(int j=0; j<MeshTxAttrStruct[i].len ; j++)
+            {
+                APP_DBG_PRINTF1("%02X ", MeshTxAttrStruct[i].buf[j]);
 				
-				// MESH_MSG_SEND_CAUSE_SUCCESS = 0
-				datatrans_publish(&VendorModel_Server, MeshTxAttrStruct[i].len,  MeshTxAttrStruct[i].buf);
-
-				MeshTxAttrStruct[i].txcnt--;
-				MeshTxAttrStruct[i].txtick = tick;
-				if( MeshTxAttrStruct[i].txcnt==0 ){
-					MeshTxAttrStruct[i].fullflag = 0;  // 最后一包不管应答
-					MeshTxAttrStruct[i].txtick   = 0;
-				}
-				break;
-			}
-		}
+            }
+            #endif
+            #if MESH_TEST_PRESSURE == 1
+            if(MeshTxAttrStruct[i].buf[TX_OPENCODE_POS]==BLEMESH_SKYWORTH_OPCODE_PROPERTY )
+            {
+                sendpackcnt++;
+            }
+            #endif
+            // MESH_MSG_SEND_CAUSE_SUCCESS = 0
+            datatrans_publish(&VendorModel_Server, MeshTxAttrStruct[i].len,  MeshTxAttrStruct[i].buf);
+            MeshTxAttrStruct[i].txcnt--;
+            MeshTxAttrStruct[i].txtick = tick;
+            if( MeshTxAttrStruct[i].txcnt==0 )
+            {
+                MeshTxAttrStruct[i].fullflag = 0;  // 最后一包不管应答
+                MeshTxAttrStruct[i].txtick   = 0;
+            }
+            oldtick = tick;	
+            break;
+        }
 	}
+		
 }
+
+//static void BleMesh_Vendor_Send_Packet(void)
+//{
+//	uint8_t  i=0;
+//	uint32_t sub_timeout_ms=0, tick=HAL_GetTickCount();	
+//	static uint32_t oldtick=0;
+//	
+//	if(MeshTxAttrStruct==NULL){
+//		return;
+//	}
+//	
+
+//	if(HAL_CalculateTickDiff(oldtick, tick) < SEND_MESH_PACKET_PERIOD){
+//		return;
+//	}else{
+//        if(MAX_TX_BUF_DEEP >1)
+//        {
+//            oldtick = tick;
+//        }
+//	}
+//	
+//	for(i=0; i<MAX_TX_BUF_DEEP; i++){
+//		if( MeshTxAttrStruct[i].fullflag==1 && MeshTxAttrStruct[i].txcnt>0 ){
+//			
+//			if(MeshTxAttrStruct[i].txtick==0){
+//				sub_timeout_ms=0;
+//			}else{
+//				sub_timeout_ms = HAL_CalculateTickDiff(MeshTxAttrStruct[i].txtick, tick);
+//			}
+//			
+//			if( MeshTxAttrStruct[i].txtick==0 || sub_timeout_ms>=maxacktimout){
+//				if(sub_timeout_ms>=maxacktimout){
+//					maxacktimout = MAX_ACK_TIMEOUT - 100*(((uint32_t)rand())%11);
+//				}
+//				APP_DBG_PRINTF4("BleMesh_Vendor_Send_Packet opcode %02X  len%d time%d %d\n", MeshTxAttrStruct[i].buf[TX_OPENCODE_POS], MeshTxAttrStruct[i].len,sub_timeout_ms,maxacktimout);	
+//				#if 1
+//				for(int j=0; j<MeshTxAttrStruct[i].len ; j++){
+//					APP_DBG_PRINTF1("%02X ", MeshTxAttrStruct[i].buf[j]);
+//				}
+//				#endif
+//				#if MESH_TEST_PRESSURE == 1
+//				if(MeshTxAttrStruct[i].buf[TX_OPENCODE_POS]==BLEMESH_SKYWORTH_OPCODE_PROPERTY ){
+//					sendpackcnt++;
+//				}
+//				#endif
+//				
+//				// MESH_MSG_SEND_CAUSE_SUCCESS = 0
+//				datatrans_publish(&VendorModel_Server, MeshTxAttrStruct[i].len,  MeshTxAttrStruct[i].buf);
+
+//				MeshTxAttrStruct[i].txcnt--;
+//				MeshTxAttrStruct[i].txtick = tick;
+//				if( MeshTxAttrStruct[i].txcnt==0 ){
+//					MeshTxAttrStruct[i].fullflag = 0;  // 最后一包不管应答
+//					MeshTxAttrStruct[i].txtick   = 0;
+//				}
+//				break;
+//			}
+//		}
+//	}
+//}
 
 
 static void BleMesh_Vendor_Ack_Packet(uint8_t eventid, uint16_t attrID, uint32_t val)
@@ -1558,7 +1608,10 @@ static void Main_Event_Handle(void)
 					APP_DBG_PRINTF1("Main_Event_Handle recv keepalive tick: %d!\n", mIotManager.recv_alive_tick);
 //                    door_alive_ctrl_dlps(true);
 				}
+                gap_sched_scan(true);
+                os_delay(2);
                 gap_sched_scan(false);
+                os_delay(2);
                 skyflag.alive =0;
                 if(skyble_alive_timer !=NULL)
                 {
@@ -2042,7 +2095,7 @@ void skyblemesh_battCheck(void)
             {
                 tick = HAL_GetTickCount();
                 batt_tickcnt = HAL_CalculateTickDiff(batt_tick,tick);
-                if((batt_tickcnt >= 1000*3)&&(batt_cnt <=3))
+                if((batt_tickcnt >= 1000*60*3)&&(batt_cnt <=3))
                 {
                     mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
                     batt_cnt++;
@@ -2060,7 +2113,7 @@ void skyblemesh_battCheck(void)
             {
                 tick = HAL_GetTickCount();
                 batt_tickcnt = HAL_CalculateTickDiff(batt_tick,tick);
-                if((batt_tickcnt >= 1000*12)&&(batt_cnt <=10))
+                if((batt_tickcnt >= 1000*60*12)&&(batt_cnt <=10))
                 {
                     mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
                     batt_cnt++;
