@@ -1811,6 +1811,28 @@ extern void test_update_attr(void)
 }
 #endif
 
+void test_alm(void)
+{
+    static uint32_t oldtick =0;
+    uint32_t tick =0;
+    uint32_t subtick =0;
+    static uint32_t cnt =0;
+    if(oldtick == 0)
+    {
+        oldtick = HAL_GetTickCount();
+    }
+    tick = HAL_GetTickCount();
+    subtick =HAL_CalculateTickDiff(oldtick,tick);
+    if(subtick >1000*60)
+    {
+        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
+        oldtick = tick;
+        cnt ++;
+        DBG_DIRECT("-----------cnt=%d-----\r\n",cnt);
+    }
+    
+}
+
 extern void SkyBleMesh_MainLoop(void)
 {
   
@@ -1829,6 +1851,7 @@ extern void SkyBleMesh_MainLoop(void)
 //		return;
 //	}
 	#endif
+//    test_alm();
 //	SkyBleMesh_Batterval_Lightsense(true);
     Sky_listendoorstate(); 
     skyblemesh_battCheck();
@@ -2183,6 +2206,7 @@ extern void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 //		APP_DBG_PRINTF0("vvvvvvvvvvvvvvvv %X\n",mIotManager.process_state);
 	}		
 }
+
 
 
 //=======================================================================================//

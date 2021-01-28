@@ -44,7 +44,7 @@ typedef struct {
 	uint8_t keyval;     // bit0:user switch bit1:PCB check switch   ; 1:press
 	uint8_t keymode;    // KEY_PRESS_MODE_e	
 }SkySwitchManager;
-extern uint8_t door_flag;
+//extern uint8_t door_flag;
 
 extern bool HAL_Switch_Init(SkySwitchManager *manager);
 
