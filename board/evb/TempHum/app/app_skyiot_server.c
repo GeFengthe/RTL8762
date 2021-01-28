@@ -37,7 +37,7 @@ uint8_t  ackattrsval=0;
 
 #define SKYBLERESET_MAXCNT          (45)    // 重配网延时服务，延时的时间用作信号灯的闪烁
 #define SKYBLERESET_MINCNT          (10)    // 配网过程中按键退出配网
-#define SKYBLERESET_TIMEOUT         (150)   // 对开关，仅仅延时而已，给闪灯时间
+#define SKYBLERESET_TIMEOUT         (4500)   // 对开关，仅仅延时而已，给闪灯时间
 
 #define SKYBLEPROVSUCCESS_MAXCNT    (16)    // 配网成功闪
 #define SKYBLEPROVSUCCESS_TIMEOUT   (500)
@@ -54,7 +54,7 @@ uint8_t  ackattrsval=0;
 #define MD5_LEN                   (16)  
 #define BLEMESH_PROPERTY_NAME_LEN (4)
 #define BLEMESH_COMMAND_WAIT_MS   (500) /* WAIT 250MS FOR Report ack */	
-#define DEFAULT_WAKEUP_ALIVE_CNT  (3)
+#define DEFAULT_WAKEUP_ALIVE_CNT  (2)
 
 #define DEFAULT_SKYIOT_ALIVE_MS   (1000*60*5)  // qlj 需要一个定时器来换算
 #define DEFAULT_GATEWAY_ALIVE_MS  (1000*60*10)
@@ -993,7 +993,6 @@ static void SkyBleMesh_handle_vendor_rx_cb(uint8_t opcode, uint8_t len, uint8_t 
 			}else if(cmd_type == OPCODE_DEVINFO_GET_PRODUCT_MACADDR){	
 				SkyIotGetProductMacAckPacket();
 			}
-	
 			break;
       
         default:break;
@@ -1170,8 +1169,6 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 		case MAINLOOP_TIMEOUT:{
              SkyBleMesh_MainLoop();
 			 #if USE_SWITCH_FOR_SKYIOT
-			 HAL_Switch_HandleTimer(NULL);
-             Main_WithoutNet_Handle();
              Reenter_tmr_ctrl_dlps(false);
 			 #endif
             break;
@@ -1183,11 +1180,11 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 		case UNPROV_TIMEOUT:{                       //未入网定时器
             beacon_stop();
             gap_sched_scan(false);
-            blemesh_unprov_ctrl_dlps(true);	
 			if(mIotManager.process_state == 0x55){
 				mIotManager.process_state = 0xff;
 				SkyBleMesh_WriteConfig();	
 			}
+            blemesh_unprov_ctrl_dlps(true);	
             break;
         }
 		case PROV_SUCCESS_TIMEOUT:{			        //入网成功定时器
@@ -1441,31 +1438,53 @@ static void SkyiotManager_Default_Config(bool sychsaveparam)
 }
 
 
-static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
+//static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
+//{
+//	if(key_mode > KEY_LONGPRESS_MODE){
+//		return;
+//	}
+//	
+//	if(key_mode != KEY_SHORTPRESS_MODE && mIotManager.release_flag == SKYIOT_FIRST_RELEASE){
+//		return;
+//	}
+//	
+//    if(mIotManager.batt_rank != BATT_NORMAL){               // 电压低于正常值，不允许配网
+//        APP_DBG_PRINTF0("low batt");
+//        return;
+//    }
+
+//   	if(key_mode == KEY_SINGLE_MODE || key_mode == KEY_SHORTPRESS_MODE ){
+//		
+//   	}
+//	if(key_mode == KEY_SINGLE_MODE){
+//            DBG_DIRECT("------KEY_SINGLE_MODE--------\r\n");
+
+//	}else if(key_mode == KEY_SHORTPRESS_MODE){
+//           DBG_DIRECT("------KEY_SHORTPRESS_MODE--------\r\n");
+//	}else if(key_mode == KEY_LONGPRESS_MODE){  
+//		SkyiotManager_Default_Config(true);	
+//		SkyBleMesh_unBind_complete();
+//        //暂未添加配网动画效果
+//        DBG_DIRECT("-------ENTER IS unBind---------\r\n");
+//		if(mIotManager.process_state != 0x55){
+//			mIotManager.process_state = 0x55;
+//			SkyBleMesh_WriteConfig();
+//		}
+//		SkyBleMesh_Reset_timer();
+//		APP_DBG_PRINTF0("vvvvvvvvvvvvvvvv %X\n",mIotManager.process_state);
+//	}		
+//}
+
+//按键函数修改
+static void SkySwitch_Handle(void)
 {
-	if(key_mode > KEY_LONGPRESS_MODE){
-		return;
-	}
-	
-	if(key_mode != KEY_SHORTPRESS_MODE && mIotManager.release_flag == SKYIOT_FIRST_RELEASE){
-		return;
-	}
-	
-    if(mIotManager.batt_rank != BATT_NORMAL){               // 电压低于正常值，不允许配网
-        APP_DBG_PRINTF0("low batt");
-        return;
-    }
-
-   	if(key_mode == KEY_SINGLE_MODE || key_mode == KEY_SHORTPRESS_MODE ){
-		
-   	}
-	if(key_mode == KEY_SINGLE_MODE){
-            DBG_DIRECT("------KEY_SINGLE_MODE--------\r\n");
-
-	}else if(key_mode == KEY_SHORTPRESS_MODE){
-           DBG_DIRECT("------KEY_SHORTPRESS_MODE--------\r\n");
-	}else if(key_mode == KEY_LONGPRESS_MODE){  
-		SkyiotManager_Default_Config(true);	
+    if(mIotManager.mSwitchManager.keymode > KEY_LONGPRESS_MODE)
+        return ;
+    if(mIotManager.batt_rank !=BATT_NORMAL)
+        return ;
+    if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE)
+    {
+        SkyiotManager_Default_Config(true);	
 		SkyBleMesh_unBind_complete();
         //暂未添加配网动画效果
         DBG_DIRECT("-------ENTER IS unBind---------\r\n");
@@ -1473,11 +1492,12 @@ static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
 			mIotManager.process_state = 0x55;
 			SkyBleMesh_WriteConfig();
 		}
+        mIotManager.mSwitchManager.keymode = KEY_MODE_INIT;
+        mIotManager.mSwitchManager.keyval = 0;
 		SkyBleMesh_Reset_timer();
 		APP_DBG_PRINTF0("vvvvvvvvvvvvvvvv %X\n",mIotManager.process_state);
-	}		
+    }
 }
-
 
 /*
 ** main functions
@@ -1534,10 +1554,8 @@ static void Main_Event_Handle(void)
 					mIotManager.report_flag = 0;
 					delayreport = (uint32_t)(rand()%80)*50 + 50; // 50~4000ms
 					oldtick = HAL_GetTickCount();	
-//					alive_ctrl_dlps(true);
 					APP_DBG_PRINTF0("Main_Event_Handle device online!\n");
 				}else {
-//                    alive_ctrl_dlps(true);
 					mIotManager.recv_alive_tick = HAL_GetTickCount();	
 					APP_DBG_PRINTF1("Main_Event_Handle recv keepalive tick: %d!\n", mIotManager.recv_alive_tick);
 				}
@@ -1588,19 +1606,19 @@ static void Main_Event_Handle(void)
 
 
 
-void Main_WithoutNet_Handle(void)
-{	
-	
+//void Main_WithoutNet_Handle(void)
+//{	
+//	
 
-	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
-		if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch	
-			SkySwitch_Handle(mIotManager.mSwitchManager.keymode, false);
-		}
-		mIotManager.mSwitchManager.keymode = 0;
-		mIotManager.mSwitchManager.keyval = 0;
-	}		
+//	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
+//		if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch	
+//			SkySwitch_Handle(mIotManager.mSwitchManager.keymode, false);
+//		}
+//		mIotManager.mSwitchManager.keymode = 0;
+//		mIotManager.mSwitchManager.keyval = 0;
+//	}		
 
-}
+//}
 
 
 static void skyble_alive(void)
@@ -1629,7 +1647,7 @@ static bool Main_Check_Online(void)
 	}
 
 	alivetimecnt = HAL_CalculateTickDiff(alivetick, tick);
-	if (alivetimecnt >= 150){  // 30*50ms
+	if (alivetimecnt >= 1000){  // 30*50ms  1s
         DBG_DIRECT("----------alive=%d--\r\n",mIotManager.alive_status);
 		if (mIotManager.alive_wakeup_cnt < DEFAULT_WAKEUP_ALIVE_CNT){
 			if (mIotManager.alive_status == 0){
@@ -1687,13 +1705,12 @@ static void Main_Upload_State(void)
 			mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_TEM;
 			SkyIotReportPropertyPacket(ATTR_HUMITURE_ID_TEM, &mIotManager.mLightManager.tem, mIotManager.tem_seq);	
 			mIotManager.tem_seq = 0;
-            mIotSaveParams.temtime = HAL_GetTickCount();
+//            mIotSaveParams.temtime = HAL_GetTickCount();
 		}
         if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_HUM){
             mIotManager.report_flag &= ~ BLEMESH_REPORT_FLAG_HUM;
             SkyIotReportPropertyPacket(ATTR_HUMITURE_ID_HUM, &mIotManager.mLightManager.hum, mIotManager.hum_seq);
             mIotManager.hum_seq = 0;
-            mIotSaveParams.humtime = HAL_GetTickCount();
         }
 		
 		if(mIotManager.report_flag & BLEMESH_REPORT_FLAG_BAT){							// 入网主动上传，或阶段性上传
@@ -1747,15 +1764,7 @@ extern void test_update_attr(void)
 #endif
 
 
-//// 温湿度转换函数
-//void SkyBleMesh_ReadTempHum(void)
-//{
-//    int temptmp;
-//    uint32_t humtmp;
-//    SHTC3_Read_Temp_Hum(&temptmp,&humtmp);
-//    mIotManager.mLightManager.tem = (float)temptmp/10.0;
-//    mIotManager.mLightManager.hum = (float) humtmp/10.0;
-//}
+
 
 
 
@@ -1767,7 +1776,7 @@ extern void SkyBleMesh_MainLoop(void)
 	}
 	
 	
-	uint32_t newtick = HAL_GetTickCount();
+//	uint32_t newtick = HAL_GetTickCount();
 	
 	#if SKYMESH_FACTORYTEST_EABLE==1
 	// 工厂测试
@@ -1775,6 +1784,8 @@ extern void SkyBleMesh_MainLoop(void)
 //		return;
 //	}
 	#endif
+    Scan_Keyboard_Time();
+    SkySwitch_Handle();
     SkyBleMesh_BattWaringTx(1000*60*22);              //电池电量发送 22min
 	bool isprov = SkyBleMesh_IsProvision_Sate();     // 联网状态              
 	if(isprov==true && mIotManager.batt_rank!=BATT_WARING){
@@ -2040,8 +2051,10 @@ extern uint8_t SkyBleMesh_Batt_Station(void)
     return mIotManager.batt_rank;
 }
 //上电启动是否配网函数
-static int temp = 0;        //屏幕温度值
-static uint32_t hum = 0;        //屏幕湿度值
+static int temp = 0;        //采集温度值
+static uint32_t hum = 0;        //采集湿度值
+static uint32_t lcdhum =0;      //屏幕温度值
+static int lcdtemp =0;
 static int temp_old =0;         //上次记录数据
 static uint32_t hum_old =0 ;    //
 static uint8_t process_flag =0;         //入网图标闪标志
@@ -2052,8 +2065,9 @@ static uint32_t old_time = 0;         //开机时间
 void SkyBle_ReadSHTC3(void)
 {
     SHTC3_Read_Temp_Hum(&temp,&hum);
-    mIotManager.mLightManager.tem = ((float)temp/(float)10.0);
-    mIotManager.mLightManager.hum = ((float)hum/(float)10.0);
+//    mIotManager.mLightManager.tem = ((float)temp/(float)10.0);
+//    mIotManager.mLightManager.hum = ((float)hum/(float)10.0);
+
 }
 //开机亮屏函数
 void SkyLcd_Process(void)
@@ -2075,8 +2089,7 @@ extern void SkyBleMesh_DisPlayTempHum(void)
     int tempcnt =0;
     uint32_t humcnt = 0;
     uint8_t single =0;
-//    int lcdtmp =0;
-    uint32_t lcdhum =0;
+    SkyBleMesh_lcdexit();
     SkyBle_ReadSHTC3();
     if(temp >= temp_old)
     {
@@ -2090,26 +2103,29 @@ extern void SkyBleMesh_DisPlayTempHum(void)
     }else{
         humcnt = hum_old - hum;
     }
-//    SkyBleMesh_lcdexit();
     if(mIotManager.process_state == 0x55)
     {
-        if((tempcnt >3)||(humcnt >6))
+        if((tempcnt >5)||(humcnt >9))
         {
             lcdhum = (hum +hum_old)/2;
-            temp_old = temp;
+            lcdtemp =temp;
+            temp_old = lcdtemp;
             hum_old = lcdhum;
         }
         lcdhum = hum_old;
+        lcdtemp = temp_old;
         if(process_flag == 1)
         {
-            SkyIot_Lcd_Display(lcdhum,temp_old,120,batt_grade);
+            SkyIot_Lcd_Display(lcdhum,lcdtemp,120,batt_grade);
             process_flag =0;
         }else{
-            SkyIot_Lcd_Display(lcdhum,temp_old,0,batt_grade);
+            SkyIot_Lcd_Display(lcdhum,lcdtemp,0,batt_grade);
             process_flag =1;
         }
+         mIotManager.mLightManager.tem = ((float)temp/(float)10.0);
+         mIotManager.mLightManager.hum = ((float)lcdhum/(float)10.0);
     }else{
-        SkyBleMesh_TempHumTx(1000*60*6,tempcnt,humcnt);
+//        SkyBleMesh_TempHumTx(1000*60*6,tempcnt,humcnt);
         if(mIotManager.alive_status == 0x01)
         {
             single =120;
@@ -2117,20 +2133,24 @@ extern void SkyBleMesh_DisPlayTempHum(void)
         {
             single =0;
         }
-        if((tempcnt >3) || (humcnt>5))
+        if((tempcnt >5) || (humcnt>9))              //5/7
         {
-//            lcdtmp = (temp_old + temp)/2;
             lcdhum = (hum_old + hum)/2;
+            lcdtemp =temp;
             DBG_DIRECT("--------single=%d-------\r\n",single);
-            SkyIot_Lcd_Display(lcdhum,temp,single,batt_grade);
-//            tempcnt = 0;
+            SkyIot_Lcd_Display(lcdhum,lcdtemp,single,batt_grade);
+            DBG_DIRECT("-----miot_hum=%f---\r\n",mIotManager.mLightManager.hum);
             hum_old =lcdhum;
-            temp_old =temp;
+            temp_old =lcdtemp;
+        }
+        if(mIotManager.alive_status == 0x01)
+        {
+            SkyBleMesh_TempHumTx(1000*60*3);
         }
         if(lcd_open ==1)
         {
-//            plt_timer_delete(skybledisplay_timer1,0);
-//            SkyBleMesh_DisPlay_timer1(1000*1);
+            plt_timer_delete(skybledisplay_timer1,0);
+            SkyBleMesh_DisPlay_timer1(1000*2);
             lcd_open = 0;
         }
     }
@@ -2159,47 +2179,46 @@ bool SkyBleMesh_Ostimecnt(uint32_t time_ms)
 }
 
 //上报温湿度属性控制函数 根据时间控制
-void SkyBleMesh_TempHumTx(uint32_t time_ms,int temcnt,uint32_t humcnt)
+void SkyBleMesh_TempHumTx(uint32_t time_ms)
 {
     float tcnt =0;
     float hcnt = 0;
     uint32_t tick =0;
     uint32_t tickcnt =0;
-    if(mIotManager.mLightManager.tem >= mIotSaveParams.tem)
+    static uint32_t sendtick = 0;
+    static int tmp1 =0;
+    static uint32_t hum1 =0;
+    if(sendtick == 0)
     {
-        tcnt = mIotManager.mLightManager.tem - mIotSaveParams.tem;
-    }else{
-        tcnt = mIotSaveParams.tem - mIotManager.mLightManager.tem;
-    }
-    if(mIotManager.mLightManager.hum >= mIotSaveParams.hum)
-    {
-        hcnt = mIotManager.mLightManager.hum - mIotSaveParams.hum;
-    }else{
-        hcnt = mIotSaveParams.hum - mIotManager.mLightManager.hum;
+        sendtick = HAL_GetTickCount();
     }
     tick =HAL_GetTickCount();
-    if( (float)(tcnt-(float)0.5)> (float)0.000001)
+    tickcnt = HAL_CalculateTickDiff(sendtick,tick);
+    if(tickcnt >time_ms)
     {
-        DBG_DIRECT("--------temcnt=%f----\r\n",tcnt);
-        tickcnt = HAL_CalculateTickDiff(mIotSaveParams.temtime,tick);
-        if(tickcnt >5000)
+        if(tmp1 != lcdtemp)
         {
+            mIotManager.mLightManager.tem = (float)lcdtemp/(float)(10.0);
             mIotManager.report_flag |= BLEMESH_REPORT_FLAG_TEM;
             mIotManager.tem_seq = 0;
-            mIotSaveParams.tem = mIotManager.mLightManager.tem;
+            tmp1 = lcdtemp;
         }
-    }
-    if((float)(hcnt -(float)0.7)>(float)0.00001)
-    {
-        DBG_DIRECT("--------humcnt=%f----\r\n",hcnt);
-        tickcnt = HAL_CalculateTickDiff(mIotSaveParams.humtime,tick);
-        if(tickcnt >5000)
+        if(hum1 != lcdhum)
         {
+            mIotManager.mLightManager.hum = (float)lcdhum/(float)10.0;
             mIotManager.report_flag |= BLEMESH_REPORT_FLAG_HUM;
             mIotManager.hum_seq = 0;
-            mIotSaveParams.hum = mIotManager.mLightManager.hum;
-        }
+            hum1 = lcdhum;
+        }   
+        sendtick = HAL_GetTickCount();
     }
+//    tickcnt = HAL_CalculateTickDiff(mIotSaveParams.humtime,tick);
+//    if(tickcnt >time_ms)
+//    {
+//         mIotManager.report_flag |= BLEMESH_REPORT_FLAG_HUM;
+//         mIotManager.hum_seq = 0;
+////         mIotSaveParams.hum = mIotManager.mLightManager.hum;
+//    }
 //    if(SkyBleMesh_Ostimecnt(1000*60*6))                 //4min上报一次当前属性
 //    {
 //        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_TEM;

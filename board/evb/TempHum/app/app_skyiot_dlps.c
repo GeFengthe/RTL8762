@@ -58,11 +58,11 @@ static void SkyBleMesh_StartWakeup_tmr(void)
 
 void SkyBleMesh_EnterDlps_TmrCnt_Handle(void)
 {
-//	if(SkyBleMesh_Is_No_ReportMsg() == true){
-//		blemesh_report_ctrl_dlps(true);		
-//	}else{
-//		blemesh_report_ctrl_dlps(false);		
-//	}
+	if(SkyBleMesh_Is_No_ReportMsg() == true){
+		blemesh_report_ctrl_dlps(true);		
+	}else{
+		blemesh_report_ctrl_dlps(false);		
+	}
 	if(HAL_Switch_Is_Relese() == true){		
 		switch_io_ctrl_dlps(true);
 	}else{
@@ -111,9 +111,6 @@ void SkyBleMesh_ReadyEnterDlps_cfg(void)
 	// ble 
 	beacon_stop();
     gap_sched_scan(false);
-//    os_delay(3);
-	// sw timer
-//    SkyBleMesh_StartWakeup_tmr();
 }
 
 void SkyBleMesh_EnterDlps_cfg(void)
@@ -136,8 +133,6 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
         HAL_Sky_I2C_Dlps(false);
 	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisioned且电量正常
         beacon_start(); // 配网才会打开，这个要验证下，未配网不广播
-//        gap_sched_scan(false);
-//        gap_sched_scan(true);
 
 	}	
 	
@@ -150,10 +145,11 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 //LCD 回调时查看是否进入低功耗失败
 void SkyBleMesh_lcdexit(void)
 {
-    DBG_DIRECT("-------dlpsstatu= %d-----\r\n",dlpsstatu);
+    
     if(dlpsstatu == 1)
     {
         SkyBleMesh_ExitDlps_cfg(true);
+        DBG_DIRECT("-------ERROR-dlpsstatu= %d-----\r\n",dlpsstatu);
     }       
 }
 

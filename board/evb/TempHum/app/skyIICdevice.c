@@ -409,7 +409,7 @@ uint8_t SHTC3_Read_Temp_Hum(int *gettemp, uint32_t *gethum)
 	
 	if(SHTC3_crc_Check(tmp_temp, crc_temp) == 0){
 		res_temp = tmp_temp;
-		res_temp = ((res_temp*175*10)>>16) - 450; // 保留一位小数点*10
+		res_temp = ((res_temp*175*10)>>16) - 450; // 保留一位小数点*10     450
 		*gettemp = res_temp;
 		if(res_temp >= 0){ // 正温度		
 			SKYDISPLAY_PRINTF("sample temperatrue is:%d\n",res_temp); 	

@@ -65,6 +65,7 @@ extern uint8_t ReadStatus(void);
 extern void HAL_Skymag_Dlps_Control(bool isenter);
 //extern uint8_t sky_findPin(void);
 extern void Scan_almboard_Function(void);
+extern void Scan_Keyboard_Time(void);
 
 #endif //
 

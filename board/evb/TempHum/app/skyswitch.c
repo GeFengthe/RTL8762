@@ -21,8 +21,8 @@
 #if (SKY_SWITCH_TYPE == SKY_NIGHTLIGHT_TYPE)
 #define SWITCH1_GPIO                P4_0                            //key 1引脚
 #define SWITCH1_GPIO_PIN            GPIO_GetPin(SWITCH1_GPIO)
-//static plt_timer_t skyalmstatue_timer =NULL;
 
+#define KEY_LONG_MODE               80   
 static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO};
 
 #endif
@@ -109,6 +109,24 @@ void HAL_SwitchKey_Dlps_Control(bool isenter)
 	}
 	return keyval; 
 }
+     
+//50ms 主定时器判断
+void Scan_Keyboard_Time(void)
+{
+    if(ReadKeyStatu() == 1 && mSwitchManager->keymode !=KEY_LONGPRESS_MODE)
+    {
+        mSwitchManager->keyval ++;
+    }else
+    {
+        mSwitchManager->keyval =0;
+    }
+    if(mSwitchManager->keyval > KEY_LONG_MODE)
+    {
+        mSwitchManager->keymode = KEY_LONGPRESS_MODE;
+    }
+    
+}
+
 
 static void Scan_Keyboard_Function(void)
 {
