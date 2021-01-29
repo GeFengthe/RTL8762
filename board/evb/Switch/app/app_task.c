@@ -192,7 +192,7 @@ void app_main_task(void *p_param)
             }
         }
 				
-				
+//        DBG_DIRECT("-----IN THE APPTASK---\r\n");
 		#if MESH_TEST_PRESSURE == 1
 		SkyBleMesh_Test_Timeout_cb(NULL);
 		

@@ -20,7 +20,7 @@ typedef union
         uint32_t alm:     1; // inf
         uint32_t factory: 1; // PCB & device check
         uint32_t alive:   1;
-        uint32_t attri:   1;
+        uint32_t bat:     1;
         uint32_t rsvd:    22;        //24
     } bit;
 } DLPS_CTRL_STATU_T;
@@ -42,6 +42,7 @@ extern void alm_ctrl_dlps(bool allowenter);
 extern void blemesh_factory_ctrl_dlps(bool allowenter);
 extern void alm_alive_dlps(bool allowenter);
 extern void Sky_alive_dlps(void);
+extern void alm_bat_dlps(bool allowenter);
 
 
 extern void SkyBleMesh_ReadyEnterDlps_cfg(void);

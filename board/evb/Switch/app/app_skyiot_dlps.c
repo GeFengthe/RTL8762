@@ -48,7 +48,7 @@ static void SkyBleMesh_StopWakeup_tmr(void)
 static void SkyBleMesh_StartWakeup_tmr(void)
 {	
 	if(skyblewakeup_timer == NULL){		
-		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*25, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
+		skyblewakeup_timer = plt_timer_create("WAKEUP", 1000*10, true, 0, SkyBleMesh_Wakeup_Timeout_cb);
 		if (skyblewakeup_timer != NULL){
 			plt_timer_start(skyblewakeup_timer, 0);
 		}
@@ -116,8 +116,6 @@ void SkyBleMesh_EnterDlps_cfg(void)
 {	
 	// APP_DBG_PRINTF(" SkyBleMesh_EnterDlps_cfg");
 	dlpsstatu = 2; // enter
-	
-
 	HAL_SwitchKey_Dlps_Control(true);
     
 	// light 维持IO电平，视电路和单前状态标志而定，
@@ -136,7 +134,7 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 {
 
 	dlpsstatu = 3; // exit
-    if(System_WakeUpInterruptValue(P4_2) == 1)
+    if(System_WakeUpInterruptValue(P4_2) == true)
     {
         alm_ctrl_dlps(false);
         if(skyalmenterdlps_timer == NULL)
@@ -153,31 +151,12 @@ void SkyBleMesh_ExitDlps_cfg(bool norexit)
 	}
 	if(SkyBleMesh_IsProvision_Sate() && SkyBleMesh_Batt_Station() == BATT_NORMAL){ // provisioned且电量正常
         beacon_start(); // 配网才会打开，这个要验证下，未配网不广播
-        gap_sched_scan(false);
-        gap_sched_scan(true);
-
+//        gap_sched_scan(false);
+//        gap_sched_scan(true);
 	}	
 	SkyBleMesh_StartMainLoop_tmr();
 	SkyBleMesh_EnterDlps_timer();
-//	Reenter_tmr_ctrl_dlps(false);
 	SkyBleMesh_StopWakeup_tmr();
-
-
-}
-void Sky_alive_dlps(void)
-{
-    static uint32_t alive_cnt = 0;
-    if(DlpsCtrlStatu_t.bit.alive == 1)
-    {
-        alive_cnt ++;
-        if(alive_cnt == 60)
-        {
-            alm_alive_dlps(true);
-            alive_cnt =0;
-        }
-    }else{
-        alive_cnt =0;
-    }
 }
 
 bool switch_check_dlps_statu(void)
@@ -255,14 +234,14 @@ void alm_alive_dlps(bool allowenter)
         DlpsCtrlStatu_t.bit.alive =1;
     }
 }
-void alm_attri_dlps(bool allowenter)
+void alm_bat_dlps(bool allowenter)
 {
     if(allowenter)
     {
-        DlpsCtrlStatu_t.bit.attri = 0;
+        DlpsCtrlStatu_t.bit.bat = 0;
     }else
     {
-        DlpsCtrlStatu_t.bit.attri = 1;
+        DlpsCtrlStatu_t.bit.bat = 1;
     }
 }
 void blemesh_factory_ctrl_dlps(bool allowenter)

@@ -128,6 +128,7 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt);
 extern uint8_t SkyBleMesh_Batt_Station(void);
 extern void SkyBleMesh_lightctrl_ON(void);
 extern void SkyBleMesh_lightctrl_OFF(void);
+void SkyBleMesh_alive_timer(void);
 
 
 extern void SkyBleMesh_Vendormodel_init(uint8_t elmt_idx);

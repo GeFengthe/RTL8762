@@ -21,6 +21,8 @@
 #define LEDTURNON    	1
 #define LEDBLINK    	2
 
+#define KEY_LONG_MODE               80 
+
 #if (SKY_SWITCH_TYPE == SKY_NIGHTLIGHT_TYPE)
 //#define BLEMESH_REPORT_FLAG_SWT1 (0x1)
 #endif
@@ -51,6 +53,7 @@ extern uint8_t almkeystatue;
 
 extern uint8_t door_flag;
 
+
 extern bool HAL_Switch_Init(SkySwitchManager *manager);
 
 extern void HAL_ProvisionLed_Control(uint8_t mode);
@@ -70,6 +73,7 @@ extern void HAL_Skymag_Dlps_Control(bool isenter);
 //extern uint8_t sky_findPin(void);
 extern void Scan_almboard_Function(void);
 extern uint8_t alm_read(void);
+extern void Scan_Keyboard_Time(void);
 
 #endif //
 

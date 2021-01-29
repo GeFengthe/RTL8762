@@ -32,8 +32,8 @@ static uint8_t SwitchIO[SKYSWITC_NUMBERS]={SWITCH1_GPIO,SWITCH_ALM_GPIO};
 
 
 #define MINPRESSTIME_2S				(40)	
-#define MIDPRESSTIME_5S   			(100)  // 50ms定时器调用
-#define MAXPRESSTIME_8S             (160)
+#define MIDPRESSTIME_5S   			(85)  // 50ms定时器调用
+#define MAXPRESSTIME_8S             (200)
 
 #define MINALM_1S                   1000
 #define MAXALM_2S                   2000
@@ -86,7 +86,7 @@ static void HAL_GpioForSwitch_Init(void)
     GPIO_InitStruct.GPIO_ITCmd  = DISABLE;
     GPIO_Init(&GPIO_InitStruct);
     
-    	/* Configure pad and pinmux firstly! */
+    /* Configure pad and pinmux firstly! */
     Pad_Config(SwitchIO[SKYSWITC_ALM_ENUM], PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE, PAD_OUT_LOW);
     Pinmux_Config(SwitchIO[SKYSWITC_ALM_ENUM], DWGPIO);	
 
@@ -111,13 +111,11 @@ void HAL_SwitchKey_Dlps_Control(bool isenter)
 		Pad_Config(SWITCH1_GPIO, PAD_PINMUX_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_DISABLE, PAD_OUT_HIGH);
         Pad_Config(SWITCH_ALM_GPIO,PAD_PINMUX_MODE,PAD_IS_PWRON,PAD_PULL_NONE,PAD_OUT_DISABLE,PAD_OUT_HIGH);
         Pad_ClearWakeupINTPendingBit(SWITCH1_GPIO);
-         System_WakeUpPinDisable(SWITCH1_GPIO);
-         Pad_ClearWakeupINTPendingBit(SWITCH_ALM_GPIO);
+        System_WakeUpPinDisable(SWITCH1_GPIO);
+        Pad_ClearWakeupINTPendingBit(SWITCH_ALM_GPIO);
             System_WakeUpPinDisable(SWITCH_ALM_GPIO);
-			switch_io_ctrl_dlps(false);		
-//		}
-		
-	}	
+			switch_io_ctrl_dlps(false);			
+        }	
 }
 uint8_t ReadalmStatu(void)
 {
@@ -125,6 +123,7 @@ uint8_t ReadalmStatu(void)
     if(GPIO_ReadInputDataBit(SWITCH_ALM_GPIO_PIN) == 0)
     {
         almval |= (1<<0);
+        DBG_DIRECT("---switch =%d---\r\n",almval);
         SkyBleMesh_lightctrl_ON();
     }else{
         SkyBleMesh_lightctrl_OFF();
@@ -226,6 +225,25 @@ uint8_t alm_read(void)
 	}
 	return keyval; 
 }
+
+
+//50ms 主定时器判断
+void Scan_Keyboard_Time(void)
+{
+    if(ReadKeyStatu() == 1 && mSwitchManager->keymode !=KEY_LONGPRESS_MODE)
+    {
+        mSwitchManager->keyval ++;
+    }else
+    {
+        mSwitchManager->keyval =0;
+    }
+    if(mSwitchManager->keyval > KEY_LONG_MODE)
+    {
+        mSwitchManager->keymode = KEY_LONGPRESS_MODE;
+    }
+    
+}
+
 
 static void Scan_Keyboard_Function(void)
 {

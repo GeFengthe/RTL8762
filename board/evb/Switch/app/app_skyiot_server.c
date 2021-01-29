@@ -55,8 +55,8 @@ uint8_t  ackattrsval=0;
 #define BLEMESH_COMMAND_WAIT_MS   (500) /* WAIT 250MS FOR Report ack */	
 #define DEFAULT_WAKEUP_ALIVE_CNT  (3)
 
-#define DEFAULT_SKYIOT_ALIVE_MS   (1000*60*5-10)  // qlj 需要一个定时器来换算
-#define DEFAULT_GATEWAY_ALIVE_MS  (1000*60*10-10)
+#define DEFAULT_SKYIOT_ALIVE_MS   (1000*60*5)  // qlj 需要一个定时器来换算
+#define DEFAULT_GATEWAY_ALIVE_MS  (1000*60*10)
 #define DEFAULT_GATEWAY_SENQ_MS   (5000)
 
 
@@ -69,7 +69,7 @@ uint8_t  ackattrsval=0;
 #define TX_ATTR_VAL_POS     7
 
 #define MAX_TX_BUF_LEN 			(MAX_BLEMESH_PACKET_LEN)    // 每个发送缓存最大32字节
-#define MAX_RE_TX_CNT 			(2) // (3)     // 最大重发次数          // 待网关作应答了再改到重发3次
+#define MAX_RE_TX_CNT 			(1) // (3)     // 最大重发次数          // 待网关作应答了再改到重发3次
 #define MAX_ACK_TIMEOUT 		(4000)  // 最大应答超时ms
 #define MAX_TX_BUF_DEEP 		(20)    // 最大10个发送缓存
 static uint16_t maxacktimout =  MAX_ACK_TIMEOUT;
@@ -182,6 +182,9 @@ typedef struct skyOldstate{
 }skyoldstate;
 
 skyoldstate oldstate;       //门磁与防拆开关旧状态
+uint8_t batt_flag = 0;
+uint8_t batt_ack=0;
+static uint8_t alive_time =0;                       //心跳超时定时器开启标志
 
 /*
  * VARIABLES
@@ -194,7 +197,7 @@ static plt_timer_t skybleprosuccess_timer = NULL;
 static plt_timer_t skyblemainloop_timer = NULL;
 static plt_timer_t skyble_unprov_timer = NULL;
 static plt_timer_t skyble_changescan_timer = NULL;
-static plt_timer_t skyble_cleandlps_timer = NULL;
+static plt_timer_t skyble_alive_timer = NULL;
 
 
 // FIFO
@@ -647,6 +650,7 @@ static void BleMesh_Vendor_Make_Packet(uint8_t *buf, uint8_t len, bool needack )
 }
 // pull
 #define SEND_MESH_PACKET_PERIOD  (800)   // ms
+//重新写的发送函数
 static void BleMesh_Vendor_Send_Packet(void)
 {
 	uint8_t  i=0;
@@ -656,53 +660,99 @@ static void BleMesh_Vendor_Send_Packet(void)
 	if(MeshTxAttrStruct==NULL){
 		return;
 	}
-	
-
 	if(HAL_CalculateTickDiff(oldtick, tick) < SEND_MESH_PACKET_PERIOD){
 		return;
-	}else{
-		oldtick = tick;
 	}
-	
-	for(i=0; i<MAX_TX_BUF_DEEP; i++){
-		if( MeshTxAttrStruct[i].fullflag==1 && MeshTxAttrStruct[i].txcnt>0 ){
-			
-			if(MeshTxAttrStruct[i].txtick==0){
-				sub_timeout_ms=0;
-			}else{
-				sub_timeout_ms = HAL_CalculateTickDiff(MeshTxAttrStruct[i].txtick, tick);
-			}
-			
-			if( MeshTxAttrStruct[i].txtick==0 || sub_timeout_ms>=maxacktimout){
-				if(sub_timeout_ms>=maxacktimout){
-					maxacktimout = MAX_ACK_TIMEOUT - 100*(((uint32_t)rand())%11);
-				}
-				APP_DBG_PRINTF4("BleMesh_Vendor_Send_Packet opcode %02X  len%d time%d %d\n", MeshTxAttrStruct[i].buf[TX_OPENCODE_POS], MeshTxAttrStruct[i].len,sub_timeout_ms,maxacktimout);	
-				#if 1
-				for(int j=0; j<MeshTxAttrStruct[i].len ; j++){
-					APP_DBG_PRINTF1("%02X ", MeshTxAttrStruct[i].buf[j]);
-				}
-				#endif
-				#if MESH_TEST_PRESSURE == 1
-				if(MeshTxAttrStruct[i].buf[TX_OPENCODE_POS]==BLEMESH_SKYWORTH_OPCODE_PROPERTY ){
-					sendpackcnt++;
-				}
-				#endif
+	for(i=0; i<MAX_TX_BUF_DEEP; i++)
+    {
+        if(MeshTxAttrStruct[i].fullflag ==1 && MeshTxAttrStruct[i].txcnt>0)
+        {
+            APP_DBG_PRINTF4("BleMesh_Vendor_Send_Packet opcode %02X  len%d time%d %d\n", MeshTxAttrStruct[i].buf[TX_OPENCODE_POS], MeshTxAttrStruct[i].len,sub_timeout_ms,maxacktimout);	
+            #if 1
+            for(int j=0; j<MeshTxAttrStruct[i].len ; j++)
+            {
+                APP_DBG_PRINTF1("%02X ", MeshTxAttrStruct[i].buf[j]);
 				
-				// MESH_MSG_SEND_CAUSE_SUCCESS = 0
-				datatrans_publish(&VendorModel_Server, MeshTxAttrStruct[i].len,  MeshTxAttrStruct[i].buf);
-
-				MeshTxAttrStruct[i].txcnt--;
-				MeshTxAttrStruct[i].txtick = tick;
-				if( MeshTxAttrStruct[i].txcnt==0 ){
-					MeshTxAttrStruct[i].fullflag = 0;  // 最后一包不管应答
-					MeshTxAttrStruct[i].txtick   = 0;
-				}
-				break;
-			}
-		}
+            }
+            #endif
+            #if MESH_TEST_PRESSURE == 1
+            if(MeshTxAttrStruct[i].buf[TX_OPENCODE_POS]==BLEMESH_SKYWORTH_OPCODE_PROPERTY )
+            {
+                sendpackcnt++;
+            }
+            #endif
+            // MESH_MSG_SEND_CAUSE_SUCCESS = 0
+            datatrans_publish(&VendorModel_Server, MeshTxAttrStruct[i].len,  MeshTxAttrStruct[i].buf);
+            MeshTxAttrStruct[i].txcnt--;
+            MeshTxAttrStruct[i].txtick = tick;
+            if( MeshTxAttrStruct[i].txcnt==0 )
+            {
+                MeshTxAttrStruct[i].fullflag = 0;  // 最后一包不管应答
+                MeshTxAttrStruct[i].txtick   = 0;
+            }
+            oldtick = tick;	
+            break;
+        }
 	}
+		
 }
+
+//static void BleMesh_Vendor_Send_Packet(void)
+//{
+//	uint8_t  i=0;
+//	uint32_t sub_timeout_ms=0, tick=HAL_GetTickCount();	
+//	static uint32_t oldtick=0;
+//	
+//	if(MeshTxAttrStruct==NULL){
+//		return;
+//	}
+//	
+
+//	if(HAL_CalculateTickDiff(oldtick, tick) < SEND_MESH_PACKET_PERIOD){
+//		return;
+//	}else{
+//		oldtick = tick;
+//	}
+//	
+//	for(i=0; i<MAX_TX_BUF_DEEP; i++){
+//		if( MeshTxAttrStruct[i].fullflag==1 && MeshTxAttrStruct[i].txcnt>0 ){
+//			
+//			if(MeshTxAttrStruct[i].txtick==0){
+//				sub_timeout_ms=0;
+//			}else{
+//				sub_timeout_ms = HAL_CalculateTickDiff(MeshTxAttrStruct[i].txtick, tick);
+//			}
+//			
+//			if( MeshTxAttrStruct[i].txtick==0 || sub_timeout_ms>=maxacktimout){
+//				if(sub_timeout_ms>=maxacktimout){
+//					maxacktimout = MAX_ACK_TIMEOUT - 100*(((uint32_t)rand())%11);
+//				}
+//				APP_DBG_PRINTF4("BleMesh_Vendor_Send_Packet opcode %02X  len%d time%d %d\n", MeshTxAttrStruct[i].buf[TX_OPENCODE_POS], MeshTxAttrStruct[i].len,sub_timeout_ms,maxacktimout);	
+//				#if 1
+//				for(int j=0; j<MeshTxAttrStruct[i].len ; j++){
+//					APP_DBG_PRINTF1("%02X ", MeshTxAttrStruct[i].buf[j]);
+//				}
+//				#endif
+//				#if MESH_TEST_PRESSURE == 1
+//				if(MeshTxAttrStruct[i].buf[TX_OPENCODE_POS]==BLEMESH_SKYWORTH_OPCODE_PROPERTY ){
+//					sendpackcnt++;
+//				}
+//				#endif
+//				
+//				// MESH_MSG_SEND_CAUSE_SUCCESS = 0
+//				datatrans_publish(&VendorModel_Server, MeshTxAttrStruct[i].len,  MeshTxAttrStruct[i].buf);
+
+//				MeshTxAttrStruct[i].txcnt--;
+//				MeshTxAttrStruct[i].txtick = tick;
+//				if( MeshTxAttrStruct[i].txcnt==0 ){
+//					MeshTxAttrStruct[i].fullflag = 0;  // 最后一包不管应答
+//					MeshTxAttrStruct[i].txtick   = 0;
+//				}
+//				break;
+//			}
+//		}
+//	}
+//}
 
 
 static void BleMesh_Vendor_Ack_Packet(uint8_t eventid, uint16_t attrID, uint32_t val)
@@ -1086,27 +1136,6 @@ extern bool SkyBleMesh_IsProvision_Sate(void)
 
 	return ret;
 }
-void SkyBleMesh_cleanflag_cb(void *timer)
-{
-    if(DlpsCtrlStatu_t.bit.alive == 1)
-    {
-        alm_alive_dlps(true);
-    }
-    plt_timer_delete(skyble_cleandlps_timer,0);
-}
-
-static void SkyBleMesh_cleanflag_timer(void)
-{
-    if(skyble_cleandlps_timer == NULL)
-    {
-        skyble_cleandlps_timer=plt_timer_create("clean",3000,false,0,SkyBleMesh_cleanflag_cb);
-    }
-    if(skyble_changescan_timer != NULL)
-    {
-        plt_timer_start(skyble_cleandlps_timer,0);
-    }
-}
-
 
 /*
 ** unprovision advertising timeout, deinit something.
@@ -1185,7 +1214,7 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 		case MAINLOOP_TIMEOUT:{
              SkyBleMesh_MainLoop();
 			 #if USE_SWITCH_FOR_SKYIOT
-			 HAL_Switch_HandleTimer(NULL);
+//			 HAL_Switch_HandleTimer(NULL);
              Reenter_tmr_ctrl_dlps(false);
 			 #endif
             break;
@@ -1210,9 +1239,8 @@ void SkyBleMesh_Handle_SwTmr_msg(T_IO_MSG *io_msg)
 				mIotManager.process_state = 0xff;
 				SkyBleMesh_WriteConfig();	
 			}
-            beacon_start();
             gap_sched_scan(false);
-            gap_sched_scan(true);
+            os_delay(3);
             blemesh_unprov_ctrl_dlps(true); 
             break;
         }
@@ -1443,53 +1471,80 @@ static int SkyBleMesh_ReadConfig(void)
 static void SkyiotManager_Default_Config(bool sychsaveparam)
 {
     mIotManager.mLightManager.alm = 0;
+    mIotManager.mLightManager.bat = 0;
     oldstate.alm = 0;
 	if(sychsaveparam == true){		
         mIotSaveParams.alm = mIotManager.mLightManager.alm;
+        mIotSaveParams.bat = mIotManager.mLightManager.bat;
 	}
 }
 
-static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
+//static void SkySwitch_Handle(uint8_t key_mode, bool isprov)
+//{
+//	if(key_mode > KEY_LONGPRESS_MODE){
+//		return;
+//	}
+//	
+//	if(key_mode != KEY_SHORTPRESS_MODE && mIotManager.release_flag == SKYIOT_FIRST_RELEASE){
+//		return;
+//	}
+//	
+//    if(mIotManager.batt_rank != BATT_NORMAL){               // 电压低于正常值，不允许配网
+//        APP_DBG_PRINTF0("low batt");
+//        return;
+//    }
+
+//   	if(key_mode == KEY_SINGLE_MODE || key_mode == KEY_SHORTPRESS_MODE){
+//		
+////        if(mIotManager.process_state == 0x55){
+////            mIotManager.process_state = 0xff;
+////            SkyBleMesh_WriteConfig();	
+////            HAL_ResetBleDevice();
+////			return;
+////        }	
+//   	}
+//	if(key_mode == KEY_SINGLE_MODE){
+//            DBG_DIRECT("------KEY_SINGLE_MODE--------\r\n");
+
+//	}else if(key_mode == KEY_SHORTPRESS_MODE){
+//           DBG_DIRECT("------KEY_SHORTPRESS_MODE--------\r\n");
+//	}else if(key_mode == KEY_LONGPRESS_MODE){  
+//		SkyiotManager_Default_Config(true);	
+//		SkyBleMesh_unBind_complete();
+//        SkyLed_Ctrl(LED_MODE_SLOW_BLINK,10,0);
+//        DBG_DIRECT("-------ENTER IS unBind---------\r\n");
+//		if(mIotManager.process_state != 0x55){
+//			mIotManager.process_state = 0x55;
+//			SkyBleMesh_WriteConfig();
+//		}
+//		SkyBleMesh_Reset_timer();
+//		APP_DBG_PRINTF0("vvvvvvvvvvvvvvvv %X\n",mIotManager.process_state);
+//	}		
+//}
+
+//按键函数修改
+static void SkySwitch_Handle(void)
 {
-	if(key_mode > KEY_LONGPRESS_MODE){
-		return;
-	}
-	
-	if(key_mode != KEY_SHORTPRESS_MODE && mIotManager.release_flag == SKYIOT_FIRST_RELEASE){
-		return;
-	}
-	
-    if(mIotManager.batt_rank != BATT_NORMAL){               // 电压低于正常值，不允许配网
-        APP_DBG_PRINTF0("low batt");
-        return;
-    }
-
-   	if(key_mode == KEY_SINGLE_MODE || key_mode == KEY_SHORTPRESS_MODE ){
-		
-//        if(mIotManager.process_state == 0x55){
-//            mIotManager.process_state = 0xff;
-//            SkyBleMesh_WriteConfig();	
-//            HAL_ResetBleDevice();
-//			return;
-//        }	
-   	}
-	if(key_mode == KEY_SINGLE_MODE){
-            DBG_DIRECT("------KEY_SINGLE_MODE--------\r\n");
-
-	}else if(key_mode == KEY_SHORTPRESS_MODE){
-           DBG_DIRECT("------KEY_SHORTPRESS_MODE--------\r\n");
-	}else if(key_mode == KEY_LONGPRESS_MODE){  
-		SkyiotManager_Default_Config(true);	
+    if(mIotManager.mSwitchManager.keymode > KEY_LONGPRESS_MODE)
+        return ;
+    if(mIotManager.batt_rank !=BATT_NORMAL)
+        return ;
+    if(mIotManager.mSwitchManager.keymode == KEY_LONGPRESS_MODE)
+    {
+        SkyiotManager_Default_Config(true);	
 		SkyBleMesh_unBind_complete();
         SkyLed_Ctrl(LED_MODE_SLOW_BLINK,10,0);
+        //暂未添加配网动画效果
         DBG_DIRECT("-------ENTER IS unBind---------\r\n");
 		if(mIotManager.process_state != 0x55){
 			mIotManager.process_state = 0x55;
 			SkyBleMesh_WriteConfig();
 		}
+        mIotManager.mSwitchManager.keymode = KEY_MODE_INIT;
+        mIotManager.mSwitchManager.keyval = 0;
 		SkyBleMesh_Reset_timer();
 		APP_DBG_PRINTF0("vvvvvvvvvvvvvvvv %X\n",mIotManager.process_state);
-	}		
+    }
 }
 
 
@@ -1524,8 +1579,6 @@ static void Main_Event_Handle(void)
 		#if USE_SWITCH_FOR_SKYIOT
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
 			mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
-
-
 		#endif
 		}
 	}
@@ -1545,15 +1598,21 @@ static void Main_Event_Handle(void)
                     Reset_iotmanager_para();
 					mIotManager.report_flag = 0;
 					delayreport = (uint32_t)(rand()%80)*50 + 50; // 50~4000ms
-					oldtick = HAL_GetTickCount();
-                    alm_alive_dlps(true);                    
+					oldtick = HAL_GetTickCount();                  
 					DBG_DIRECT("Main_Event_Handle device online!\n");
 				}else {
 					mIotManager.recv_alive_tick = HAL_GetTickCount();
-                    alm_alive_dlps(true);
 					APP_DBG_PRINTF1("Main_Event_Handle recv keepalive tick: %d!\n", mIotManager.recv_alive_tick);
 				}
-//                alm_alive_dlps(true);
+                gap_sched_scan(false);
+                alive_time = 0;
+                if(skyble_alive_timer != NULL)
+                {
+                    plt_timer_delete(skyble_alive_timer,0);
+                    skyble_alive_timer =NULL;
+                }
+//                DBG_DIRECT("-----ALIVE IS RETURN--\r\n");
+                alm_alive_dlps(true);
 				break;
 			case EVENT_TYPE_UPDATE_PROPERTY:
 				if(mIotManager.alive_status == 0){
@@ -1578,39 +1637,41 @@ static void Main_Event_Handle(void)
 
 			case EVENT_TYPE_REPORT_PROPERTY_ACK:
 				BleMesh_Vendor_Ack_Packet(event.event_id, event.prop_ID, event.prop_value);     //
+//                batt_ack =1;
+//                alm_bat_dlps(true);
 				break;
 		}	
 	}
-#if USE_SWITCH_FOR_SKYIOT
-//     
-	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
-		if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch	
-			SkySwitch_Handle(mIotManager.mSwitchManager.keymode, false);
-		}
-		mIotManager.mSwitchManager.keymode = 0;
-		mIotManager.mSwitchManager.keyval = 0;
-	}		
-#endif
+//#if USE_SWITCH_FOR_SKYIOT
+////     
+//	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
+//		if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch	
+//			SkySwitch_Handle(mIotManager.mSwitchManager.keymode, false);
+//		}
+//		mIotManager.mSwitchManager.keymode = 0;
+//		mIotManager.mSwitchManager.keyval = 0;
+//	}		
+//#endif
     
 	
 }
 
 
 
-static void Main_WithoutNet_Handle(void)
-{	
-	
-#if USE_SWITCH_FOR_SKYIOT
-	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
-		if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch	
-			SkySwitch_Handle(mIotManager.mSwitchManager.keymode, false);
-		}
-		mIotManager.mSwitchManager.keymode = 0;
-		mIotManager.mSwitchManager.keyval = 0;
-	}		
-#endif
+//static void Main_WithoutNet_Handle(void)
+//{	
+//	
+//#if USE_SWITCH_FOR_SKYIOT
+//	if(mIotManager.mSwitchManager.keymode && mIotManager.mSwitchManager.keyval){
+//		if(mIotManager.mSwitchManager.keyval == 0x01){ // user switch	
+//			SkySwitch_Handle(mIotManager.mSwitchManager.keymode, false);
+//		}
+//		mIotManager.mSwitchManager.keymode = 0;
+//		mIotManager.mSwitchManager.keyval = 0;
+//	}		
+//#endif
 
-}
+//}
 
 static bool Main_Check_Online(void)
 {	
@@ -1625,18 +1686,32 @@ static bool Main_Check_Online(void)
 		return true; 
 	}
 	alivetimecnt = HAL_CalculateTickDiff(alivetick, tick);
-    DBG_DIRECT("----alivetimecnt=%d--\r\n",alivetimecnt);
-	if (alivetimecnt >= 30*50){  // 30*50ms
+//    DBG_DIRECT("----alivetimecnt=%d--\r\n",alivetimecnt);
+	if (alivetimecnt >= 1000){  // 30*50ms
 		if (mIotManager.alive_wakeup_cnt < DEFAULT_WAKEUP_ALIVE_CNT){
 			if (mIotManager.alive_status == 0){
-                alm_alive_dlps(false);
+                if(alive_time ==0)
+                {
+                    gap_sched_scan(true);
+                    os_delay(3);
+                    alive_time =1;
+                    alm_alive_dlps(false);
+                    SkyBleMesh_alive_timer();
+                }
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
 			}else{
 				sub_timeout_ms = HAL_CalculateTickDiff(mIotManager.recv_alive_tick, tick);     //
 				 DBG_DIRECT("Main_Check_Online wakeupcnt %d %d\n", mIotManager.alive_wakeup_cnt, sub_timeout_ms);
 				if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
-                    alm_alive_dlps(false);
+                   if(alive_time ==0)
+                    {
+                        gap_sched_scan(true);
+                        os_delay(3);
+                        alive_time =1;
+                        alm_alive_dlps(false);
+                        SkyBleMesh_alive_timer();
+                    }
 					SkyIotSendKeepAlivePacket();
 					mIotManager.send_alive_tick = tick;
 				}
@@ -1647,7 +1722,14 @@ static bool Main_Check_Online(void)
 			if (sub_timeout_ms >= DEFAULT_SKYIOT_ALIVE_MS){
 				APP_DBG_PRINTF1("Main_Check_Online sub_timeout_ms %d\n", sub_timeout_ms);
 				//SEND ALIVE PACKET
-                alm_alive_dlps(false);
+                if(alive_time ==0)
+                {
+                    gap_sched_scan(true);
+                    os_delay(3);
+                    alive_time =1;
+                    alm_alive_dlps(false);
+                    SkyBleMesh_alive_timer();
+                }
 //                SkyBleMesh_cleanflag_timer();
 				SkyIotSendKeepAlivePacket();
 				mIotManager.send_alive_tick = tick;
@@ -1758,12 +1840,6 @@ void Hal_alm(void)
             mIotManager.mLightManager.alm =1;
             mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
             mIotManager.alm_seq = 0;
-//            if(mIotManager.batt_rank == BATT_NORMAL && mIotManager.alive_status ==1)
-//            {
-//                SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,2,0);
-//            }else{
-//                SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,2,1);
-//            }
             break;
         }
         case ALM_KEY_TWO:{
@@ -1771,12 +1847,6 @@ void Hal_alm(void)
             mIotManager.mLightManager.alm = 2;
             mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
             mIotManager.alm_seq = 0;
-//            if(mIotManager.batt_rank == BATT_NORMAL && mIotManager.alive_status ==1)
-//            {
-//                SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,4,0);
-//            }else{
-//                SkyLed_Ctrl(LED_MODE_NORMAL_BRIGHT,4,1);
-//            }
             break;
         }
         case ALM_KEY_LONG:{
@@ -1784,12 +1854,6 @@ void Hal_alm(void)
             mIotManager.mLightManager.alm = 3;
             mIotManager.report_flag |= BLEMESH_REPORT_FLAG_ALM;
             mIotManager.alm_seq = 0;
-//            if(mIotManager.batt_rank == BATT_NORMAL && mIotManager.alive_status ==1)
-//            {
-//                HAL_Lighting_ON(0);
-//            }else{
-//                HAL_Lighting_ON(1);
-//            }
             break;
         }
     }
@@ -1810,6 +1874,8 @@ extern void SkyBleMesh_MainLoop(void)
 //		return;
 //	}
 	#endif
+    Scan_Keyboard_Time();
+    SkySwitch_Handle();
 	SkyBleMesh_Batterval_Lightsense(true);
     Hal_alm();
 	bool isprov = SkyBleMesh_IsProvision_Sate();     // 联网状态              
@@ -1818,7 +1884,6 @@ extern void SkyBleMesh_MainLoop(void)
 		//recv message	
 		Main_Event_Handle();
 //		SkyFunction_Handle(newtick);
-		Sky_alive_dlps();
 		//判断设备是否离线
 		if(Main_Check_Online() == true){
 			//状态上报 
@@ -1838,10 +1903,9 @@ extern void SkyBleMesh_MainLoop(void)
             memset(mIotManager.reppack_buffer, 0x0, MAX_BLEMESH_PACKET_LEN);
             mIotManager.reppack_len = 0;
         }
-			Main_WithoutNet_Handle();
-
-        
-        
+//			Main_WithoutNet_Handle();
+//            alm_bat_dlps(true);
+ 
 	}
 	
 }
@@ -2004,12 +2068,17 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
     if(batt_val < BATT_WARING_RANK+200)     //2600
     {
         mIotManager.mLightManager.bat =1;
+
     }else{
         mIotManager.mLightManager.bat = 0;
     }
+    if(batt_flag != mIotManager.mLightManager.bat)
+    {
+//            batt_ack = 0;
+    }
+    batt_flag = mIotManager.mLightManager.bat;
     if(tickcnt>1000*60)      //1min
     {
-        mIotManager.report_flag |= BLEMESH_REPORT_FLAG_BAT;
         batt_tick =0;
         batt_tick = HAL_GetTickCount();
     }
@@ -2026,10 +2095,6 @@ extern void SkyBleMesh_Batterval_Lightsense(bool onlybatt)
                 mIotManager.batt_rank = BATT_NORMAL;
 			}
 		}
-		
-//		APP_DBG_PRINTF3("batt_val:%d, lp_dat:%d\r\n", batt_val);
-	// }
-
 }
 
 extern uint8_t SkyBleMesh_Batt_Station(void)
@@ -2053,8 +2118,32 @@ extern void SkyBleMesh_lightctrl_OFF(void)
         HAL_Lighting_OFF(0);
     }else{
         HAL_Lighting_OFF(1);
+    }  
+}
+
+void SkyBleMesh_alive_timer_cb(void *timer)
+{
+    alive_time =0;
+    gap_sched_scan(false);
+    alm_alive_dlps(true);
+    if(skyble_alive_timer != NULL)
+    {
+        plt_timer_delete(skyble_alive_timer,0);
+        skyble_alive_timer =NULL;
     }
-    
+}
+
+
+void SkyBleMesh_alive_timer(void)
+{
+    if(skyble_alive_timer ==NULL)
+    {
+        skyble_alive_timer=plt_timer_create("alive",5000,false,0,SkyBleMesh_alive_timer_cb);
+    }
+    if(skyble_alive_timer != NULL)
+    {
+        plt_timer_start(skyble_alive_timer,0);
+    }
 }
 
 //=======================================================================================//

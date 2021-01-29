@@ -205,7 +205,7 @@ void SkyLed_Timeout_cb_handel(void *timer)
 }
 
 
-void SkyLed_Timeout_cb(void)
+void SkyLed_Timeout_cb(void *timer)
 {      
     T_IO_MSG msg;
     msg.type = IO_MSG_TYPE_TIMER;
@@ -216,7 +216,7 @@ void SkyLed_Timeout_cb(void)
 void Start_LED_Timer(void)
 {
 	if(LEDCtrl_timer == NULL){
-		LEDCtrl_timer = plt_timer_create("ledtest", 100, true, 0, (void*)SkyLed_Timeout_cb); 
+		LEDCtrl_timer = plt_timer_create("ledtest", 100, true, 0, SkyLed_Timeout_cb); 
 		if(LEDCtrl_timer != NULL){
 			Led_Relay_tmr_ctrl_dlps(false);
 			plt_timer_start(LEDCtrl_timer, 0);
@@ -249,7 +249,7 @@ void HAL_Light_Dlps_Control(bool isenter)
             Pad_Config(LED_YELLOW, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_NONE, PAD_OUT_ENABLE, PAD_OUT_LOW);
         }else
         {
-            Pad_Config(LED_YELLOW, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_HIGH);
+            Pad_Config(LED_YELLOW, PAD_SW_MODE, PAD_IS_PWRON, PAD_PULL_UP, PAD_OUT_ENABLE, PAD_OUT_LOW);
         }
         
     }else{

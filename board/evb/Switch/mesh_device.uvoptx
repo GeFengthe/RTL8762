@@ -120,7 +120,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
-          <Name></Name>
+          <Name>d</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -157,18 +157,50 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>426</LineNumber>
+          <LineNumber>1591</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>8461252</Address>
+          <Address>8473594</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_Switch\board\evb\Switch\app\main.c</Filename>
+          <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_Switch\board\evb\Switch\app\app_skyiot_server.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\app\app/main.c\426</Expression>
+          <Expression>\\app\app/app_skyiot_server.c\1591</Expression>
+        </Bp>
+        <Bp>
+          <Number>1</Number>
+          <Type>0</Type>
+          <LineNumber>371</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>8480860</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_Switch\board\evb\Switch\app\skyswitch.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\app\app/skyswitch.c\371</Expression>
+        </Bp>
+        <Bp>
+          <Number>2</Number>
+          <Type>0</Type>
+          <LineNumber>368</LineNumber>
+          <EnabledFlag>1</EnabledFlag>
+          <Address>8480844</Address>
+          <ByteObject>0</ByteObject>
+          <HtxType>0</HtxType>
+          <ManyObjects>0</ManyObjects>
+          <SizeOfObject>0</SizeOfObject>
+          <BreakByAccess>0</BreakByAccess>
+          <BreakIfRCount>1</BreakIfRCount>
+          <Filename>D:\妗岄潰\RTL8762-SDK\SKYIOT_Rtl8762_MESH_Switch\board\evb\Switch\app\skyswitch.c</Filename>
+          <ExecCommand></ExecCommand>
+          <Expression>\\app\app/skyswitch.c\368</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
